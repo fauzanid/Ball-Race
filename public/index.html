@@ -289,8 +289,19 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .replay-label{font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.15em;color:var(--accent-2);background:rgba(255,215,0,.1);padding:2px 8px;border-radius:3px;align-self:flex-start;text-transform:uppercase}
 .replay-tl{display:flex;align-items:center;gap:8px}
 .replay-time{font-family:var(--font-mono);font-size:12px;color:var(--ink-200);min-width:70px;text-align:center}
-#replay-slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:rgba(255,255,255,.1);outline:none;cursor:pointer}
+.replay-slider-wrap{flex:1;position:relative;display:flex;align-items:center;min-height:16px}
+#replay-slider{width:100%;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:rgba(255,255,255,.1);outline:none;cursor:pointer;position:relative;z-index:2}
 #replay-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px rgba(255,69,0,.4)}
+.replay-markers{position:absolute;inset:0;pointer-events:none;z-index:1}
+.replay-marker{position:absolute;top:50%;width:3px;height:14px;margin-top:-7px;border-radius:2px;box-shadow:0 0 6px rgba(0,0,0,.6);opacity:.9}
+.replay-marker::after{content:attr(data-label);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(5,5,4,.95);color:var(--ink-50);font-family:var(--font-cond);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:3px 6px;border-radius:3px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;border:1px solid rgba(255,255,255,.1)}
+.replay-marker:hover::after{opacity:1}
+.replay-label-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.replay-winner-line{font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.08em;color:var(--accent-2);text-transform:uppercase;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.replay-hotkeys{font-family:var(--font-mono);font-size:10px;letter-spacing:.05em;color:var(--ink-400);white-space:nowrap}
+@media(max-width:640px){.replay-hotkeys{display:none}}
+.replay-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;background:var(--accent-2);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.1em;border-radius:3px;box-shadow:0 0 16px rgba(255,215,64,.4)}
+.replay-badge::before{content:"";width:0;height:0;border-left:7px solid var(--ink-900);border-top:4px solid transparent;border-bottom:4px solid transparent;margin-left:-2px}
 .replay-btns{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .r-ctrl{font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:5px 10px;cursor:pointer;background:rgba(255,255,255,.04);color:var(--ink-200);transition:all .15s}
 .r-ctrl:hover{background:rgba(255,255,255,.08);color:var(--ink-50)}
@@ -561,7 +572,8 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
   <div id="race-screen" class="screen">
     <div class="race-topbar">
       <div class="race-topbar-l">
-        <span class="live-badge">LIVE</span>
+        <span class="live-badge" id="topbar-live-badge">LIVE</span>
+        <span class="replay-badge" id="topbar-replay-badge" style="display:none">REPLAY</span>
         <div class="race-topbar-title">Ball Race<span class="small" id="race-meta">· PITCH 01</span></div>
       </div>
       <div class="race-topbar-c">
@@ -595,10 +607,17 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
       </div>
     </div>
     <div class="replay-bar" id="replay-bar">
-      <span class="replay-label">REPLAY</span>
+      <div class="replay-label-row">
+        <span class="replay-label">REPLAY</span>
+        <span class="replay-winner-line" id="replay-winner-line"></span>
+        <span class="replay-hotkeys" title="Keyboard shortcuts">⌨ Space · ← → · [ ]</span>
+      </div>
       <div class="replay-tl">
         <span class="replay-time" id="r-time-cur">0:00.0</span>
-        <input type="range" id="replay-slider" min="0" max="1000" value="0">
+        <div class="replay-slider-wrap">
+          <input type="range" id="replay-slider" min="0" max="1000" value="0">
+          <div class="replay-markers" id="replay-markers" aria-hidden="true"></div>
+        </div>
         <span class="replay-time" id="r-time-tot">0:00.0</span>
       </div>
       <div class="replay-btns">
@@ -608,6 +627,8 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
         <button id="r-play">▶</button>
         <button class="r-ctrl speed-btn act" data-speed="1">1×</button>
         <button class="r-ctrl speed-btn" data-speed="2">2×</button>
+        <button class="r-ctrl speed-btn" data-speed="4">4×</button>
+        <button class="r-ctrl" id="r-share-moment" title="Copy link to this moment">🔗 Moment</button>
       </div>
     </div>
   </div>
@@ -1867,7 +1888,7 @@ function updateScoreboard(){
     if(a.finished) return -1; if(b.finished) return 1;
     return b.pos - a.pos;
   });
-  $('race-status').textContent = raceActive ? 'LIVE' : (viewerRacing ? 'LIVE' : finishOrder.length===racers.length ? 'FT' : '—');
+  $('race-status').textContent = replayMode ? 'REPLAY' : raceActive ? 'LIVE' : (viewerRacing ? 'LIVE' : finishOrder.length===racers.length ? 'FT' : '—');
   $('scoreboard-list').innerHTML = sorted.map((o,idx) => {
     const rr = o.r;
     const time = rr.finished ? formatTime(rr.finishTime/1000) : Math.round(rr.position*100)+'%';
@@ -1993,7 +2014,7 @@ function renderHistory(){
       });
   }));
 }
-async function playHistoryReplay(raceId){
+async function playHistoryReplay(raceId, seekMs){
   try {
     toast('Loading replay…');
     const res = await fetch('/api/races/'+raceId);
@@ -2004,7 +2025,8 @@ async function playHistoryReplay(raceId){
     racers = h.players.map((name,i)=>({id:nextId(),name,colorIdx:colors[i],position:0,finished:false,finishTime:0}));
     finishOrder = (h.results || []).map(r=>({...r, colorIdx:r.colorIdx!=null?r.colorIdx:0}));
     recording = h.recording; replayFromHistory = true;
-    enterReplay();
+    replayCurrentRaceId = raceId;
+    enterReplay(seekMs);
   } catch(e){ toast('Failed to load'); console.error(e); }
 }
 $('clear-history-btn').addEventListener('click', async () => {
@@ -2016,23 +2038,87 @@ $('clear-history-btn').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // REPLAY
 // ═══════════════════════════════════════════════════════════════════════════
-function enterReplay(){
+let replayCurrentRaceId = null; // track for share-moment link
+
+function computeReplayMarkers(){
+  if(!recording || recording.length < 2) return [];
+  const markers = [];
+  const total = recording[recording.length-1].time;
+  const finished = new Set();
+  const n = racers.length;
+  for(const f of recording){
+    for(let i=0;i<n;i++){
+      const pos = f.positions[i];
+      if(pos >= 1 && !finished.has(i)){
+        finished.add(i);
+        const place = finished.size;
+        const r = racers[i] || {};
+        const color = TEAM_COLORS[(r.colorIdx!=null?r.colorIdx:i) % TEAM_COLORS.length];
+        const suffix = place===1?'1st':place===2?'2nd':place===3?'3rd':place+'th';
+        markers.push({
+          time: f.time,
+          pct: Math.max(0, Math.min(100, (f.time / total) * 100)),
+          color, place,
+          label: `${(r.name || '?').toUpperCase()} · ${suffix}`,
+        });
+      }
+    }
+    if(finished.size === n) break;
+  }
+  return markers;
+}
+
+function renderReplayMarkers(){
+  const el = $('replay-markers');
+  const markers = computeReplayMarkers();
+  el.innerHTML = markers.map(m => `<span class="replay-marker" style="left:${m.pct}%;background:${m.color}" data-label="${escapeHtml(m.label)}"></span>`).join('');
+}
+
+function updateReplayTopbar(){
+  const isReplay = replayMode;
+  $('topbar-live-badge').style.display = isReplay ? 'none' : '';
+  $('topbar-replay-badge').style.display = isReplay ? '' : 'none';
+  const meta = $('race-meta');
+  if(isReplay && finishOrder.length){
+    const w = finishOrder[0];
+    meta.innerHTML = `· 🏆 ${escapeHtml(w.name)}`;
+    $('replay-winner-line').innerHTML = `Winner · <strong>${escapeHtml(w.name)}</strong>`;
+  } else {
+    meta.textContent = '· PITCH 01';
+    $('replay-winner-line').textContent = '';
+  }
+}
+
+function enterReplay(seekMs){
   if(!recording.length) return;
   stopConfetti(); showScreen($race); $tabBar.classList.add('hidden');
   $('kick-off-row').style.display = 'none';
   resizeCanvas();
-  replayMode = true; replayFrame = 0; replayPlaying = true;
+  replayMode = true; replayFrame = 0; replayPlaying = seekMs==null;
   replaySpeed = 1; replayLastTime = 0; replayAccum = 0;
   $('replay-bar').classList.add('active');
   $('replay-slider').value = 0;
   $('r-time-tot').textContent = replayFmt(recording[recording.length-1].time);
   $('r-time-cur').textContent = replayFmt(0);
-  updSpeedBtns(); updPlayBtn(); applyFrame(0);
+  updSpeedBtns(); updPlayBtn();
+  renderReplayMarkers();
+  updateReplayTopbar();
+  $('r-back').textContent = replayFromHistory ? '↩ History' : '↩ Results';
+  // Seek if requested
+  if(seekMs != null && seekMs > 0){
+    let idx = 0;
+    while(idx < recording.length-1 && recording[idx+1].time <= seekMs) idx++;
+    applyFrame(idx);
+  } else {
+    applyFrame(0);
+  }
   requestAnimationFrame(replayLoop);
 }
 function exitReplay(){
   replayMode = false; replayPlaying = false; cancelAnimationFrame(replayAnim);
   replayAnim = null; $('replay-bar').classList.remove('active');
+  replayCurrentRaceId = null;
+  updateReplayTopbar();
 }
 function applyFrame(idx){
   idx = Math.max(0, Math.min(idx, recording.length-1));
@@ -2094,6 +2180,50 @@ document.querySelectorAll('.speed-btn').forEach(b => b.addEventListener('click',
 $('replay-slider').addEventListener('input', () => {
   replayPlaying=false; replayAccum=0; replayLastTime=0; updPlayBtn();
   applyFrame(Math.round(($('replay-slider').value/1000)*(recording.length-1)));
+});
+
+// Share link to current moment in replay
+$('r-share-moment').addEventListener('click', () => {
+  if(!replayMode || !replayCurrentRaceId){ toast('Only saved races can be shared'); return; }
+  const ms = recording[replayFrame]?.time || 0;
+  const url = `${location.origin}${location.pathname}#replay=${replayCurrentRaceId}&t=${(ms/1000).toFixed(1)}`;
+  (navigator.clipboard?.writeText(url) || Promise.reject())
+    .then(()=>toast('Link copied (jumps to this moment)'))
+    .catch(()=>toast(url));
+});
+
+// Seek helper — used by keyboard shortcuts
+function replaySeekBy(seconds){
+  if(!recording.length) return;
+  const cur = recording[replayFrame]?.time || 0;
+  const target = Math.max(0, cur + seconds*1000);
+  let idx = 0;
+  while(idx < recording.length-1 && recording[idx+1].time <= target) idx++;
+  replayPlaying=false; replayAccum=0; replayLastTime=0; updPlayBtn();
+  applyFrame(idx);
+}
+
+// Cycle through speeds with [ / ]
+function cycleReplaySpeed(delta){
+  const opts = [0.25, 0.5, 1, 2, 4];
+  let i = opts.indexOf(replaySpeed);
+  if(i < 0) i = 2;
+  i = Math.max(0, Math.min(opts.length-1, i + delta));
+  replaySpeed = opts[i]; replayAccum=0; replayLastTime=0; updSpeedBtns();
+}
+
+// Global keyboard shortcuts for replay
+document.addEventListener('keydown', (e) => {
+  if(!replayMode) return;
+  // Ignore if user is typing in an input/textarea
+  const t = e.target;
+  if(t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if(e.key === ' '){ e.preventDefault(); $('r-play').click(); }
+  else if(e.key === 'ArrowLeft'){ e.preventDefault(); replaySeekBy(-1); }
+  else if(e.key === 'ArrowRight'){ e.preventDefault(); replaySeekBy(1); }
+  else if(e.key === '['){ e.preventDefault(); cycleReplaySpeed(-1); }
+  else if(e.key === ']'){ e.preventDefault(); cycleReplaySpeed(1); }
+  else if(e.key === 'Escape'){ e.preventDefault(); $('r-back').click(); }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2437,15 +2567,16 @@ renderWheelChips();
 loadWheelHistory();
 connectSocket();
 
-// Deep-link: /#replay=<id> auto-loads that race into the replay view
+// Deep-link: /#replay=<id> or /#replay=<id>&t=<seconds> auto-loads that race into the replay view
 (function handleReplayLink(){
-  const m = /#replay=(\d+)/.exec(location.hash);
+  const m = /#replay=(\d+)(?:&t=([\d.]+))?/.exec(location.hash);
   if(!m) return;
   const id = +m[1];
+  const tSec = m[2] ? parseFloat(m[2]) : 0;
   // Clear the hash so a reload doesn't re-trigger
   history.replaceState(null, '', location.pathname);
   // Small delay so the socket state-sync doesn't yank us off the race screen
-  setTimeout(() => playHistoryReplay(id), 250);
+  setTimeout(() => playHistoryReplay(id, tSec * 1000), 250);
 })();
 
 // Autofocus name input
