@@ -450,7 +450,7 @@ let players = [{name:'',colorIdx:0},{name:'',colorIdx:1}];
 let racers = [], finishOrder = [], raceActive = false;
 let lastLeader = -1, lastCommentaryTime = 0, commentaryText = '', raceStartRealTime = 0;
 let recording = [], replayMode = false, replayPlaying = false, replayFrame = 0;
-let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0;
+let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0, replayFromHistory = false;
 let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
 let teamNames = [], teamCount = 2;
 let currentTab = 'race';
@@ -869,13 +869,40 @@ function showResults(){
 
 // ===== HISTORY =====
 function saveRaceHistory(){
-  raceHistory.unshift({date:Date.now(),players:racers.map(r=>r.name),winner:finishOrder[0]?.name||'',results:finishOrder.map(r=>({name:r.name,time:r.finishTime})),duration:settings.duration});
-  if(raceHistory.length>50)raceHistory.length=50;LS.set('history',raceHistory);
+  const sampled = recording.filter((_,i) => i%3===0 || i===recording.length-1);
+  raceHistory.unshift({
+    date:Date.now(),
+    players:racers.map(r=>r.name),
+    colors:racers.map(r=>r.colorIdx),
+    winner:finishOrder[0]?.name||'',
+    results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,time:r.finishTime})),
+    duration:settings.duration,
+    recording:sampled,
+  });
+  if(raceHistory.length>30)raceHistory.length=30;
+  LS.set('history',raceHistory);
 }
 function renderHistory(){
   const el=$id('history-list');
   if(!raceHistory.length){el.innerHTML='<div class="empty-msg">No races yet</div>';return;}
-  el.innerHTML=raceHistory.map(h=>{const d=new Date(h.date),ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});return`<div class="history-item"><div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${h.winner}</span></div><div class="history-players">${h.players.join(', ')}</div></div>`;}).join('');
+  el.innerHTML=raceHistory.map((h,idx)=>{
+    const d=new Date(h.date),ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const hasReplay=h.recording&&h.recording.length>0;
+    return`<div class="history-item"><div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${h.winner}</span></div><div class="history-players">${h.players.join(', ')}</div>${hasReplay?`<button class="btn btn-g history-replay-btn" data-hidx="${idx}" style="margin-top:8px;padding:6px 14px;font-size:.8rem;width:100%">WATCH REPLAY</button>`:''}</div>`;
+  }).join('');
+  el.querySelectorAll('.history-replay-btn').forEach(b=>b.addEventListener('click',e=>{
+    playHistoryReplay(+e.target.dataset.hidx);
+  }));
+}
+function playHistoryReplay(idx){
+  const h=raceHistory[idx];
+  if(!h||!h.recording||!h.recording.length)return;
+  const colors=h.colors||h.players.map((_,i)=>i);
+  racers=h.players.map((name,i)=>({name,colorIdx:colors[i],position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+  finishOrder=h.results||[];
+  recording=h.recording;
+  replayFromHistory=true;
+  enterReplay();
 }
 $id('clear-history-btn').addEventListener('click',()=>{raceHistory=[];LS.set('history',raceHistory);renderHistory();toast('History cleared');});
 
@@ -902,8 +929,13 @@ function replayLoop(ts){
 function updPlayBtn(){$rPlay.innerHTML=replayPlaying?'&#9646;&#9646;':'&#9654;';}
 function updSpeedBtns(){document.querySelectorAll('.speed-btn').forEach(b=>b.classList.toggle('act',parseFloat(b.dataset.speed)===replaySpeed));}
 
-$id('replay-btn').addEventListener('click',enterReplay);
-$id('r-back').addEventListener('click',()=>{exitReplay();$tabBar.classList.remove('hidden');if(mode==='viewer')showViewerResults({results:finishOrder});else showResults();});
+$id('replay-btn').addEventListener('click',()=>{replayFromHistory=false;enterReplay();});
+$id('r-back').addEventListener('click',()=>{
+  exitReplay();$tabBar.classList.remove('hidden');
+  if(replayFromHistory){replayFromHistory=false;renderHistory();showScreen($historyScr);document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='history'));currentTab='history';}
+  else if(mode==='viewer')showViewerResults({results:finishOrder});
+  else showResults();
+});
 $rPlay.addEventListener('click',()=>{if(replayFrame>=recording.length-1){replayFrame=0;replayAccum=0;replayLastTime=0;replayPlaying=true;}else{replayPlaying=!replayPlaying;if(replayPlaying){replayLastTime=0;replayAccum=0;}}updPlayBtn();});
 document.querySelectorAll('.speed-btn').forEach(b=>b.addEventListener('click',()=>{replaySpeed=parseFloat(b.dataset.speed);replayAccum=0;replayLastTime=0;updSpeedBtns();}));
 $rSlider.addEventListener('input',()=>{replayPlaying=false;replayAccum=0;replayLastTime=0;updPlayBtn();applyFrame(Math.round(($rSlider.value/1000)*(recording.length-1)));});
