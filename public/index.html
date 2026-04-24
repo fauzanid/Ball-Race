@@ -359,6 +359,11 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 #wheel-canvas{width:100%;height:100%;display:block}
 .wheel-pointer{position:absolute;top:-4px;left:50%;transform:translateX(-50%);font-size:1.8rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));z-index:2;color:var(--accent)}
 .wheel-result{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,4vw,32px);text-align:center;color:var(--accent-2);min-height:40px;text-transform:uppercase;text-shadow:0 0 20px rgba(255,215,0,.3)}
+.wheel-history-section{margin-top:18px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px}
+.wheel-history-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.wheel-hist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);margin-bottom:4px}
+.wheel-hist-winner{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-2)}
+.wheel-hist-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-200);text-transform:uppercase;white-space:nowrap}
 
 .team-results{display:grid;gap:12px;margin-top:16px}
 .team-card{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:16px}
@@ -642,6 +647,14 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
       <div class="wheel-canvas-wrap"><div class="wheel-pointer">▼</div><canvas id="wheel-canvas"></canvas></div>
       <div class="wheel-result" id="wheel-result"></div>
       <button class="btn btn-primary" id="wheel-spin-btn" style="width:100%">⚡ Spin</button>
+
+      <div class="wheel-history-section">
+        <div class="wheel-history-hd">
+          <span class="label">Recent Spins</span>
+          <button class="btn btn-ghost btn-xs" id="wheel-clear-hist-btn">Clear</button>
+        </div>
+        <div id="wheel-history"></div>
+      </div>
     </div>
   </div>
 
@@ -1266,6 +1279,7 @@ function setRole(r){
   $('viewer-setup').style.display = isAdmin ? 'none' : '';
   $('kick-off-row').style.display = (isAdmin && currentTab==='race' && !raceActive && !replayMode) ? '' : 'none';
   $('clear-history-btn').style.display = isAdmin ? '' : 'none';
+  $('wheel-clear-hist-btn').style.display = isAdmin ? '' : 'none';
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
   if(isAdmin){ if(players.length<2) seedDefaultPlayers(); renderPlayerList(); } else renderViewerLineup();
@@ -1308,7 +1322,7 @@ document.querySelectorAll('.tab').forEach(t => {
     t.classList.add('active'); currentTab = t.dataset.tab;
     $('kick-off-row').style.display = (role==='admin' && currentTab==='race' && !raceActive) ? '' : 'none';
     if(currentTab==='race'){ exitReplay(); showScreen($setup); }
-    else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); }
+    else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
     else if(currentTab==='teams') showScreen($teams);
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
   });
@@ -2115,16 +2129,58 @@ function wheelLoop(ts){
     wheelVelocity=0; wheelSpinning=false;
     let a=(-Math.PI/2 - wheelRotation)%(Math.PI*2); if(a<0) a += Math.PI*2;
     const idx = Math.floor(a/(Math.PI*2/wheelNames.length));
-    $('wheel-result').textContent = '🎉 ' + wheelNames[idx] + '!';
+    const winner = wheelNames[idx];
+    $('wheel-result').textContent = '🎉 ' + winner + '!';
     sfx.fanfare();
+    saveWheelSpin(winner, [...wheelNames]);
   }
   drawWheel();
   if(wheelSpinning) requestAnimationFrame(wheelLoop);
+}
+
+// ── Wheel history (database) ──
+let wheelHistory = [];
+async function loadWheelHistory(){
+  try { const r = await fetch('/api/wheel-spins?limit=30'); wheelHistory = r.ok ? await r.json() : []; }
+  catch { wheelHistory = []; }
+  renderWheelHistory();
+}
+async function saveWheelSpin(winner, names){
+  if(role !== 'admin') return;    // only admin writes
+  try {
+    await fetch('/api/wheel-spins', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ names, winner })
+    });
+    loadWheelHistory();
+  } catch(e) { console.error('save wheel spin', e); }
+}
+function renderWheelHistory(){
+  const el = $('wheel-history');
+  if(!el) return;
+  if(!wheelHistory.length){ el.innerHTML = '<div class="empty-msg">No spins yet</div>'; return; }
+  el.innerHTML = wheelHistory.map(h => {
+    const d = new Date(h.created_at);
+    const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    return `<div class="wheel-hist-row">
+      <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
+      <span class="wheel-hist-meta">${h.names.length} names · ${ds}</span>
+    </div>`;
+  }).join('');
+}
+async function clearWheelHistory(){
+  if(role !== 'admin'){ toast('Admin only'); return; }
+  try {
+    await fetch('/api/wheel-spins', { method:'DELETE', headers:{'x-admin-token': adminToken} });
+    wheelHistory = []; renderWheelHistory(); toast('Cleared');
+  } catch { toast('Failed to clear'); }
 }
 $('wheel-add-btn').addEventListener('click', () => { const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
 $('wheel-use-players').addEventListener('click', () => { wheelNames = players.map((p,i)=>p.name.trim()||'Player '+(i+1)); renderWheelChips(); drawWheel(); });
 $('wheel-spin-btn').addEventListener('click', spinWheel);
+$('wheel-clear-hist-btn').addEventListener('click', clearWheelHistory);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TEAMS
@@ -2212,6 +2268,7 @@ applySettings();
 renderSkinPicker();
 setRole('viewer');
 renderWheelChips(); renderTeamChips();
+loadWheelHistory();
 connectSocket();
 
 // Autofocus name input

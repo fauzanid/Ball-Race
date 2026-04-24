@@ -51,6 +51,15 @@ async function initDB() {
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_races_created ON races (created_at DESC)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS wheel_spins (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        names TEXT[] NOT NULL,
+        winner VARCHAR(120) NOT NULL
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_wheel_spins_created ON wheel_spins (created_at DESC)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -135,6 +144,48 @@ app.delete('/api/races', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     await pool.query('DELETE FROM races');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear' });
+  }
+});
+
+// ===== WHEEL SPINS API =====
+app.get('/api/wheel-spins', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+    const { rows } = await pool.query(
+      `SELECT id, created_at, names, winner FROM wheel_spins ORDER BY created_at DESC LIMIT $1`,
+      [limit]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/wheel-spins:', err.message);
+    res.status(500).json({ error: 'Failed to load spins' });
+  }
+});
+
+app.post('/api/wheel-spins', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const { names, winner } = req.body || {};
+    if (!Array.isArray(names) || !names.length || !winner) return res.status(400).json({ error: 'Missing fields' });
+    const { rows } = await pool.query(
+      `INSERT INTO wheel_spins (names, winner) VALUES ($1, $2) RETURNING id, created_at`,
+      [names, winner]
+    );
+    res.json({ id: rows[0].id, created_at: rows[0].created_at });
+  } catch (err) {
+    console.error('POST /api/wheel-spins:', err.message);
+    res.status(500).json({ error: 'Failed to save spin' });
+  }
+});
+
+app.delete('/api/wheel-spins', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    await pool.query('DELETE FROM wheel_spins');
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to clear' });
