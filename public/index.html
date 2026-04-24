@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Football Race</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00e676">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0b1120;--surface:#141e33;--surface-hover:#1a2740;--border:#1e2d4a;
+  --primary:#00e676;--gold:#ffd740;--text:#e0e4f0;--text-muted:#6b7a9e;--danger:#ff4466;
+  --font-d:'Oswald',sans-serif;--font-b:'Barlow Condensed',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-b);overflow:hidden}
+body{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(0,230,118,.06) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 20% 10%,rgba(41,121,255,.04) 0%,transparent 50%),radial-gradient(ellipse 60% 40% at 80% 10%,rgba(255,215,64,.04) 0%,transparent 50%),var(--bg)}
+#app{height:100%;display:flex;flex-direction:column}
+
+header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);background:rgba(11,17,32,.9);backdrop-filter:blur(10px);z-index:10;flex-shrink:0}
+.logo{font-family:var(--font-d);font-weight:700;font-size:1.35rem;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.logo-icon{font-size:1.2rem}
+.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.icon-btn{background:none;border:1px solid var(--border);color:var(--text-muted);width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{background:var(--surface-hover);color:var(--text)}
+.icon-btn.active{border-color:var(--primary);color:var(--primary)}
+
+#tab-bar{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tab{font-family:var(--font-d);font-weight:600;font-size:.85rem;letter-spacing:1px;text-transform:uppercase;padding:10px 18px;background:none;border:none;color:var(--text-muted);cursor:pointer;position:relative;transition:color .2s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--primary)}
+.tab.active::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:2px;background:var(--primary);border-radius:1px}
+#tab-bar.hidden{display:none}
+
+.screen{flex:1;display:none;overflow:auto}
+.screen.active{display:flex}
+
+.btn{font-family:var(--font-d);font-weight:600;font-size:1rem;letter-spacing:1.2px;text-transform:uppercase;border:none;border-radius:8px;padding:12px 20px;cursor:pointer;transition:transform .12s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn-s{background:var(--surface);color:var(--text-muted);border:1px solid var(--border);font-size:.9rem;padding:10px 16px}
+.btn-s:hover{background:var(--surface-hover);color:var(--text)}
+.btn-p{background:linear-gradient(135deg,#00c853,#00e676);color:#0b1120;box-shadow:0 4px 20px rgba(0,230,118,.25)}
+.btn-p:hover{box-shadow:0 6px 28px rgba(0,230,118,.4)}
+.btn-g{background:linear-gradient(135deg,#e6a800,#ffd740);color:#0b1120;box-shadow:0 4px 16px rgba(255,215,64,.2)}
+.btn-g:hover{box-shadow:0 6px 24px rgba(255,215,64,.35)}
+.btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.toast{position:fixed;top:60px;left:50%;transform:translateX(-50%);background:var(--primary);color:#0b1120;font-family:var(--font-d);font-weight:600;padding:8px 24px;border-radius:8px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* LOBBY */
+#lobby-screen{justify-content:center;align-items:center;padding:24px}
+.lobby-wrap{width:100%;max-width:420px;text-align:center}
+.lobby-title{font-family:var(--font-d);font-weight:700;font-size:2.2rem;letter-spacing:3px;margin-bottom:6px;background:linear-gradient(135deg,var(--primary),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lobby-sub{font-size:1rem;color:var(--text-muted);margin-bottom:32px}
+.lobby-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px}
+.lobby-card-title{font-family:var(--font-d);font-weight:600;font-size:.95rem;letter-spacing:1.2px;color:var(--text);margin-bottom:12px}
+.lobby-join-row{display:flex;gap:8px}
+.lobby-join-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 14px;color:var(--text);font-family:var(--font-d);font-size:1.1rem;font-weight:600;letter-spacing:3px;text-transform:uppercase;text-align:center;outline:none}
+.lobby-join-row input:focus{border-color:var(--primary)}
+.lobby-join-row input::placeholder{letter-spacing:1px;font-size:.85rem;font-weight:400;text-transform:none}
+.lobby-divider{color:var(--text-muted);font-size:.85rem;margin:16px 0;display:flex;align-items:center;gap:12px}
+.lobby-divider::before,.lobby-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ROOM BAR */
+.room-bar{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.room-code{font-family:var(--font-d);font-weight:700;font-size:1.3rem;letter-spacing:4px;color:var(--primary)}
+.room-viewers{font-size:.85rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.room-link-btn{font-family:var(--font-d);font-weight:600;font-size:.75rem;padding:4px 10px;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.25);border-radius:5px;color:var(--primary);cursor:pointer;letter-spacing:.5px}
+.room-link-btn:hover{background:rgba(0,230,118,.18)}
+.viewer-waiting{text-align:center;padding:30px 20px;color:var(--text-muted);font-family:var(--font-d);font-size:1rem;letter-spacing:1px}
+.viewer-waiting .spin{display:inline-block;animation:spin 1s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SETUP */
+#setup-screen{flex-direction:column;align-items:center;padding:20px}
+.setup-wrap{width:100%;max-width:540px}
+.section-title{font-family:var(--font-d);font-size:1.1rem;font-weight:600;letter-spacing:1.5px;margin-bottom:12px;color:var(--text)}
+.player-entry{display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:6px;background:var(--surface);border:1px solid var(--border);border-radius:8px;transition:border-color .2s}
+.player-entry:focus-within{border-color:var(--primary)}
+.p-num{font-family:var(--font-d);font-weight:600;font-size:.85rem;color:var(--text-muted);width:18px;text-align:center}
+.p-color{width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,255,255,.12);flex-shrink:0}
+.player-entry input{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:var(--font-b);font-size:1rem;font-weight:500}
+.player-entry input::placeholder{color:var(--text-muted)}
+.player-entry .p-name-ro{flex:1;font-family:var(--font-b);font-size:1rem;font-weight:500;color:var(--text)}
+.rm-btn{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;padding:2px 6px;border-radius:4px;line-height:1}
+.rm-btn:hover{color:var(--danger)}
+.setup-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.setup-row .btn{flex:1;min-width:100px}
+
+.settings-panel{margin-top:16px;padding:14px;background:var(--surface);border:1px solid var(--border);border-radius:10px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-family:var(--font-d);font-weight:500;font-size:.9rem;letter-spacing:.5px;color:var(--text)}
+.setting-hint{font-size:.8rem;color:var(--text-muted);margin-top:2px}
+#duration-input:focus{border-color:var(--primary)}
+#duration-input::-webkit-inner-spin-button{opacity:1}
+.seg-group{display:flex;gap:0}
+.seg-btn{font-family:var(--font-d);font-weight:600;font-size:.75rem;letter-spacing:.5px;padding:6px 12px;background:var(--bg);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;transition:all .15s}
+.seg-btn:first-child{border-radius:6px 0 0 6px}
+.seg-btn:last-child{border-radius:0 6px 6px 0}
+.seg-btn.active{background:rgba(0,230,118,.1);border-color:var(--primary);color:var(--primary)}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--border);cursor:pointer;position:relative;transition:background .2s;border:none}
+.toggle.on{background:var(--primary)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle.on::after{transform:translateX(20px)}
+
+.rooms-panel{margin-top:12px}
+.room-list{max-height:140px;overflow-y:auto;margin-bottom:8px}
+.room-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:background .15s}
+.room-item:hover{background:var(--surface-hover)}
+.room-item-name{flex:1;font-family:var(--font-d);font-weight:500;font-size:.9rem}
+.room-item-count{font-size:.8rem;color:var(--text-muted)}
+.room-item .rm-btn{font-size:.9rem}
+.room-save-row{display:flex;gap:6px}
+.room-save-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-b);font-size:.9rem;outline:none}
+.room-save-row input:focus{border-color:var(--primary)}
+.empty-msg{font-size:.85rem;color:var(--text-muted);padding:12px;text-align:center}
+
+/* RACE */
+#race-screen{position:relative;flex-direction:column;background:#0d1a0d}
+#race-canvas{flex:1;width:100%;display:block}
+#commentary-bar{position:absolute;bottom:0;left:0;right:0;padding:10px 20px;background:rgba(11,17,32,.92);backdrop-filter:blur(8px);border-top:1px solid var(--border);font-family:var(--font-d);font-size:1rem;font-weight:500;letter-spacing:.8px;color:var(--gold);text-align:center;min-height:44px}
+#countdown-overlay{position:absolute;inset:0;display:flex;justify-content:center;align-items:center;background:rgba(11,17,32,.7);z-index:20;pointer-events:none}
+.cd-text{font-family:var(--font-d);font-weight:700;font-size:7rem;color:var(--primary);text-shadow:0 0 40px rgba(0,230,118,.6);animation:cdPop .6s ease-out}
+.cd-text.go{color:var(--gold);text-shadow:0 0 40px rgba(255,215,64,.6)}
+@keyframes cdPop{0%{transform:scale(2);opacity:0}50%{opacity:1}100%{transform:scale(1);opacity:1}}
+
+#replay-bar{position:absolute;bottom:0;left:0;right:0;padding:8px 14px;background:rgba(11,17,32,.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);display:none;flex-direction:column;gap:6px;z-index:15}
+#replay-bar.active{display:flex}
+.replay-label{font-family:var(--font-d);font-size:.7rem;font-weight:600;letter-spacing:1.5px;color:var(--gold);background:rgba(255,215,64,.1);padding:2px 8px;border-radius:3px;align-self:flex-start;margin-bottom:2px}
+.replay-tl{display:flex;align-items:center;gap:8px}
+.replay-time{font-family:var(--font-b);font-weight:500;font-size:.8rem;color:var(--text-muted);min-width:70px;text-align:center}
+#replay-slider{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--border);outline:none;cursor:pointer}
+#replay-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--primary);cursor:pointer;box-shadow:0 0 6px rgba(0,230,118,.4)}
+.replay-btns{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.r-ctrl{font-family:var(--font-d);font-weight:600;font-size:.75rem;letter-spacing:.8px;text-transform:uppercase;border:1px solid var(--border);border-radius:5px;padding:5px 10px;cursor:pointer;background:var(--surface);color:var(--text-muted);transition:all .15s}
+.r-ctrl:hover{background:var(--surface-hover);color:var(--text)}
+.r-ctrl.act{border-color:var(--primary);color:var(--primary);background:rgba(0,230,118,.08)}
+#r-play{background:var(--primary);color:#0b1120;border:none;width:36px;height:36px;border-radius:50%;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px rgba(0,230,118,.3)}
+
+/* RESULTS */
+#results-screen{justify-content:center;align-items:center;padding:20px;position:relative;overflow:hidden}
+.results-wrap{width:100%;max-width:500px;text-align:center;z-index:2}
+.results-title{font-family:var(--font-d);font-weight:700;font-size:1.1rem;letter-spacing:3px;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px}
+.winner-card{background:linear-gradient(135deg,rgba(255,215,64,.1),rgba(255,215,64,.03));border:1px solid rgba(255,215,64,.3);border-radius:14px;padding:24px 20px;margin-bottom:20px;position:relative;overflow:hidden}
+.winner-trophy{font-size:2.8rem;margin-bottom:6px}
+.winner-name{font-family:var(--font-d);font-weight:700;font-size:2.2rem;letter-spacing:1px;color:var(--gold);text-shadow:0 0 30px rgba(255,215,64,.3)}
+.winner-label{font-family:var(--font-d);font-weight:500;font-size:.85rem;letter-spacing:2px;color:var(--text-muted);margin-top:2px}
+.leaderboard{margin-bottom:16px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:7px;margin-bottom:5px}
+.lb-rank{font-family:var(--font-d);font-weight:700;font-size:1rem;width:28px;text-align:center;flex-shrink:0}
+.lb-rank.gold{color:var(--gold)}.lb-rank.silver{color:#b0bec5}.lb-rank.bronze{color:#ff8a65}
+.lb-color{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.1);flex-shrink:0}
+.lb-name{flex:1;font-family:var(--font-b);font-weight:500;font-size:1rem;text-align:left}
+.lb-time{font-family:var(--font-b);font-size:.85rem;color:var(--text-muted)}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap}
+.result-actions .btn{flex:1;min-width:110px}
+#confetti-canvas{position:absolute;inset:0;pointer-events:none;z-index:1}
+
+/* WHEEL */
+#wheel-screen{flex-direction:column;align-items:center;padding:20px;gap:16px}
+.wheel-wrap{width:100%;max-width:540px;display:flex;flex-direction:column;gap:12px}
+.wheel-canvas-wrap{position:relative;width:100%;aspect-ratio:1;max-width:400px;margin:0 auto}
+#wheel-canvas{width:100%;height:100%}
+.wheel-pointer{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-size:1.8rem;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));z-index:2}
+.wheel-result{font-family:var(--font-d);font-weight:700;font-size:1.6rem;text-align:center;color:var(--gold);min-height:40px;text-shadow:0 0 20px rgba(255,215,64,.3)}
+.name-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;min-height:44px}
+.chip{font-family:var(--font-b);font-size:.9rem;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.08);color:var(--text);display:flex;align-items:center;gap:4px}
+.chip .rm-btn{font-size:.85rem;padding:0 2px}
+.wheel-add-row{display:flex;gap:6px}
+.wheel-add-row input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--font-b);outline:none}
+.wheel-add-row input:focus{border-color:var(--primary)}
+
+/* TEAMS */
+#teams-screen{flex-direction:column;align-items:center;padding:20px;gap:16px}
+.teams-wrap{width:100%;max-width:600px}
+.team-results{display:grid;gap:12px;margin-top:16px}
+.team-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.team-card-title{font-family:var(--font-d);font-weight:700;font-size:1.1rem;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.team-card-title .p-color{width:18px;height:18px}
+.team-member{padding:4px 0;font-size:.95rem;color:var(--text);border-bottom:1px solid var(--border)}
+.team-member:last-child{border-bottom:none}
+
+/* HISTORY */
+#history-screen{flex-direction:column;align-items:center;padding:20px}
+.history-wrap{width:100%;max-width:540px}
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.history-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.history-date{font-size:.8rem;color:var(--text-muted)}
+.history-winner{font-family:var(--font-d);font-weight:600;font-size:.95rem;color:var(--gold)}
+.history-players{font-size:.85rem;color:var(--text-muted)}
+
+@media(max-width:600px){
+  header{padding:8px 14px}.logo{font-size:1.1rem}
+  .cd-text{font-size:4.5rem}.winner-name{font-size:1.6rem}
+  .result-actions,.lobby-join-row{flex-direction:column}
+  .replay-btns{gap:4px}.tab{padding:8px 12px;font-size:.75rem}
+  .room-bar{flex-direction:column;text-align:center}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <span class="logo-icon">⚽</span>
+    <span class="logo">Football Race</span>
+    <div class="header-right">
+      <button class="icon-btn" id="sound-btn" title="Toggle Sound">🔊</button>
+    </div>
+  </header>
+
+  <nav id="tab-bar" class="hidden">
+    <button class="tab active" data-tab="race">⚽ Race</button>
+    <button class="tab" data-tab="wheel">🎡 Wheel</button>
+    <button class="tab" data-tab="teams">👥 Teams</button>
+    <button class="tab" data-tab="history">📋 History</button>
+  </nav>
+
+  <!-- LOBBY -->
+  <div id="lobby-screen" class="screen active">
+    <div class="lobby-wrap">
+      <div class="lobby-title">FOOTBALL RACE</div>
+      <div class="lobby-sub">Race, pick names, build teams</div>
+      <div class="lobby-card">
+        <div class="lobby-card-title">CREATE A ROOM</div>
+        <button class="btn btn-p" id="create-room-btn" style="width:100%">CREATE ROOM</button>
+      </div>
+      <div class="lobby-card">
+        <div class="lobby-card-title">JOIN A ROOM</div>
+        <div class="lobby-join-row">
+          <input type="text" id="join-code-input" placeholder="Room code" maxlength="6">
+          <button class="btn btn-p" id="join-room-btn">JOIN</button>
+        </div>
+      </div>
+      <div class="lobby-divider">or</div>
+      <button class="btn btn-s" id="offline-btn" style="width:100%">PLAY OFFLINE</button>
+    </div>
+  </div>
+
+  <!-- SETUP -->
+  <div id="setup-screen" class="screen">
+    <div class="setup-wrap">
+      <div class="room-bar" id="room-bar" style="display:none">
+        <div>
+          <div style="font-size:.75rem;color:var(--text-muted);letter-spacing:1px;font-family:var(--font-d)">ROOM CODE</div>
+          <div class="room-code" id="room-code-display"></div>
+        </div>
+        <div class="room-viewers"><span>👥</span><span id="viewer-count">1</span></div>
+        <button class="room-link-btn" id="copy-room-link">COPY LINK</button>
+      </div>
+
+      <div id="host-controls">
+        <div class="section-title">PLAYERS</div>
+        <div id="player-list"></div>
+        <div class="setup-row">
+          <button class="btn btn-s" id="add-btn">+ ADD</button>
+          <button class="btn btn-s" id="share-btn">🔗 SHARE</button>
+        </div>
+
+        <div class="rooms-panel">
+          <div class="section-title" style="margin-top:16px">SAVED ROOMS</div>
+          <div class="room-list" id="room-list"></div>
+          <div class="room-save-row">
+            <input type="text" id="room-name-input" placeholder="Room name..." maxlength="30">
+            <button class="btn btn-s" id="save-room-btn">SAVE</button>
+          </div>
+        </div>
+
+        <div class="settings-panel">
+          <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div class="setting-label">Race Duration</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="duration-input" min="3" max="60" step="1" value="10" style="width:58px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:var(--font-b);font-size:.95rem;text-align:center;outline:none">
+                <span style="font-size:.85rem;color:var(--text-muted)">seconds</span>
+              </div>
+            </div>
+            <div class="seg-group" id="duration-group">
+              <button class="seg-btn" data-val="5">QUICK</button>
+              <button class="seg-btn active" data-val="10">NORMAL</button>
+              <button class="seg-btn" data-val="15">LONG</button>
+              <button class="seg-btn" data-val="25">EPIC</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div><div class="setting-label">Fair Mode</div><div class="setting-hint">Balances wins over time</div></div>
+            <button class="toggle" id="fair-toggle"></button>
+          </div>
+        </div>
+
+        <div class="setup-row" style="margin-top:16px">
+          <button class="btn btn-s" id="leave-room-btn" style="display:none">LEAVE ROOM</button>
+          <button class="btn btn-p" id="start-btn" style="flex:2">START RACE</button>
+        </div>
+      </div>
+
+      <div id="viewer-controls" style="display:none">
+        <div class="section-title">PLAYERS</div>
+        <div id="viewer-player-list"></div>
+        <div class="viewer-waiting"><span class="spin">⚽</span>Waiting for host to start the race...</div>
+        <div class="setup-row" style="margin-top:16px">
+          <button class="btn btn-s" id="viewer-leave-btn">LEAVE ROOM</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACE -->
+  <div id="race-screen" class="screen">
+    <canvas id="race-canvas"></canvas>
+    <div id="commentary-bar"></div>
+    <div id="replay-bar">
+      <span class="replay-label">REPLAY</span>
+      <div class="replay-tl">
+        <span class="replay-time" id="r-time-cur">0:00.0</span>
+        <input type="range" id="replay-slider" min="0" max="1000" value="0">
+        <span class="replay-time" id="r-time-tot">0:00.0</span>
+      </div>
+      <div class="replay-btns">
+        <button class="r-ctrl" id="r-back">RESULTS</button>
+        <button class="r-ctrl speed-btn" data-speed="0.25">0.25x</button>
+        <button class="r-ctrl speed-btn" data-speed="0.5">0.5x</button>
+        <button id="r-play">&#9654;</button>
+        <button class="r-ctrl speed-btn act" data-speed="1">1x</button>
+        <button class="r-ctrl speed-btn" data-speed="2">2x</button>
+      </div>
+    </div>
+    <div id="countdown-overlay" style="display:none"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results-screen" class="screen">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="results-wrap">
+      <div class="results-title">RACE COMPLETE</div>
+      <div class="winner-card">
+        <div class="winner-trophy">🏆</div>
+        <div class="winner-name" id="winner-name"></div>
+        <div class="winner-label">CHAMPION</div>
+      </div>
+      <div class="leaderboard" id="leaderboard"></div>
+      <div class="result-actions" id="result-actions">
+        <button class="btn btn-g" id="replay-btn">REPLAY</button>
+        <button class="btn btn-p" id="race-again-btn">RACE AGAIN</button>
+        <button class="btn btn-s" id="new-race-btn">NEW SETUP</button>
+      </div>
+      <div id="viewer-result-msg" style="display:none" class="viewer-waiting"><span class="spin">⚽</span>Waiting for host...</div>
+    </div>
+  </div>
+
+  <!-- WHEEL -->
+  <div id="wheel-screen" class="screen">
+    <div class="wheel-wrap">
+      <div class="section-title">WHEEL OF NAMES</div>
+      <div class="name-chips" id="wheel-chips"></div>
+      <div class="wheel-add-row">
+        <input type="text" id="wheel-name-input" placeholder="Add a name..." maxlength="20">
+        <button class="btn btn-s" id="wheel-add-btn">ADD</button>
+        <button class="btn btn-s" id="wheel-use-players">USE PLAYERS</button>
+      </div>
+      <div class="wheel-canvas-wrap"><div class="wheel-pointer">▼</div><canvas id="wheel-canvas"></canvas></div>
+      <div class="wheel-result" id="wheel-result"></div>
+      <button class="btn btn-p" id="wheel-spin-btn" style="width:100%">SPIN</button>
+    </div>
+  </div>
+
+  <!-- TEAMS -->
+  <div id="teams-screen" class="screen">
+    <div class="teams-wrap">
+      <div class="section-title">RANDOM TEAM GENERATOR</div>
+      <div class="name-chips" id="team-chips"></div>
+      <div class="wheel-add-row">
+        <input type="text" id="team-name-input" placeholder="Add a name..." maxlength="20">
+        <button class="btn btn-s" id="team-add-btn">ADD</button>
+        <button class="btn btn-s" id="team-use-players">USE PLAYERS</button>
+      </div>
+      <div class="setting-row" style="margin-top:12px;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px">
+        <div class="setting-label">Number of Teams</div>
+        <div class="seg-group" id="team-count-group">
+          <button class="seg-btn active" data-val="2">2</button>
+          <button class="seg-btn" data-val="3">3</button>
+          <button class="seg-btn" data-val="4">4</button>
+        </div>
+      </div>
+      <button class="btn btn-p" id="team-gen-btn" style="width:100%;margin-top:12px">GENERATE TEAMS</button>
+      <div class="team-results" id="team-results"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div id="history-screen" class="screen">
+    <div class="history-wrap">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="section-title" style="margin-bottom:0">RACE HISTORY</div>
+        <button class="btn btn-s" id="clear-history-btn" style="padding:6px 12px;font-size:.75rem">CLEAR</button>
+      </div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+// ===== CONSTANTS =====
+const TC = ['#ff1744','#2979ff','#ffd740','#00e676','#d500f9','#ff6d00','#00e5ff','#ff4081'];
+const MAX_P = 8, MIN_P = 2;
+const RACE_CFG = { speedChangeMsMin:250, speedChangeMsMax:700, lerpFactor:2.5, startX:.14, finishX:.92, ballRadius:.025, trailLength:.06 };
+const COMMS = {
+  lead:['{n} takes the lead!','{n} surges ahead!','{n} is pulling away!','Look at {n} go!'],
+  close:["It's neck and neck!",'This is incredibly close!',"Anyone's race right now!",'What a tight battle!'],
+  finish:["They're approaching the finish!",'The finish line is in sight!','Final stretch!',"Here they come!"],
+  overtake:['{n} overtakes for the lead!','What a move by {n}!','{n} pushes past!'],
+};
+
+function durationToSpeed(sec) { sec = Math.max(3,Math.min(60,sec)); const avg = 1/sec; return { min:avg*.35, max:avg*1.65 }; }
+
+// ===== SOUND =====
+const sfx = {
+  ctx:null, enabled:true, crowdSrc:null, crowdGain:null,
+  init(){ if(!this.ctx) this.ctx = new (window.AudioContext||window.webkitAudioContext)(); },
+  beep(f,d,v=.3){ if(!this.enabled)return;this.init();const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(v,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+d);o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d); },
+  whistle(){ if(!this.enabled)return;this.init();const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type='sine';o.frequency.setValueAtTime(600,this.ctx.currentTime);o.frequency.linearRampToValueAtTime(1200,this.ctx.currentTime+.15);o.frequency.linearRampToValueAtTime(900,this.ctx.currentTime+.5);g.gain.setValueAtTime(.35,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,this.ctx.currentTime+.6);o.connect(g).connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+.6); },
+  fanfare(){ if(!this.enabled)return;[523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.beep(f,.35,.25),i*120)); },
+  startCrowd(){ if(!this.enabled)return;this.init();const sr=this.ctx.sampleRate,buf=this.ctx.createBuffer(1,sr*4,sr),d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this.crowdSrc=this.ctx.createBufferSource();this.crowdSrc.buffer=buf;this.crowdSrc.loop=true;const filt=this.ctx.createBiquadFilter();filt.type='bandpass';filt.frequency.value=600;filt.Q.value=.3;this.crowdGain=this.ctx.createGain();this.crowdGain.gain.value=.05;this.crowdSrc.connect(filt).connect(this.crowdGain).connect(this.ctx.destination);this.crowdSrc.start(); },
+  stopCrowd(){ if(!this.crowdSrc)return;try{this.crowdGain.gain.linearRampToValueAtTime(0,this.ctx.currentTime+.4);}catch(e){}const s=this.crowdSrc;setTimeout(()=>{try{s.stop();}catch(e){}},500);this.crowdSrc=null;this.crowdGain=null; },
+  setCrowdLevel(v){ if(this.crowdGain)this.crowdGain.gain.value=.03+v*.1; },
+  toggle(){ this.enabled=!this.enabled;if(!this.enabled)this.stopCrowd();saveSettings(); }
+};
+
+// ===== PERSISTENCE =====
+const LS = {
+  get(k,d){ try{return JSON.parse(localStorage.getItem('fb-'+k))||d;}catch{return d;} },
+  set(k,v){ localStorage.setItem('fb-'+k,JSON.stringify(v)); }
+};
+let settings = { sound:true, duration:10, fairMode:false, ...LS.get('settings',{}) };
+if(typeof settings.duration==='string') settings.duration=10;
+let savedRooms = LS.get('rooms',[]);
+let raceHistory = LS.get('history',[]);
+let fairStats = LS.get('fair',{});
+function saveSettings(){ LS.set('settings',{sound:sfx.enabled,duration:settings.duration,fairMode:settings.fairMode}); }
+
+// ===== STATE =====
+let mode = 'offline'; // 'offline' | 'host' | 'viewer'
+let roomCode = '';
+let socket = null;
+let players = [{name:'',colorIdx:0},{name:'',colorIdx:1}];
+let racers = [], finishOrder = [], raceActive = false;
+let lastLeader = -1, lastCommentaryTime = 0, commentaryText = '', raceStartRealTime = 0;
+let recording = [], replayMode = false, replayPlaying = false, replayFrame = 0;
+let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0;
+let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
+let teamNames = [], teamCount = 2;
+let currentTab = 'race';
+let broadcastTimer = null;
+let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
+
+// ===== DOM =====
+const $id = id => document.getElementById(id);
+const $lobby = $id('lobby-screen'), $setup = $id('setup-screen'), $race = $id('race-screen');
+const $results = $id('results-screen'), $wheel = $id('wheel-screen'), $teams = $id('teams-screen'), $historyScr = $id('history-screen');
+const $pList = $id('player-list'), $addBtn = $id('add-btn'), $startBtn = $id('start-btn');
+const $canvas = $id('race-canvas'), $commBar = $id('commentary-bar'), $cdOverlay = $id('countdown-overlay');
+const $wName = $id('winner-name'), $lb = $id('leaderboard');
+const $replayBar = $id('replay-bar'), $rSlider = $id('replay-slider');
+const $rPlay = $id('r-play'), $rTimeCur = $id('r-time-cur'), $rTimeTot = $id('r-time-tot');
+const $confCanvas = $id('confetti-canvas');
+const $tabBar = $id('tab-bar');
+const $wCanvas = $id('wheel-canvas');
+const ctx = $canvas.getContext('2d');
+const confCtx = $confCanvas.getContext('2d');
+const wCtx = $wCanvas.getContext('2d');
+const allScreens = [$lobby,$setup,$race,$results,$wheel,$teams,$historyScr];
+
+function toast(msg){ const t=$id('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800); }
+function showScreen(el){ allScreens.forEach(s=>s.classList.remove('active'));el.classList.add('active'); }
+
+// ===== SOCKET =====
+function connectSocket() {
+  return new Promise((resolve, reject) => {
+    if (socket && socket.connected) { resolve(); return; }
+    socket = io();
+    socket.on('connect', resolve);
+    socket.on('connect_error', () => { socket = null; reject(); });
+    setupSocketListeners();
+  });
+}
+
+function setupSocketListeners() {
+  socket.on('viewer-count', n => { $id('viewer-count').textContent = n; });
+  socket.on('host-left', () => { toast('Host left the room'); goToLobby(); });
+
+  // Viewer events
+  socket.on('players-updated', p => {
+    if (mode !== 'viewer') return;
+    players = p.map((n,i) => ({name:n,colorIdx:i}));
+    renderViewerPlayers();
+  });
+  socket.on('settings-updated', s => { if (mode==='viewer') Object.assign(settings, s); });
+
+  socket.on('race-countdown', () => {
+    if (mode !== 'viewer') return;
+    showScreen($race); $tabBar.classList.add('hidden');
+    $commBar.style.display = ''; $replayBar.classList.remove('active');
+    resizeCanvas();
+    runCountdown();
+  });
+
+  socket.on('race-started', data => {
+    if (mode !== 'viewer') return;
+    racers = data.racers.map((r,i) => ({name:r.name,colorIdx:r.colorIdx,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+    viewerTargetPos = racers.map(() => 0);
+    viewerCurPos = racers.map(() => 0);
+    viewerRacing = true;
+    recording = [];
+    raceStartRealTime = performance.now();
+    $commBar.textContent = "And they're off!";
+    sfx.whistle(); sfx.startCrowd();
+    requestAnimationFrame(viewerLoop);
+  });
+
+  socket.on('race-frame', data => {
+    if (mode !== 'viewer') return;
+    viewerTargetPos = data.positions;
+    commentaryText = data.commentary;
+    $commBar.textContent = commentaryText;
+    const maxP = Math.max(...data.positions);
+    sfx.setCrowdLevel(Math.min(maxP, 1));
+    recording.push({ positions:[...data.positions], commentary:commentaryText, time:performance.now()-raceStartRealTime });
+  });
+
+  socket.on('race-ended', data => {
+    if (mode !== 'viewer') return;
+    viewerRacing = false;
+    sfx.stopCrowd(); sfx.fanfare();
+    finishOrder = data.results;
+    racers = data.racers.map((r,i) => ({...racers[i], ...r}));
+    setTimeout(() => showViewerResults(data), 800);
+  });
+
+  socket.on('back-to-setup', () => {
+    if (mode !== 'viewer') return;
+    showScreen($setup); $tabBar.classList.remove('hidden');
+  });
+}
+
+function viewerLoop(ts) {
+  if (!viewerRacing && !viewerTargetPos) return;
+  if (viewerTargetPos && viewerCurPos) {
+    viewerCurPos = viewerCurPos.map((c,i) => c + (viewerTargetPos[i] - c) * .25);
+    racers.forEach((r,i) => { r.position = viewerCurPos[i]; });
+    drawRace();
+  }
+  if (viewerRacing) requestAnimationFrame(viewerLoop);
+}
+
+function showViewerResults(data) {
+  showScreen($results); $tabBar.classList.remove('hidden');
+  const w = data.results[0];
+  $wName.textContent = w.name; $wName.style.color = TC[w.colorIdx];
+  $lb.innerHTML = data.results.map((r,i) => {
+    const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    const m=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+    return `<div class="lb-row"><span class="lb-rank ${rc}">${m}</span><span class="lb-color" style="background:${TC[r.colorIdx]}"></span><span class="lb-name">${r.name}</span><span class="lb-time">${(r.finishTime/1000).toFixed(2)}s</span></div>`;
+  }).join('');
+  $id('result-actions').style.display = 'none';
+  $id('viewer-result-msg').style.display = '';
+  $id('replay-btn').style.display = recording.length ? '' : 'none';
+  startConfetti();
+}
+
+// ===== LOBBY =====
+$id('create-room-btn').addEventListener('click', async () => {
+  try {
+    await connectSocket();
+    socket.emit('create-room', res => {
+      mode = 'host'; roomCode = res.code;
+      $tabBar.classList.remove('hidden');
+      showScreen($setup);
+      $id('room-bar').style.display = '';
+      $id('room-code-display').textContent = roomCode;
+      $id('leave-room-btn').style.display = '';
+      $id('host-controls').style.display = '';
+      $id('viewer-controls').style.display = 'none';
+      broadcastPlayers();
+    });
+  } catch { toast('Could not connect to server'); }
+});
+
+$id('join-room-btn').addEventListener('click', async () => {
+  const code = $id('join-code-input').value.trim();
+  if (!code) { toast('Enter a room code'); return; }
+  try {
+    await connectSocket();
+    socket.emit('join-room', code, res => {
+      if (res.error) { toast(res.error); return; }
+      mode = 'viewer'; roomCode = code.toUpperCase();
+      $tabBar.classList.remove('hidden');
+      showScreen($setup);
+      $id('room-bar').style.display = '';
+      $id('room-code-display').textContent = roomCode;
+      $id('viewer-count').textContent = res.viewerCount;
+      $id('host-controls').style.display = 'none';
+      $id('viewer-controls').style.display = '';
+      players = (res.players||[]).map((n,i) => ({name:n,colorIdx:i}));
+      renderViewerPlayers();
+    });
+  } catch { toast('Could not connect to server'); }
+});
+
+$id('join-code-input').addEventListener('keydown', e => { if(e.key==='Enter') $id('join-room-btn').click(); });
+
+$id('offline-btn').addEventListener('click', () => {
+  mode = 'offline'; roomCode = '';
+  $tabBar.classList.remove('hidden');
+  showScreen($setup);
+  $id('room-bar').style.display = 'none';
+  $id('leave-room-btn').style.display = 'none';
+  $id('host-controls').style.display = '';
+  $id('viewer-controls').style.display = 'none';
+  renderPlayerList();
+});
+
+function goToLobby() {
+  if (socket) { socket.emit('leave-room'); }
+  mode = 'offline'; roomCode = '';
+  raceActive = false; viewerRacing = false;
+  sfx.stopCrowd(); stopConfetti(); exitReplay();
+  $tabBar.classList.add('hidden');
+  showScreen($lobby);
+  $id('room-bar').style.display = 'none';
+}
+
+$id('leave-room-btn').addEventListener('click', goToLobby);
+$id('viewer-leave-btn').addEventListener('click', goToLobby);
+
+$id('copy-room-link').addEventListener('click', () => {
+  const url = location.origin + location.pathname + '#room=' + roomCode;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied!')).catch(() => toast('Could not copy'));
+});
+
+// ===== TAB NAV =====
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    if (raceActive) return;
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active'); currentTab = t.dataset.tab;
+    if (currentTab==='race') { exitReplay(); showScreen($setup); }
+    else if (currentTab==='wheel') { showScreen($wheel); resizeWheelCanvas(); drawWheel(); }
+    else if (currentTab==='teams') showScreen($teams);
+    else if (currentTab==='history') { renderHistory(); showScreen($historyScr); }
+  });
+});
+
+// ===== SETUP =====
+function broadcastPlayers() {
+  if (mode==='host' && socket) {
+    const names = players.map((p,i) => p.name.trim()||'Player '+(i+1));
+    socket.emit('update-players', names);
+  }
+}
+
+function renderPlayerList() {
+  $pList.innerHTML = '';
+  players.forEach((p,i) => {
+    const d=document.createElement('div');d.className='player-entry';
+    d.innerHTML=`<span class="p-num">${i+1}</span><span class="p-color" style="background:${TC[p.colorIdx]}"></span><input type="text" placeholder="Player ${i+1}" value="${p.name}" data-idx="${i}" maxlength="20">${players.length>MIN_P?`<button class="rm-btn" data-idx="${i}">&times;</button>`:''}`;
+    $pList.appendChild(d);
+  });
+  $pList.querySelectorAll('input').forEach(inp => inp.addEventListener('input', e => { players[+e.target.dataset.idx].name=e.target.value; broadcastPlayers(); }));
+  $pList.querySelectorAll('.rm-btn').forEach(b => b.addEventListener('click', e => { players.splice(+e.target.dataset.idx,1);players.forEach((p,i)=>p.colorIdx=i);renderPlayerList();broadcastPlayers(); }));
+  $addBtn.style.display = players.length>=MAX_P?'none':'';
+}
+
+function renderViewerPlayers() {
+  const el=$id('viewer-player-list'); el.innerHTML='';
+  players.forEach((p,i) => {
+    const d=document.createElement('div');d.className='player-entry';
+    d.innerHTML=`<span class="p-num">${i+1}</span><span class="p-color" style="background:${TC[p.colorIdx]}"></span><span class="p-name-ro">${p.name||'Player '+(i+1)}</span>`;
+    el.appendChild(d);
+  });
+}
+
+$addBtn.addEventListener('click', () => {
+  if(players.length<MAX_P){ players.push({name:'',colorIdx:players.length}); renderPlayerList(); broadcastPlayers(); const inps=$pList.querySelectorAll('input');inps[inps.length-1].focus(); }
+});
+
+$startBtn.addEventListener('click', () => {
+  players.forEach((p,i)=>{ if(!p.name.trim()) p.name='Player '+(i+1); });
+  broadcastPlayers(); startRace();
+});
+
+// ===== ROOMS (local save/load) =====
+function renderSavedRooms() {
+  const el=$id('room-list');
+  if(!savedRooms.length){el.innerHTML='<div class="empty-msg">No saved rooms</div>';return;}
+  el.innerHTML=savedRooms.map((r,i)=>`<div class="room-item" data-idx="${i}"><span class="room-item-name">${r.name}</span><span class="room-item-count">${r.players.length} players</span><button class="rm-btn" data-ridx="${i}">&times;</button></div>`).join('');
+  el.querySelectorAll('.room-item').forEach(item=>{
+    item.addEventListener('click',e=>{if(e.target.classList.contains('rm-btn'))return;const r=savedRooms[+item.dataset.idx];players=r.players.map((n,i)=>({name:n,colorIdx:i}));renderPlayerList();broadcastPlayers();toast('Room loaded');});
+  });
+  el.querySelectorAll('.rm-btn').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();savedRooms.splice(+e.target.dataset.ridx,1);LS.set('rooms',savedRooms);renderSavedRooms();}));
+}
+
+$id('save-room-btn').addEventListener('click',()=>{
+  const name=$id('room-name-input').value.trim();
+  if(!name){toast('Enter a room name');return;}
+  savedRooms.push({name,players:players.map((p,i)=>p.name.trim()||'Player '+(i+1)),created:Date.now()});
+  LS.set('rooms',savedRooms);$id('room-name-input').value='';renderSavedRooms();toast('Room saved');
+});
+
+$id('share-btn').addEventListener('click',()=>{
+  players.forEach((p,i)=>{if(!p.name.trim())p.name='Player '+(i+1);});
+  const names=players.map(p=>p.name).join(',');
+  const url=location.origin+location.pathname+'#players='+encodeURIComponent(names);
+  navigator.clipboard.writeText(url).then(()=>toast('Link copied!')).catch(()=>toast('Could not copy'));
+});
+
+// ===== SETTINGS =====
+function applySettings(){
+  sfx.enabled=settings.sound;
+  $id('sound-btn').textContent=sfx.enabled?'🔊':'🔇';
+  $id('sound-btn').classList.toggle('active',sfx.enabled);
+  $id('duration-input').value=settings.duration;
+  document.querySelectorAll('#duration-group .seg-btn').forEach(b=>b.classList.toggle('active',+b.dataset.val===settings.duration));
+  $id('fair-toggle').classList.toggle('on',settings.fairMode);
+}
+$id('sound-btn').addEventListener('click',()=>{settings.sound=!settings.sound;sfx.enabled=settings.sound;applySettings();saveSettings();});
+document.querySelectorAll('#duration-group .seg-btn').forEach(b=>{b.addEventListener('click',()=>{settings.duration=+b.dataset.val;applySettings();saveSettings();});});
+$id('duration-input').addEventListener('change',e=>{const v=Math.max(3,Math.min(60,Math.round(+e.target.value||10)));e.target.value=v;settings.duration=v;applySettings();saveSettings();});
+$id('fair-toggle').addEventListener('click',()=>{settings.fairMode=!settings.fairMode;applySettings();saveSettings();});
+
+// ===== FAIR MODE =====
+function getFairMult(name){if(!settings.fairMode)return 1;const s=fairStats[name];if(!s||s.races<2)return 1;const wr=s.wins/s.races,target=1/racers.length;return Math.max(.75,Math.min(1.25,1-(wr-target)*2.5));}
+function updateFairStats(){racers.forEach(r=>{if(!fairStats[r.name])fairStats[r.name]={wins:0,races:0};fairStats[r.name].races++;});if(finishOrder.length>0){const w=finishOrder[0].name;if(!fairStats[w])fairStats[w]={wins:0,races:0};fairStats[w].wins++;}LS.set('fair',fairStats);}
+
+// ===== RACE =====
+function getSpeedRange(){ return durationToSpeed(settings.duration); }
+
+function startRace(){
+  exitReplay();
+  showScreen($race);$tabBar.classList.add('hidden');
+  $commBar.style.display='';$replayBar.classList.remove('active');
+  resizeCanvas();
+
+  if(mode==='host' && socket) socket.emit('race-countdown');
+  runCountdown().then(()=>{
+    initRacers(); recording=[]; raceActive=true; lastTime=0;
+    lastLeader=-1;lastCommentaryTime=0;commentaryText='';
+    raceStartRealTime=performance.now();
+    $commBar.textContent="And they're off!";
+    sfx.whistle();sfx.startCrowd();
+    if(mode==='host' && socket){
+      socket.emit('race-start',{racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx}))});
+      startBroadcasting();
+    }
+    requestAnimationFrame(raceLoop);
+  });
+}
+
+function startBroadcasting(){
+  clearInterval(broadcastTimer);
+  broadcastTimer=setInterval(()=>{
+    if(!raceActive){clearInterval(broadcastTimer);return;}
+    if(socket) socket.emit('race-update',{positions:racers.map(r=>r.position),commentary:commentaryText});
+  },50);
+}
+
+function resizeCanvas(){$canvas.width=$canvas.clientWidth*devicePixelRatio;$canvas.height=$canvas.clientHeight*devicePixelRatio;}
+
+function runCountdown(){
+  return new Promise(resolve=>{
+    $cdOverlay.style.display='flex';
+    const steps=['3','2','1','GO!'];let i=0;
+    function next(){
+      if(i>=steps.length){$cdOverlay.style.display='none';resolve();return;}
+      $cdOverlay.innerHTML=`<div class="cd-text ${steps[i]==='GO!'?'go':''}">${steps[i]}</div>`;
+      if(i<3)sfx.beep(440,.12);else sfx.beep(880,.2);
+      i++;setTimeout(next,i<=3?700:500);
+    }
+    next();
+  });
+}
+
+function initRacers(){
+  finishOrder=[];const sp=getSpeedRange();
+  racers=players.map((p,i)=>{const speed=sp.min+Math.random()*(sp.max-sp.min);return{name:p.name,colorIdx:p.colorIdx,position:0,speed,targetSpeed:speed,nextSpeedChange:randInt(),finished:false,finishTime:0};});
+}
+
+function randInt(){return RACE_CFG.speedChangeMsMin+Math.random()*(RACE_CFG.speedChangeMsMax-RACE_CFG.speedChangeMsMin);}
+
+let lastTime=0;
+function raceLoop(ts){
+  if(!lastTime)lastTime=ts;const dt=Math.min(ts-lastTime,50);lastTime=ts;
+  updateRacers(dt);updateCommentary(ts);drawRace();
+  const elapsed=performance.now()-raceStartRealTime;
+  recording.push({positions:racers.map(r=>r.position),commentary:commentaryText,time:elapsed});
+  const maxPos=Math.max(...racers.map(r=>r.position));
+  sfx.setCrowdLevel(Math.min(maxPos,1));
+  if(finishOrder.length<racers.length){requestAnimationFrame(raceLoop);}
+  else{
+    raceActive=false;lastTime=0;clearInterval(broadcastTimer);sfx.stopCrowd();sfx.fanfare();
+    updateFairStats();saveRaceHistory();
+    if(mode==='host'&&socket) socket.emit('race-end',{results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime})),racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,position:r.position}))});
+    setTimeout(showResults,800);
+  }
+}
+
+function updateRacers(dt){
+  const dtS=dt/1000,sp=getSpeedRange();
+  racers.forEach(r=>{if(r.finished)return;r.nextSpeedChange-=dt;
+    if(r.nextSpeedChange<=0){let t=sp.min+Math.random()*(sp.max-sp.min);t*=getFairMult(r.name);r.targetSpeed=t;r.nextSpeedChange=randInt();}
+    r.speed+=(r.targetSpeed-r.speed)*RACE_CFG.lerpFactor*dtS;r.position+=r.speed*dtS;
+    if(r.position>=1){r.position=1;r.finished=true;r.finishTime=performance.now()-raceStartRealTime;finishOrder.push(r);}
+  });
+}
+
+function updateCommentary(now){
+  if(now-lastCommentaryTime<1800)return;
+  const sorted=[...racers].sort((a,b)=>b.position-a.position);
+  const leader=racers.indexOf(sorted[0]),maxPos=sorted[0].position;
+  if(maxPos>.82){commentaryText=pick(COMMS.finish);lastCommentaryTime=now;}
+  else if(leader!==lastLeader&&lastLeader!==-1){commentaryText=pick(COMMS.overtake).replace('{n}',sorted[0].name);lastCommentaryTime=now;}
+  else if(sorted.length>1&&sorted[0].position-sorted[1].position<.04){commentaryText=pick(COMMS.close);lastCommentaryTime=now;}
+  else if(sorted[0].position-(sorted[1]?.position||0)>.1){commentaryText=pick(COMMS.lead).replace('{n}',sorted[0].name);lastCommentaryTime=now;}
+  lastLeader=leader;$commBar.textContent=commentaryText;
+}
+
+function pick(a){return a[Math.floor(Math.random()*a.length)];}
+
+// ===== DRAWING =====
+function drawRace(){
+  const w=$canvas.width,h=$canvas.height,n=racers.length;if(!n)return;
+  const cbH=48*devicePixelRatio,rH=h-cbH,lH=rH/n;
+  const sX=w*RACE_CFG.startX,fX=w*RACE_CFG.finishX,rW=fX-sX;
+  const bR=Math.min(Math.min(w,h)*RACE_CFG.ballRadius,lH*.35);
+  ctx.clearRect(0,0,w,h);ctx.fillStyle='#0b1120';ctx.fillRect(0,rH,w,cbH);
+  for(let i=0;i<n;i++){ctx.fillStyle=i%2===0?'#1a6b30':'#1d7a37';ctx.fillRect(0,i*lH,w,lH);}
+  ctx.setLineDash([8*devicePixelRatio,8*devicePixelRatio]);ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=devicePixelRatio;
+  for(let i=1;i<n;i++){ctx.beginPath();ctx.moveTo(sX,i*lH);ctx.lineTo(fX,i*lH);ctx.stroke();}ctx.setLineDash([]);
+  ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2*devicePixelRatio;ctx.beginPath();ctx.moveTo(sX,0);ctx.lineTo(sX,rH);ctx.stroke();
+  drawChecker(fX,0,rH,10*devicePixelRatio);
+  racers.forEach((r,i)=>{
+    const cy=i*lH+lH/2,bx=sX+r.position*rW;
+    ctx.fillStyle=TC[r.colorIdx];ctx.globalAlpha=.5;ctx.fillRect(0,i*lH+2,4*devicePixelRatio,lH-4);ctx.globalAlpha=1;
+    const tL=Math.min(rW*RACE_CFG.trailLength,bx-sX);
+    if(tL>2){const g=ctx.createLinearGradient(bx-tL,cy,bx,cy);g.addColorStop(0,colA(TC[r.colorIdx],0));g.addColorStop(1,colA(TC[r.colorIdx],.35));ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(bx-tL/2,cy,tL/2,bR*.7,0,0,Math.PI*2);ctx.fill();}
+    drawBall(bx,cy,bR,r.position*rW/bR,r.colorIdx);
+    const fs=Math.min(Math.round(14*devicePixelRatio),Math.round(lH*.32));
+    ctx.fillStyle='#fff';ctx.font=`600 ${fs}px 'Oswald',sans-serif`;ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=4*devicePixelRatio;ctx.fillText(r.name,8*devicePixelRatio,cy);ctx.shadowColor='transparent';ctx.shadowBlur=0;
+  });
+}
+function drawChecker(x,y,h,sz){const rows=Math.ceil(h/sz);for(let r=0;r<rows;r++)for(let c=0;c<2;c++){ctx.fillStyle=(r+c)%2===0?'#fff':'#222';ctx.fillRect(x+c*sz,y+r*sz,sz,sz);}}
+function drawBall(cx,cy,r,rot,ci){ctx.save();ctx.translate(cx,cy);ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.save();ctx.clip();ctx.fillStyle='#fff';ctx.fillRect(-r,-r,r*2,r*2);const pr=r*.32;pent(ctx,0,0,pr,rot);for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5;pent(ctx,Math.cos(a)*r*.7,Math.sin(a)*r*.7,pr*.8,rot+Math.PI/5);}ctx.restore();ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.strokeStyle='#333';ctx.lineWidth=1.5*devicePixelRatio;ctx.stroke();ctx.beginPath();ctx.arc(0,0,r+2*devicePixelRatio,0,Math.PI*2);ctx.strokeStyle=TC[ci];ctx.lineWidth=2*devicePixelRatio;ctx.stroke();ctx.restore();}
+function pent(c,cx,cy,sz,rot){c.beginPath();for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5-Math.PI/2,x=cx+Math.cos(a)*sz,y=cy+Math.sin(a)*sz;i===0?c.moveTo(x,y):c.lineTo(x,y);}c.closePath();c.fillStyle='#1a1a2e';c.fill();c.strokeStyle='rgba(0,0,0,.3)';c.lineWidth=.5*devicePixelRatio;c.stroke();}
+function colA(hex,a){return`rgba(${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)},${a})`;}
+
+// ===== RESULTS =====
+function showResults(){
+  showScreen($results);$tabBar.classList.remove('hidden');
+  const w=finishOrder[0];$wName.textContent=w.name;$wName.style.color=TC[w.colorIdx];
+  $lb.innerHTML=finishOrder.map((r,i)=>{const rc=i===0?'gold':i===1?'silver':i===2?'bronze':'';const m=i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;return`<div class="lb-row"><span class="lb-rank ${rc}">${m}</span><span class="lb-color" style="background:${TC[r.colorIdx]}"></span><span class="lb-name">${r.name}</span><span class="lb-time">${(r.finishTime/1000).toFixed(2)}s</span></div>`;}).join('');
+  $id('result-actions').style.display='';$id('viewer-result-msg').style.display='none';
+  $id('replay-btn').style.display='';
+  startConfetti();
+}
+
+// ===== HISTORY =====
+function saveRaceHistory(){
+  raceHistory.unshift({date:Date.now(),players:racers.map(r=>r.name),winner:finishOrder[0]?.name||'',results:finishOrder.map(r=>({name:r.name,time:r.finishTime})),duration:settings.duration});
+  if(raceHistory.length>50)raceHistory.length=50;LS.set('history',raceHistory);
+}
+function renderHistory(){
+  const el=$id('history-list');
+  if(!raceHistory.length){el.innerHTML='<div class="empty-msg">No races yet</div>';return;}
+  el.innerHTML=raceHistory.map(h=>{const d=new Date(h.date),ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});return`<div class="history-item"><div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${h.winner}</span></div><div class="history-players">${h.players.join(', ')}</div></div>`;}).join('');
+}
+$id('clear-history-btn').addEventListener('click',()=>{raceHistory=[];LS.set('history',raceHistory);renderHistory();toast('History cleared');});
+
+// ===== REPLAY =====
+function fmtTime(ms){const s=Math.floor(ms/1000),t=Math.floor((ms%1000)/100);return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}.${t}`;}
+function enterReplay(){
+  if(!recording.length)return;stopConfetti();showScreen($race);$tabBar.classList.add('hidden');resizeCanvas();
+  replayMode=true;replayFrame=0;replayPlaying=true;replaySpeed=1;replayLastTime=0;replayAccum=0;
+  $commBar.style.display='none';$replayBar.classList.add('active');$rSlider.value=0;
+  $rTimeTot.textContent=fmtTime(recording[recording.length-1].time);$rTimeCur.textContent=fmtTime(0);
+  updSpeedBtns();updPlayBtn();applyFrame(0);requestAnimationFrame(replayLoop);
+}
+function exitReplay(){replayMode=false;replayPlaying=false;cancelAnimationFrame(replayAnim);replayAnim=null;$replayBar.classList.remove('active');$commBar.style.display='';}
+function applyFrame(idx){
+  idx=Math.max(0,Math.min(idx,recording.length-1));replayFrame=idx;const f=recording[idx];
+  racers.forEach((r,i)=>{r.position=f.positions[i];});drawRace();
+  $rTimeCur.textContent=fmtTime(f.time);$rSlider.value=Math.round((idx/(recording.length-1))*1000);
+}
+function replayLoop(ts){
+  if(!replayMode)return;
+  if(replayPlaying){if(!replayLastTime)replayLastTime=ts;const dt=Math.min(ts-replayLastTime,50);replayLastTime=ts;replayAccum+=dt*replaySpeed;const target=recording[replayFrame].time+replayAccum;let nf=replayFrame;while(nf<recording.length-1&&recording[nf+1].time<=target)nf++;if(nf!==replayFrame){replayAccum=0;replayLastTime=ts;applyFrame(nf);}if(replayFrame>=recording.length-1){replayPlaying=false;updPlayBtn();}}
+  replayAnim=requestAnimationFrame(replayLoop);
+}
+function updPlayBtn(){$rPlay.innerHTML=replayPlaying?'&#9646;&#9646;':'&#9654;';}
+function updSpeedBtns(){document.querySelectorAll('.speed-btn').forEach(b=>b.classList.toggle('act',parseFloat(b.dataset.speed)===replaySpeed));}
+
+$id('replay-btn').addEventListener('click',enterReplay);
+$id('r-back').addEventListener('click',()=>{exitReplay();$tabBar.classList.remove('hidden');if(mode==='viewer')showViewerResults({results:finishOrder});else showResults();});
+$rPlay.addEventListener('click',()=>{if(replayFrame>=recording.length-1){replayFrame=0;replayAccum=0;replayLastTime=0;replayPlaying=true;}else{replayPlaying=!replayPlaying;if(replayPlaying){replayLastTime=0;replayAccum=0;}}updPlayBtn();});
+document.querySelectorAll('.speed-btn').forEach(b=>b.addEventListener('click',()=>{replaySpeed=parseFloat(b.dataset.speed);replayAccum=0;replayLastTime=0;updSpeedBtns();}));
+$rSlider.addEventListener('input',()=>{replayPlaying=false;replayAccum=0;replayLastTime=0;updPlayBtn();applyFrame(Math.round(($rSlider.value/1000)*(recording.length-1)));});
+
+$id('race-again-btn').addEventListener('click',()=>{stopConfetti();startRace();});
+$id('new-race-btn').addEventListener('click',()=>{
+  stopConfetti();$tabBar.classList.remove('hidden');showScreen($setup);renderPlayerList();
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='race'));
+  if(mode==='host'&&socket) socket.emit('back-to-setup');
+});
+
+// ===== WHEEL =====
+function renderWheelChips(){
+  const el=$id('wheel-chips');if(!wheelNames.length){el.innerHTML='<span class="empty-msg" style="padding:4px">Add names to spin</span>';return;}
+  el.innerHTML=wheelNames.map((n,i)=>`<span class="chip" style="border-left:3px solid ${TC[i%TC.length]}">${n}<button class="rm-btn" data-widx="${i}">&times;</button></span>`).join('');
+  el.querySelectorAll('.rm-btn').forEach(b=>b.addEventListener('click',()=>{wheelNames.splice(+b.dataset.widx,1);renderWheelChips();drawWheel();}));
+}
+function resizeWheelCanvas(){const wrap=$wCanvas.parentElement;$wCanvas.width=wrap.clientWidth*devicePixelRatio;$wCanvas.height=wrap.clientWidth*devicePixelRatio;}
+function drawWheel(){
+  const w=$wCanvas.width,h=$wCanvas.height,cx=w/2,cy=h/2,r=Math.min(cx,cy)*.88;wCtx.clearRect(0,0,w,h);
+  if(wheelNames.length<2){wCtx.fillStyle='#1e2d4a';wCtx.beginPath();wCtx.arc(cx,cy,r,0,Math.PI*2);wCtx.fill();wCtx.fillStyle='#6b7a9e';wCtx.font=`500 ${16*devicePixelRatio}px 'Oswald',sans-serif`;wCtx.textAlign='center';wCtx.textBaseline='middle';wCtx.fillText('Add at least 2 names',cx,cy);return;}
+  const n=wheelNames.length,slice=Math.PI*2/n;wCtx.save();wCtx.translate(cx,cy);wCtx.rotate(wheelRotation);
+  for(let i=0;i<n;i++){const sa=i*slice,ea=sa+slice;wCtx.beginPath();wCtx.moveTo(0,0);wCtx.arc(0,0,r,sa,ea);wCtx.closePath();wCtx.fillStyle=TC[i%TC.length];wCtx.fill();wCtx.strokeStyle='rgba(0,0,0,.2)';wCtx.lineWidth=2*devicePixelRatio;wCtx.stroke();wCtx.save();wCtx.rotate(sa+slice/2);const fs=Math.min(Math.round(14*devicePixelRatio),Math.round(r*.15));wCtx.fillStyle='#fff';wCtx.font=`600 ${fs}px 'Oswald',sans-serif`;wCtx.textAlign='right';wCtx.textBaseline='middle';wCtx.shadowColor='rgba(0,0,0,.5)';wCtx.shadowBlur=3*devicePixelRatio;wCtx.fillText(wheelNames[i],r-14*devicePixelRatio,0);wCtx.restore();}
+  wCtx.restore();wCtx.beginPath();wCtx.arc(cx,cy,r*.1,0,Math.PI*2);wCtx.fillStyle='#0b1120';wCtx.fill();wCtx.strokeStyle='#fff';wCtx.lineWidth=2*devicePixelRatio;wCtx.stroke();
+}
+function spinWheel(){if(wheelNames.length<2||wheelSpinning)return;wheelVelocity=12+Math.random()*18;wheelDecel=1.8+Math.random()*1.5;wheelSpinning=true;wheelLastTime=0;$id('wheel-result').textContent='';sfx.beep(660,.1);requestAnimationFrame(wheelLoop);}
+function wheelLoop(ts){if(!wheelLastTime)wheelLastTime=ts;const dt=Math.min(ts-wheelLastTime,50)/1000;wheelLastTime=ts;wheelRotation+=wheelVelocity*dt;wheelVelocity-=wheelDecel*dt;if(wheelVelocity<=0){wheelVelocity=0;wheelSpinning=false;let a=(-Math.PI/2-wheelRotation)%(Math.PI*2);if(a<0)a+=Math.PI*2;const idx=Math.floor(a/(Math.PI*2/wheelNames.length));$id('wheel-result').textContent='🎉 '+wheelNames[idx]+'!';sfx.fanfare();}drawWheel();if(wheelSpinning)requestAnimationFrame(wheelLoop);}
+
+$id('wheel-add-btn').addEventListener('click',()=>{const inp=$id('wheel-name-input'),v=inp.value.trim();if(v){wheelNames.push(v);inp.value='';renderWheelChips();drawWheel();inp.focus();}});
+$id('wheel-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')$id('wheel-add-btn').click();});
+$id('wheel-use-players').addEventListener('click',()=>{wheelNames=players.map((p,i)=>p.name.trim()||'Player '+(i+1));renderWheelChips();drawWheel();});
+$id('wheel-spin-btn').addEventListener('click',spinWheel);
+
+// ===== TEAMS =====
+function renderTeamChips(){
+  const el=$id('team-chips');if(!teamNames.length){el.innerHTML='<span class="empty-msg" style="padding:4px">Add names to generate teams</span>';return;}
+  el.innerHTML=teamNames.map((n,i)=>`<span class="chip">${n}<button class="rm-btn" data-tidx="${i}">&times;</button></span>`).join('');
+  el.querySelectorAll('.rm-btn').forEach(b=>b.addEventListener('click',()=>{teamNames.splice(+b.dataset.tidx,1);renderTeamChips();}));
+}
+document.querySelectorAll('#team-count-group .seg-btn').forEach(b=>{b.addEventListener('click',()=>{teamCount=+b.dataset.val;document.querySelectorAll('#team-count-group .seg-btn').forEach(x=>x.classList.toggle('active',x===b));});});
+$id('team-add-btn').addEventListener('click',()=>{const inp=$id('team-name-input'),v=inp.value.trim();if(v){teamNames.push(v);inp.value='';renderTeamChips();inp.focus();}});
+$id('team-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')$id('team-add-btn').click();});
+$id('team-use-players').addEventListener('click',()=>{teamNames=players.map((p,i)=>p.name.trim()||'Player '+(i+1));renderTeamChips();});
+$id('team-gen-btn').addEventListener('click',()=>{
+  if(teamNames.length<teamCount){toast('Need at least '+teamCount+' names');return;}
+  const sh=[...teamNames];for(let i=sh.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sh[i],sh[j]]=[sh[j],sh[i]];}
+  const teams=Array.from({length:teamCount},()=>[]);sh.forEach((n,i)=>teams[i%teamCount].push(n));
+  const el=$id('team-results');el.style.gridTemplateColumns=`repeat(${Math.min(teamCount,3)},1fr)`;
+  el.innerHTML=teams.map((t,i)=>`<div class="team-card"><div class="team-card-title"><span class="p-color" style="background:${TC[i]}"></span>Team ${i+1}</div>${t.map(n=>`<div class="team-member">${n}</div>`).join('')}</div>`).join('');
+  sfx.beep(880,.12);
+});
+
+// ===== CONFETTI =====
+let confPieces=[],confAnim=null;
+function startConfetti(){$confCanvas.width=$confCanvas.clientWidth*devicePixelRatio;$confCanvas.height=$confCanvas.clientHeight*devicePixelRatio;confPieces=[];const w=$confCanvas.width,h=$confCanvas.height;for(let i=0;i<150;i++)confPieces.push({x:Math.random()*w,y:-Math.random()*h,w:(3+Math.random()*5)*devicePixelRatio,h:(8+Math.random()*10)*devicePixelRatio,color:TC[Math.floor(Math.random()*TC.length)],rot:Math.random()*Math.PI*2,rs:(Math.random()-.5)*.15,vy:(1.5+Math.random()*3)*devicePixelRatio,vx:(Math.random()-.5)*2*devicePixelRatio,o:.7+Math.random()*.3});cancelAnimationFrame(confAnim);animConf();}
+function animConf(){const w=$confCanvas.width,h=$confCanvas.height;confCtx.clearRect(0,0,w,h);let alive=false;confPieces.forEach(p=>{p.y+=p.vy;p.x+=p.vx;p.rot+=p.rs;if(p.y<h+20)alive=true;confCtx.save();confCtx.translate(p.x,p.y);confCtx.rotate(p.rot);confCtx.globalAlpha=p.o;confCtx.fillStyle=p.color;confCtx.fillRect(-p.w/2,-p.h/2,p.w,p.h);confCtx.restore();});if(alive)confAnim=requestAnimationFrame(animConf);}
+function stopConfetti(){cancelAnimationFrame(confAnim);confCtx.clearRect(0,0,$confCanvas.width,$confCanvas.height);confPieces=[];}
+
+// ===== RESIZE =====
+window.addEventListener('resize',()=>{if(raceActive||replayMode||viewerRacing){resizeCanvas();if(replayMode)applyFrame(replayFrame);}if(currentTab==='wheel'){resizeWheelCanvas();drawWheel();}});
+
+// ===== URL HASH =====
+function loadFromHash(){
+  const hash=location.hash;
+  if(hash.startsWith('#room=')){
+    const code=hash.slice(6);$id('join-code-input').value=code;
+    history.replaceState(null,'',location.pathname);
+  } else if(hash.startsWith('#players=')){
+    const names=decodeURIComponent(hash.slice(9)).split(',').filter(n=>n);
+    if(names.length>=2){players=names.slice(0,MAX_P).map((n,i)=>({name:n,colorIdx:i}));toast('Players loaded from link');}
+    history.replaceState(null,'',location.pathname);
+  }
+}
+
+// ===== PWA =====
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ===== INIT =====
+sfx.enabled=settings.sound;
+applySettings();
+loadFromHash();
+renderPlayerList();
+renderSavedRooms();
+renderWheelChips();
+renderTeamChips();
+</script>
+</body>
+</html>
