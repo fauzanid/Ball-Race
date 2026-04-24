@@ -354,8 +354,8 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes confetti-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(120vh) rotate(720deg);opacity:0}}
 
 /* ═══ WHEEL / TEAMS / HISTORY — styled to match ═══ */
-#wheel-screen,#teams-screen,#history-screen{padding:28px 40px;overflow-y:auto}
-@media(max-width:640px){#wheel-screen,#teams-screen,#history-screen{padding:18px 16px}}
+#wheel-screen,#history-screen{padding:28px 40px;overflow-y:auto}
+@media(max-width:640px){#wheel-screen,#history-screen{padding:18px 16px}}
 .tool-wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
 .tool-title .accent{color:var(--accent)}
@@ -379,17 +379,6 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .wheel-hist-winner{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-2)}
 .wheel-hist-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-200);text-transform:uppercase;white-space:nowrap}
 
-.team-results{display:grid;gap:12px;margin-top:16px}
-.team-card{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:16px}
-.team-card-title{font-family:var(--font-display);font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.team-dot{width:16px;height:16px;border-radius:50%}
-.team-member{padding:6px 0;font-family:var(--font-cond);font-weight:600;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-100);border-bottom:1px solid rgba(255,255,255,.04)}
-.team-member:last-child{border-bottom:none}
-.seg-group{display:flex;gap:0}
-.seg-btn{font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.06em;padding:8px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--ink-200);cursor:pointer;text-transform:uppercase}
-.seg-btn:first-child{border-radius:var(--r-sm) 0 0 var(--r-sm)}
-.seg-btn:last-child{border-radius:0 var(--r-sm) var(--r-sm) 0}
-.seg-btn.active{background:var(--accent);color:var(--ink-900);border-color:var(--accent)}
 
 .history-item{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
 .history-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;gap:10px;flex-wrap:wrap}
@@ -434,7 +423,6 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
   <nav id="tab-bar">
     <button class="tab active" data-tab="race">⚽ Race</button>
     <button class="tab" data-tab="wheel">🎡 Wheel</button>
-    <button class="tab" data-tab="teams">👥 Teams</button>
     <button class="tab" data-tab="history">📋 History</button>
   </nav>
 
@@ -649,14 +637,15 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
     <div class="tool-wrap">
       <h2 class="tool-title">Wheel of <span class="accent">Names</span></h2>
       <div class="name-chips" id="wheel-chips"></div>
-      <div class="add-row">
+      <div class="add-row wheel-admin-only" id="wheel-add-row">
         <input id="wheel-name-input" placeholder="Add a name…" maxlength="20">
         <button class="btn btn-ghost btn-sm" id="wheel-add-btn">+ Add</button>
         <button class="btn btn-ghost btn-sm" id="wheel-use-players">Use Players</button>
       </div>
       <div class="wheel-canvas-wrap"><div class="wheel-pointer">▼</div><canvas id="wheel-canvas"></canvas></div>
       <div class="wheel-result" id="wheel-result"></div>
-      <button class="btn btn-primary" id="wheel-spin-btn" style="width:100%">⚡ Spin</button>
+      <button class="btn btn-primary wheel-admin-only" id="wheel-spin-btn" style="width:100%">⚡ Spin</button>
+      <div class="wheel-viewer-note" id="wheel-viewer-note" style="display:none;text-align:center;padding:12px;color:var(--ink-400);font-family:var(--font-cond);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Only the admin can add names or spin</div>
 
       <div class="wheel-history-section">
         <div class="wheel-history-hd">
@@ -665,29 +654,6 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
         </div>
         <div id="wheel-history"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- TEAMS -->
-  <div id="teams-screen" class="screen">
-    <div class="tool-wrap">
-      <h2 class="tool-title">Random <span class="accent">Teams</span></h2>
-      <div class="name-chips" id="team-chips"></div>
-      <div class="add-row">
-        <input id="team-name-input" placeholder="Add a name…" maxlength="20">
-        <button class="btn btn-ghost btn-sm" id="team-add-btn">+ Add</button>
-        <button class="btn btn-ghost btn-sm" id="team-use-players">Use Players</button>
-      </div>
-      <div class="setting-row" style="padding:12px 14px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md)">
-        <div class="setting-label">Number of Teams</div>
-        <div class="seg-group" id="team-count-group">
-          <button class="seg-btn active" data-val="2">2</button>
-          <button class="seg-btn" data-val="3">3</button>
-          <button class="seg-btn" data-val="4">4</button>
-        </div>
-      </div>
-      <button class="btn btn-primary" id="team-gen-btn" style="width:100%">Generate Teams</button>
-      <div class="team-results" id="team-results"></div>
     </div>
   </div>
 
@@ -794,7 +760,6 @@ let raceStartRealTime = 0, lastCommentaryTime = 0, commentaryText = '', lastLead
 let recording = [], replayMode = false, replayPlaying = false, replayFrame = 0;
 let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0, replayFromHistory = false;
 let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
-let teamNames = [], teamCount = 2;
 let currentTab = 'race';
 let broadcastTimer = null;
 let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
@@ -804,12 +769,12 @@ let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $teams=$('teams-screen'), $historyScr=$('history-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 const ctx = $canvas.getContext('2d');
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$setup,$race,$results,$wheel,$teams,$historyScr];
+const allScreens = [$setup,$race,$results,$wheel,$historyScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -1290,6 +1255,9 @@ function setRole(r){
   $('kick-off-row').style.display = (isAdmin && currentTab==='race' && !raceActive && !replayMode) ? '' : 'none';
   $('clear-history-btn').style.display = isAdmin ? '' : 'none';
   $('wheel-clear-hist-btn').style.display = isAdmin ? '' : 'none';
+  document.querySelectorAll('.wheel-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  $('wheel-viewer-note').style.display = isAdmin ? 'none' : '';
+  renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
   if(isAdmin){ if(players.length<2) seedDefaultPlayers(); renderPlayerList(); } else renderViewerLineup();
@@ -1333,7 +1301,6 @@ document.querySelectorAll('.tab').forEach(t => {
     $('kick-off-row').style.display = (role==='admin' && currentTab==='race' && !raceActive) ? '' : 'none';
     if(currentTab==='race'){ exitReplay(); showScreen($setup); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
-    else if(currentTab==='teams') showScreen($teams);
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
   });
 });
@@ -2092,9 +2059,15 @@ $('replay-slider').addEventListener('input', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 function renderWheelChips(){
   const el = $('wheel-chips');
-  if(!wheelNames.length){ el.innerHTML='<span class="empty-msg">Add names to spin</span>'; return; }
-  el.innerHTML = wheelNames.map((n,i)=>`<span class="chip" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${escapeHtml(n)}<button class="rm-btn" data-widx="${i}">×</button></span>`).join('');
-  el.querySelectorAll('.rm-btn').forEach(b => b.addEventListener('click', () => { wheelNames.splice(+b.dataset.widx, 1); renderWheelChips(); drawWheel(); }));
+  if(!wheelNames.length){
+    el.innerHTML = role==='admin'
+      ? '<span class="empty-msg">Add names to spin</span>'
+      : '<span class="empty-msg">Waiting for admin to set up the wheel</span>';
+    return;
+  }
+  const isAdmin = role === 'admin';
+  el.innerHTML = wheelNames.map((n,i)=>`<span class="chip" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${escapeHtml(n)}${isAdmin?`<button class="rm-btn" data-widx="${i}">×</button>`:''}</span>`).join('');
+  if(isAdmin) el.querySelectorAll('.rm-btn').forEach(b => b.addEventListener('click', () => { wheelNames.splice(+b.dataset.widx, 1); renderWheelChips(); drawWheel(); }));
 }
 function resizeWheelCanvas(){const wrap=$wCanvas.parentElement; $wCanvas.width=wrap.clientWidth*devicePixelRatio; $wCanvas.height=wrap.clientWidth*devicePixelRatio;}
 function drawWheel(){
@@ -2190,40 +2163,11 @@ async function clearWheelHistory(){
     wheelHistory = []; renderWheelHistory(); toast('Cleared');
   } catch { toast('Failed to clear'); }
 }
-$('wheel-add-btn').addEventListener('click', () => { const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
+$('wheel-add-btn').addEventListener('click', () => { if(role!=='admin')return; const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
-$('wheel-use-players').addEventListener('click', () => { wheelNames = players.map((p,i)=>p.name.trim()||'Player '+(i+1)); renderWheelChips(); drawWheel(); });
-$('wheel-spin-btn').addEventListener('click', spinWheel);
+$('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Player '+(i+1)); renderWheelChips(); drawWheel(); });
+$('wheel-spin-btn').addEventListener('click', () => { if(role!=='admin')return; spinWheel(); });
 $('wheel-clear-hist-btn').addEventListener('click', clearWheelHistory);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TEAMS
-// ═══════════════════════════════════════════════════════════════════════════
-function renderTeamChips(){
-  const el = $('team-chips');
-  if(!teamNames.length){ el.innerHTML='<span class="empty-msg">Add names to generate teams</span>'; return; }
-  el.innerHTML = teamNames.map((n,i)=>`<span class="chip">${escapeHtml(n)}<button class="rm-btn" data-tidx="${i}">×</button></span>`).join('');
-  el.querySelectorAll('.rm-btn').forEach(b=>b.addEventListener('click',()=>{teamNames.splice(+b.dataset.tidx,1);renderTeamChips();}));
-}
-document.querySelectorAll('#team-count-group .seg-btn').forEach(b => b.addEventListener('click', () => {
-  teamCount = +b.dataset.val;
-  document.querySelectorAll('#team-count-group .seg-btn').forEach(x=>x.classList.toggle('active', x===b));
-}));
-$('team-add-btn').addEventListener('click', () => { const v=$('team-name-input').value.trim(); if(v){ teamNames.push(v); $('team-name-input').value=''; renderTeamChips(); $('team-name-input').focus(); }});
-$('team-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('team-add-btn').click(); });
-$('team-use-players').addEventListener('click', () => { teamNames = players.map((p,i)=>p.name.trim()||'Player '+(i+1)); renderTeamChips(); });
-$('team-gen-btn').addEventListener('click', () => {
-  if(teamNames.length < teamCount){ toast('Need '+teamCount+' names'); return; }
-  const sh=[...teamNames]; for(let i=sh.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sh[i],sh[j]]=[sh[j],sh[i]];}
-  const teams = Array.from({length:teamCount}, ()=>[]);
-  sh.forEach((n,i)=>teams[i%teamCount].push(n));
-  $('team-results').innerHTML = teams.map((t,i)=>`
-    <div class="team-card">
-      <div class="team-card-title"><span class="team-dot" style="background:${TEAM_COLORS[i]}"></span>Team ${i+1}</div>
-      ${t.map(n=>`<div class="team-member">${escapeHtml(n)}</div>`).join('')}
-    </div>`).join('');
-  sfx.beep(880,.12);
-});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFETTI (DOM-based, matches design)
@@ -2281,7 +2225,7 @@ sfx.enabled = settings.sound;
 applySettings();
 renderSkinPicker();
 setRole('viewer');
-renderWheelChips(); renderTeamChips();
+renderWheelChips();
 loadWheelHistory();
 connectSocket();
 
