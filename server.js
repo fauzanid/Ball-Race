@@ -9,7 +9,16 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static('public'));
+// Don't cache HTML — users should always see fresh UI after a deploy
+app.use(express.static('public', {
+  setHeaders(res, filepath) {
+    if (filepath.endsWith('.html') || filepath.endsWith('index.html')) {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+    }
+  },
+}));
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const validTokens = new Set();

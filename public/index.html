@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ball Race '26</title>
-<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff4500">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -800,154 +799,171 @@ function showScreen(el){allScreens.forEach(s=>s.classList.remove('active'));el.c
 // BALL RENDERING — Canvas port of SVG skin system
 // ═══════════════════════════════════════════════════════════════════════════
 // Runner figure dribbling a ball — for the race canvas
-function drawRunner(c, cx, cy, height, strideFrame, colorIdx, skin, phase, stamina) {
+// All drawing is in page-space (no rotation transforms) so the ball stays
+// aligned with the foot and can't drift when the runner leans.
+function drawRunner(c, cx, cy, h, strideFrame, colorIdx, skin, phase, stamina) {
   const color = TEAM_COLORS[colorIdx % TEAM_COLORS.length];
+  const darkCol = shade(color, -35);
   const stride = Math.sin(strideFrame * Math.PI * 2);
+  const absStride = Math.abs(stride);
   const tired = phase === 'tired';
   const sprinting = phase === 'sprinting';
-  // Lean forward when sprinting, upright when tired
-  const lean = sprinting ? -0.15 : tired ? 0.04 : -0.05;
-  // Vertical bob from stride
-  const bob = Math.abs(stride) * height * 0.04;
+  // Slight vertical bob at each full stride
+  const bob = (1 - absStride) * h * 0.03;
+  // Forward lean as a horizontal offset on the upper body
+  const lean = sprinting ? h * 0.1 : tired ? -h * 0.02 : h * 0.035;
 
-  const headR = height * 0.13;
-  const bodyTopY = cy - height * 0.32 + bob;
-  const bodyBotY = cy + height * 0.08 + bob;
-  const hipY = cy + height * 0.1 + bob;
-  const kneeY = cy + height * 0.28;
-  const footY = cy + height * 0.42;
+  // Anchor points
+  const footY     = cy + h * 0.42;
+  const kneeY     = cy + h * 0.22 + bob;
+  const hipY      = cy + h * 0.06 + bob;
+  const shoulderY = cy - h * 0.22 + bob;
+  const headCY    = cy - h * 0.34 + bob;
+  const headR     = h * 0.125;
+  const chestX    = cx + lean * 0.55;
+  const headX     = cx + lean;
+
+  const frontFootX = cx + stride * h * 0.22;
+  const backFootX  = cx - stride * h * 0.22;
+  const frontKneeX = cx + stride * h * 0.1;
+  const backKneeX  = cx - stride * h * 0.1;
+  const armSwing   = -stride;
 
   c.save();
-  c.translate(cx, 0);
-  c.rotate(lean);
-  c.translate(-cx, 0);
   c.lineCap = 'round';
   c.lineJoin = 'round';
 
   // Ground shadow
-  c.fillStyle = 'rgba(0,0,0,0.35)';
+  c.fillStyle = 'rgba(0,0,0,0.45)';
   c.beginPath();
-  c.ellipse(cx, cy + height*0.45, height*0.26, height*0.06, 0, 0, Math.PI*2);
+  c.ellipse(cx, cy + h*0.45, h*0.3, h*0.055, 0, 0, Math.PI*2);
   c.fill();
 
-  // Back leg (behind body)
-  const strideX = stride * height * 0.22;
-  c.strokeStyle = '#f4c49a';  // skin legs
-  c.lineWidth = height * 0.075;
+  // Back leg (dark, behind)
+  c.strokeStyle = darkCol;
+  c.lineWidth = h * 0.1;
   c.beginPath();
-  c.moveTo(cx - height*0.04, hipY);
-  c.quadraticCurveTo(cx - height*0.02 - strideX*0.6, kneeY, cx - strideX, footY);
+  c.moveTo(cx, hipY);
+  c.quadraticCurveTo(backKneeX, kneeY, backFootX, footY - h*0.02);
   c.stroke();
-  // Shoe on back foot
-  c.fillStyle = '#111';
-  c.beginPath(); c.ellipse(cx - strideX, footY, height*0.07, height*0.035, -0.1, 0, Math.PI*2); c.fill();
+  // Back shoe
+  c.fillStyle = '#0a0a08';
+  c.beginPath(); c.ellipse(backFootX, footY, h*0.08, h*0.035, 0, 0, Math.PI*2); c.fill();
 
   // Shorts
-  c.fillStyle = '#111';
+  c.fillStyle = '#0e0e0c';
   c.beginPath();
-  c.moveTo(cx - height*0.13, bodyBotY - 1);
-  c.lineTo(cx + height*0.13, bodyBotY - 1);
-  c.lineTo(cx + height*0.11, hipY + height*0.03);
-  c.lineTo(cx - height*0.11, hipY + height*0.03);
-  c.closePath(); c.fill();
-
-  // Torso / jersey (team color)
-  c.fillStyle = color;
-  c.beginPath();
-  c.moveTo(cx - height*0.17, bodyTopY);
-  c.lineTo(cx + height*0.17, bodyTopY);
-  c.lineTo(cx + height*0.14, bodyBotY);
-  c.lineTo(cx - height*0.14, bodyBotY);
-  c.closePath(); c.fill();
-  c.strokeStyle = 'rgba(0,0,0,0.3)';
-  c.lineWidth = Math.max(1, height*0.015);
-  c.stroke();
-
-  // Jersey number (the team number, simple)
-  c.fillStyle = 'rgba(255,255,255,0.85)';
-  const numFs = height * 0.17;
-  c.font = `italic 900 ${numFs}px 'Archivo Black', sans-serif`;
-  c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.fillText(String((colorIdx % 12) + 1), cx, (bodyTopY + bodyBotY)/2);
-
-  // Arms — swing opposite of stride
-  const armStride = -stride;
-  c.strokeStyle = '#f4c49a';
-  c.lineWidth = height * 0.058;
-  // Left arm
-  c.beginPath();
-  c.moveTo(cx - height*0.15, bodyTopY + height*0.05);
-  c.quadraticCurveTo(cx - height*0.22 + armStride*height*0.05, cy, cx - height*0.18 + armStride*height*0.14, cy + height*0.12);
-  c.stroke();
-  // Right arm
-  c.beginPath();
-  c.moveTo(cx + height*0.15, bodyTopY + height*0.05);
-  c.quadraticCurveTo(cx + height*0.22 - armStride*height*0.05, cy, cx + height*0.18 - armStride*height*0.14, cy + height*0.12);
-  c.stroke();
-
-  // Head
-  c.fillStyle = '#f4c49a';
-  c.beginPath();
-  c.arc(cx, bodyTopY - headR*0.55, headR, 0, Math.PI*2);
+  c.moveTo(cx - h*0.14, hipY - h*0.01);
+  c.lineTo(cx + h*0.14, hipY - h*0.01);
+  c.lineTo(cx + h*0.12, hipY + h*0.13);
+  c.lineTo(cx - h*0.12, hipY + h*0.13);
+  c.closePath();
   c.fill();
-  c.strokeStyle = '#1a1a1a';
-  c.lineWidth = Math.max(1, height*0.01);
+
+  // Back arm (behind torso) — skin
+  c.strokeStyle = '#d8a784';
+  c.lineWidth = h * 0.075;
+  c.beginPath();
+  c.moveTo(chestX - h*0.14, shoulderY + h*0.04);
+  const backArmEndX = chestX - h*0.18 + armSwing * h*0.14;
+  c.quadraticCurveTo(chestX - h*0.22, shoulderY + h*0.18, backArmEndX, shoulderY + h*0.34);
   c.stroke();
-  // Hair / cap (team colored crown)
+
+  // Jersey / torso — team color with outline
+  c.fillStyle = color;
+  c.strokeStyle = darkCol;
+  c.lineWidth = Math.max(1.5, h*0.02);
+  c.beginPath();
+  c.moveTo(chestX - h*0.18, shoulderY);
+  c.quadraticCurveTo(chestX, shoulderY - h*0.04, chestX + h*0.18, shoulderY);
+  c.lineTo(cx + h*0.15, hipY);
+  c.lineTo(cx - h*0.15, hipY);
+  c.closePath();
+  c.fill();
+  c.stroke();
+
+  // Center stripe
+  c.strokeStyle = 'rgba(255,255,255,0.35)';
+  c.lineWidth = Math.max(1.5, h*0.016);
+  c.beginPath();
+  c.moveTo(chestX, shoulderY + h*0.01);
+  c.lineTo((chestX+cx)/2, (hipY+shoulderY)/2);
+  c.lineTo(cx, hipY - h*0.015);
+  c.stroke();
+
+  // Head — face + team-color cap
+  c.fillStyle = '#f1c49a';
+  c.beginPath();
+  c.arc(headX, headCY, headR, 0, Math.PI*2);
+  c.fill();
+  c.strokeStyle = darkCol;
+  c.lineWidth = Math.max(1, h*0.012);
+  c.stroke();
   c.fillStyle = color;
   c.beginPath();
-  c.arc(cx, bodyTopY - headR*0.55, headR*0.98, Math.PI*1.1, Math.PI*1.9);
-  c.lineTo(cx + headR*0.3, bodyTopY - headR*0.55);
-  c.lineTo(cx - headR*0.3, bodyTopY - headR*0.55);
-  c.closePath(); c.fill();
+  c.arc(headX, headCY, headR, Math.PI*1.12, Math.PI*1.88);
+  c.lineTo(headX + headR*0.38, headCY - headR*0.1);
+  c.lineTo(headX - headR*0.38, headCY - headR*0.1);
+  c.closePath();
+  c.fill();
 
-  // Front leg (on top of ball-side)
-  c.strokeStyle = '#f4c49a';
-  c.lineWidth = height * 0.075;
+  // Front arm — skin
+  c.strokeStyle = '#f1c49a';
+  c.lineWidth = h * 0.078;
   c.beginPath();
-  c.moveTo(cx + height*0.04, hipY);
-  c.quadraticCurveTo(cx + height*0.06 + strideX*0.6, kneeY, cx + strideX, footY);
+  c.moveTo(chestX + h*0.14, shoulderY + h*0.04);
+  const frontArmEndX = chestX + h*0.2 - armSwing * h*0.14;
+  c.quadraticCurveTo(chestX + h*0.24, shoulderY + h*0.16, frontArmEndX, shoulderY + h*0.34);
   c.stroke();
-  // Shoe on front foot
+
+  // Front leg (lighter, on top)
+  c.strokeStyle = '#c48a5f';
+  c.lineWidth = h * 0.1;
+  c.beginPath();
+  c.moveTo(cx, hipY);
+  c.quadraticCurveTo(frontKneeX, kneeY, frontFootX, footY - h*0.02);
+  c.stroke();
+  // Front shoe
   c.fillStyle = '#111';
-  c.beginPath(); c.ellipse(cx + strideX, footY, height*0.07, height*0.035, 0.1, 0, Math.PI*2); c.fill();
+  c.beginPath(); c.ellipse(frontFootX, footY, h*0.085, h*0.04, 0, 0, Math.PI*2); c.fill();
 
   c.restore();
 
-  // Ball — drawn in page-space (no lean) so it rolls forward naturally
-  const ballSize = height * 0.22;
-  // Ball bounces slightly as the player dribbles
-  const ballBob = Math.abs(Math.sin(strideFrame * Math.PI * 2 + 0.3)) * height * 0.05;
-  const ballX = cx + height * 0.22;
-  const ballY = cy + height * 0.4 - ballBob;
-  const ballRot = strideFrame * Math.PI * 2;
-  drawBall(c, ballX, ballY, ballSize, ballRot, colorIdx, skin);
+  // Ball at front foot
+  const ballR = h * 0.19;
+  const ballAhead = sprinting ? h*0.3 : tired ? h*0.16 : h*0.22;
+  const ballX = cx + ballAhead;
+  const ballBob = Math.abs(Math.sin(strideFrame * Math.PI * 2 + 0.4)) * h * 0.06;
+  const ballY = footY - ballR*0.5 - ballBob;
+  const ballRot = strideFrame * Math.PI * 3;
+  drawBall(c, ballX, ballY, ballR, ballRot, colorIdx, skin);
 
-  // State indicators
+  // Phase indicators
   if(tired){
-    // Sweat drops above head
-    c.fillStyle = 'rgba(0,229,255,0.9)';
-    const dropY = bodyTopY - headR - height*0.08;
-    for(let k=0;k<3;k++){
+    c.fillStyle = 'rgba(150,220,255,0.9)';
+    for(let k=0;k<2;k++){
+      const dx = k===0 ? -headR*0.7 : headR*0.7;
+      const dy = headCY - headR - h*0.05 - k*h*0.03 + Math.sin(strideFrame*6+k*2)*h*0.015;
       c.beginPath();
-      c.arc(cx - height*0.1 + k*height*0.1, dropY + Math.sin(strideFrame*4+k)*2, height*0.025, 0, Math.PI*2);
+      c.arc(headX + dx, dy, h*0.03, 0, Math.PI*2);
       c.fill();
     }
-    // "!" symbol when really drained
     if(stamina < 0.2){
       c.fillStyle = '#ff2d2d';
-      c.font = `italic 900 ${height*0.18}px 'Archivo Black', sans-serif`;
-      c.textAlign = 'center';
-      c.fillText('!', cx + height*0.25, bodyTopY - headR*0.3);
+      c.font = `italic 900 ${h*0.22}px 'Archivo Black',sans-serif`;
+      c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('!', headX + headR + h*0.08, headCY);
     }
   } else if(sprinting){
-    // Speed lines behind sprinter
-    c.strokeStyle = 'rgba(255,255,255,0.6)';
-    c.lineWidth = height*0.02;
-    for(let k=0;k<3;k++){
+    c.strokeStyle = 'rgba(255,255,255,0.55)';
+    c.lineWidth = h*0.022;
+    c.lineCap = 'round';
+    for(let k=0;k<4;k++){
+      const off = k * h*0.11;
+      const yOff = ((k%2)*2-1) * h*0.12;
       c.beginPath();
-      c.moveTo(cx - height*0.25 - k*height*0.1, cy + (k-1)*height*0.08);
-      c.lineTo(cx - height*0.42 - k*height*0.1, cy + (k-1)*height*0.08);
+      c.moveTo(cx - h*0.22 - off, cy + yOff);
+      c.lineTo(cx - h*0.38 - off, cy + yOff);
       c.stroke();
     }
   }
@@ -1208,11 +1224,30 @@ function setupSocketListeners(){
   socket.on('viewer-count', n => {/* silent */});
 }
 
+let viewerLastT = 0;
 function viewerLoop(ts){
   if(!viewerRacing && !viewerTargetPos) return;
+  if(!viewerLastT) viewerLastT = ts;
+  const dt = Math.min(ts - viewerLastT, 50) / 1000;
+  viewerLastT = ts;
+
   if(viewerTargetPos && viewerCurPos){
     viewerCurPos = viewerCurPos.map((c,i)=>c + (viewerTargetPos[i]-c) * .25);
-    racers.forEach((r,i)=>{r.position = viewerCurPos[i];});
+    racers.forEach((r,i)=>{
+      const prevPos = r.position;
+      r.position = viewerCurPos[i];
+      // Derive stride animation from positional velocity
+      const vel = Math.max(0, (r.position - prevPos) / Math.max(dt, 0.001));
+      // vel is in units/sec. A full-speed run is roughly 1/duration per sec.
+      // Scale to a stride rate around 3-5 Hz at normal pace.
+      const strideRate = Math.min(6, vel * 40 + 0.6);
+      r.strideFrame = (r.strideFrame || 0) + strideRate * dt;
+      // Heuristic phase: very slow = tired, very fast = sprinting
+      const avgVel = 1 / Math.max(settings.duration || 20, 5);
+      if(vel > avgVel * 1.6) r.phase = 'sprinting';
+      else if(vel < avgVel * 0.45 && r.position > 0.02 && !r.finished) r.phase = 'tired';
+      else r.phase = 'running';
+    });
     drawRace();
     updateScoreboard();
   }
@@ -1593,60 +1628,65 @@ function updateRacers(dt){
     const NAME = r.name.toUpperCase();
 
     if(r.phase === 'sprinting'){
-      r.speedMult = 1.75;
-      r.stamina -= 0.42 * dtS;
-      if(r.stamina <= 0 || r.phaseTime > 2.2){
+      r.speedMult = 1.5;
+      r.stamina -= 0.55 * dtS;
+      if(r.stamina <= 0.05 || r.phaseTime > 1.6){
         r.stamina = Math.max(0, r.stamina);
         r.phase = 'tired';
         r.phaseTime = 0;
-        if(Math.random() < 0.35) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+        if(Math.random() < 0.3) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
       }
     } else if(r.phase === 'tired'){
-      r.speedMult = 0.42 + r.stamina * 0.25;
-      r.stamina = Math.min(1, r.stamina + 0.16 * dtS);
-      // Rare "second wind" — tired runner suddenly finds a burst
-      if(r.phaseTime > 1.2 && r.stamina > 0.35 && Math.random() < 0.02){
-        r.phase = 'sprinting';
-        r.phaseTime = 0;
-        r.stamina = Math.max(r.stamina, 0.75);
-        if(Math.random() < 0.5) setCommentary(pick(COMMS.secondWind).replace('{n}', NAME), 'boost');
-      } else if(r.stamina >= 0.65){
-        r.phase = 'running';
-        r.phaseTime = 0;
+      // 0.6 – 0.78x while recovering — slow but not crawling
+      r.speedMult = 0.6 + r.stamina * 0.18;
+      r.stamina = Math.min(1, r.stamina + 0.3 * dtS);
+      // Cap total tired duration at 1.3s
+      if(r.phaseTime > 1.3){
+        r.phase = 'running'; r.phaseTime = 0;
+      } else if(r.phaseTime > 0.6 && r.stamina > 0.35 && Math.random() < 0.025){
+        // Second wind! Tired → sprinting
+        r.phase = 'sprinting'; r.phaseTime = 0;
+        r.stamina = Math.max(r.stamina, 0.7);
+        if(Math.random() < 0.6) setCommentary(pick(COMMS.secondWind).replace('{n}', NAME), 'boost');
+      } else if(r.stamina >= 0.55){
+        r.phase = 'running'; r.phaseTime = 0;
       }
     } else {
-      // running — speed scales with stamina so it fluctuates naturally
-      r.speedMult = 0.78 + r.stamina * 0.44;   // range ~0.78 – 1.22
-      r.stamina = Math.min(1, r.stamina + 0.055 * dtS);
+      // running — small stamina-based fluctuation (0.88–1.12)
+      r.speedMult = 0.88 + r.stamina * 0.24;
+      r.stamina = Math.min(1, r.stamina + 0.09 * dtS);
 
-      // Trigger sprint burst when fresh
-      if(r.stamina > 0.55 && Math.random() < 0.006){
-        r.phase = 'sprinting';
-        r.phaseTime = 0;
-        if(Math.random() < 0.45) setCommentary(pick(COMMS.sprint).replace('{n}', NAME), 'boost');
+      // Sprint burst (fresh runners burst more often)
+      if(r.stamina > 0.5 && Math.random() < 0.008){
+        r.phase = 'sprinting'; r.phaseTime = 0;
+        if(Math.random() < 0.5) setCommentary(pick(COMMS.sprint).replace('{n}', NAME), 'boost');
       }
-      // Occasional voluntary tire-out (drama)
-      else if(r.phaseTime > 3 && Math.random() < 0.0018){
-        r.phase = 'tired';
-        r.phaseTime = 0;
-        if(Math.random() < 0.45) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+      // Occasional voluntary tire-out
+      else if(r.phaseTime > 2.5 && Math.random() < 0.002){
+        r.phase = 'tired'; r.phaseTime = 0;
+        if(Math.random() < 0.4) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
       }
     }
 
-    // Rare ball fumble (can happen in any phase)
+    // Ball fumble — rare, brief slowdown
     if(r.stumbling > 0){
-      r.speedMult *= 0.3;
+      r.speedMult *= 0.45;
       r.stumbling -= dtS;
-    } else if(Math.random() < 0.0015){
-      r.stumbling = 0.3 + Math.random()*0.2;
-      if(Math.random() < 0.3) setCommentary(pick(COMMS.stumble).replace('{n}', NAME), 'stumble');
+    } else if(Math.random() < 0.0005){
+      r.stumbling = 0.25 + Math.random()*0.2;
+      if(Math.random() < 0.4) setCommentary(pick(COMMS.stumble).replace('{n}', NAME), 'stumble');
     }
+
+    // Rubber-band catch-up — keeps the pack close, more dramatic finishes
+    const leaderPos = Math.max(...racers.map(x => x.position));
+    const behind = leaderPos - r.position;
+    if(behind > 0.15) r.speedMult *= (1 + Math.min(0.4, behind * 0.6));
 
     // Advance position
     r.position += r.speed * r.speedMult * dtS;
 
     // Advance stride animation based on apparent speed
-    r.strideFrame += Math.max(0.3, r.speedMult) * 3.2 * dtS;
+    r.strideFrame += Math.max(0.4, r.speedMult) * 3.5 * dtS;
 
     if(r.position >= 1){
       r.position = 1; r.finished = true; r.finishTime = performance.now() - raceStartRealTime;
@@ -1970,7 +2010,21 @@ function applyFrame(idx){
   idx = Math.max(0, Math.min(idx, recording.length-1));
   replayFrame = idx;
   const f = recording[idx];
-  racers.forEach((r,i) => { r.position = f.positions[i]; });
+  const prev = idx > 0 ? recording[idx-1] : null;
+  const dt = prev ? Math.max(0.001, (f.time - prev.time)/1000) : 0.016;
+  const avgVel = 1 / Math.max(settings.duration || 20, 5);
+
+  racers.forEach((r,i) => {
+    const prevPos = prev ? prev.positions[i] : r.position;
+    r.position = f.positions[i];
+    const vel = Math.max(0, (r.position - prevPos) / dt);
+    const strideRate = Math.min(6, vel * 40 + 0.6);
+    r.strideFrame = (r.strideFrame || 0) + strideRate * dt;
+    if(vel > avgVel * 1.6) r.phase = 'sprinting';
+    else if(vel < avgVel * 0.45 && r.position > 0.02) r.phase = 'tired';
+    else r.phase = 'running';
+    r.stamina = 0.7;   // stable stamina for replay indicators
+  });
   drawRace(); updateScoreboard();
   setCommentary(f.commentary || '');
   $('r-time-cur').textContent = replayFmt(f.time);
@@ -2151,18 +2205,12 @@ $('header-sound-btn').addEventListener('click', toggleSound);
 $('sound-btn').addEventListener('click', toggleSound);
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PWA
+// Unregister any old service workers so stale caches don't come back from
+// previous versions of the app.
 // ═══════════════════════════════════════════════════════════════════════════
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-  // When a new SW takes control (after a deploy), reload once so the user
-  // gets the fresh HTML without manually clearing the cache.
-  let swRefreshing = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if(swRefreshing) return;
-    swRefreshing = true;
-    location.reload();
-  });
+  navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister())).catch(()=>{});
+  caches?.keys?.().then(keys => keys.forEach(k => caches.delete(k))).catch(()=>{});
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
