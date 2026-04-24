@@ -401,6 +401,9 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .wheel-hist-summary:hover{background:rgba(255,255,255,.03)}
 .wheel-hist-winner{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wheel-hist-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-200);text-transform:uppercase;white-space:nowrap}
+.wheel-hist-replay{font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.04em;padding:5px 10px;background:rgba(255,69,0,.14);border:1px solid rgba(255,69,0,.35);border-radius:5px;color:var(--accent);cursor:pointer;transition:background .15s,transform .1s}
+.wheel-hist-replay:hover{background:rgba(255,69,0,.25);color:#fff}
+.wheel-hist-replay:active{transform:scale(.96)}
 .wheel-hist-toggle{font-size:12px;color:var(--ink-400);transition:transform .2s}
 .wheel-hist-row.open .wheel-hist-toggle{transform:rotate(180deg);color:var(--accent-2)}
 .wheel-hist-details{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
@@ -819,6 +822,7 @@ let recording = [], replayMode = false, replayPlaying = false, replayFrame = 0;
 let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0, replayFromHistory = false;
 let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
 let wheelWinnerIdx = -1, wheelPrevSegment = -1, wheelIdleAnim = 0;
+let pendingSpinPhysics = null, isReplayingSpin = false;
 let currentTab = 'race';
 let broadcastTimer = null;
 let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
@@ -2402,9 +2406,13 @@ function currentWheelSegment(){
 }
 function spinWheel(){
   if(wheelNames.length<2||wheelSpinning) return;
-  // More rotations so it feels more dramatic
-  wheelVelocity = 18 + Math.random()*14;           // ~18-32 rad/s
-  wheelDecel   = 2.0 + Math.random()*1.3;           // ~2-3.3 rad/s²
+  const startRot = wheelRotation;
+  const vel = 18 + Math.random()*14;   // ~18-32 rad/s
+  const dec = 2.0 + Math.random()*1.3;  // ~2-3.3 rad/s²
+  pendingSpinPhysics = { start_rotation: startRot, initial_velocity: vel, deceleration: dec };
+  isReplayingSpin = false;
+  wheelVelocity = vel;
+  wheelDecel = dec;
   wheelSpinning = true;
   wheelLastTime = 0;
   wheelWinnerIdx = -1;
@@ -2416,6 +2424,33 @@ function spinWheel(){
   $('wheel-result').classList.remove('announce');
   $('wheel-result').textContent = '';
   sfx.beep(660,.1,.15);
+  requestAnimationFrame(wheelLoop);
+}
+
+function replaySpinFromHistory(h){
+  if(wheelSpinning) return;
+  if(h.initial_velocity == null || h.deceleration == null){ toast('No replay data for this spin'); return; }
+  // Set names list exactly as it was
+  wheelNames = Array.isArray(h.names) ? [...h.names] : [];
+  resetWheelState();
+  renderWheelChips();
+  // Physics
+  wheelRotation = h.start_rotation || 0;
+  wheelVelocity = h.initial_velocity;
+  wheelDecel    = h.deceleration;
+  wheelSpinning = true;
+  wheelLastTime = 0;
+  wheelWinnerIdx = -1;
+  wheelPrevSegment = currentWheelSegment();
+  isReplayingSpin = true;
+  pendingSpinPhysics = null;
+  const btn = $('wheel-spin-btn');
+  if(btn){ btn.classList.add('spinning'); btn.disabled = true; btn.innerHTML = 'REPLAYING'; }
+  const res = $('wheel-result');
+  res.classList.remove('announce'); res.textContent = '';
+  // Focus the wheel on mobile
+  document.getElementById('wheel-canvas')?.scrollIntoView({ behavior:'smooth', block:'center' });
+  sfx.beep(660,.08,.12);
   requestAnimationFrame(wheelLoop);
 }
 
@@ -2445,14 +2480,17 @@ function wheelLoop(ts){
       wheelWinnerIdx = currentWheelSegment();
       const winner = wheelNames[wheelWinnerIdx];
       const res = $('wheel-result');
-      res.textContent = '🎉 ' + winner + '!';
+      res.textContent = (isReplayingSpin ? '↻ ' : '🎉 ') + winner + '!';
       res.classList.remove('announce'); void res.offsetWidth; res.classList.add('announce');
       const btn = $('wheel-spin-btn');
       btn.classList.remove('spinning');
+      // Only admins get the spin button visible; hidden for viewers but we still normalize
       btn.disabled = false;
       btn.innerHTML = '⚡ Spin Again';
       sfx.fanfare();
-      saveWheelSpin(winner, [...wheelNames]);
+      if(!isReplayingSpin) saveWheelSpin(winner, [...wheelNames], pendingSpinPhysics);
+      isReplayingSpin = false;
+      pendingSpinPhysics = null;
     }
   }
 
@@ -2482,13 +2520,13 @@ async function loadWheelHistory(){
   catch { wheelHistory = []; }
   renderWheelHistory();
 }
-async function saveWheelSpin(winner, names){
+async function saveWheelSpin(winner, names, physics){
   if(role !== 'admin') return;    // only admin writes
   try {
     await fetch('/api/wheel-spins', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ names, winner })
+      body: JSON.stringify({ names, winner, ...(physics || {}) })
     });
     loadWheelHistory();
   } catch(e) { console.error('save wheel spin', e); }
@@ -2500,16 +2538,18 @@ function renderWheelHistory(){
   el.innerHTML = wheelHistory.map((h, idx) => {
     const d = new Date(h.created_at);
     const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    // Put the winner first, then the rest in the original wheel order (winner dedup'd)
     const names = Array.isArray(h.names) ? h.names : [];
     const chips = names.map((n, i) => {
       const isWinner = n === h.winner;
       return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${escapeHtml(n)}</span>`;
     }).join('');
+    const canReplay = h.initial_velocity != null && h.deceleration != null;
+    const replayBtn = canReplay ? `<button class="wheel-hist-replay" data-idx="${idx}" title="Replay this spin">▶</button>` : '';
     return `<div class="wheel-hist-row" data-idx="${idx}">
       <div class="wheel-hist-summary">
         <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
         <span class="wheel-hist-meta">${names.length} names · ${ds}</span>
+        ${replayBtn}
         <span class="wheel-hist-toggle" aria-hidden="true">▾</span>
       </div>
       <div class="wheel-hist-details">
@@ -2519,8 +2559,17 @@ function renderWheelHistory(){
     </div>`;
   }).join('');
   el.querySelectorAll('.wheel-hist-summary').forEach(s => {
-    s.addEventListener('click', () => s.parentElement.classList.toggle('open'));
+    s.addEventListener('click', (e) => {
+      if(e.target.closest('.wheel-hist-replay')) return; // don't toggle when hitting replay
+      s.parentElement.classList.toggle('open');
+    });
   });
+  el.querySelectorAll('.wheel-hist-replay').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const idx = +b.dataset.idx;
+    const h = wheelHistory[idx];
+    if(h) replaySpinFromHistory(h);
+  }));
 }
 async function clearWheelHistory(){
   if(role !== 'admin'){ toast('Admin only'); return; }
