@@ -89,9 +89,9 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 #tab-bar.hidden{display:none}
 
 /* Screens */
-.screen{display:none;flex-direction:column}
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
 .screen.active{display:flex}
-#app{min-height:100vh;display:flex;flex-direction:column}
+#app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
 
 /* Toast */
 .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.04em;padding:10px 24px;border-radius:6px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase}
@@ -109,7 +109,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .ticker-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
 
 /* ═══ SETUP SCREEN ═══ */
-#setup-screen{padding:24px 20px 88px;justify-content:center}
+#setup-screen{padding:24px 20px 88px;overflow-y:auto}
 .setup-wrap{width:100%;max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
 @media(max-width:640px){#setup-screen{padding:16px 12px 100px}.setup-wrap{gap:12px}}
 
@@ -229,7 +229,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .v-racer-name{font-family:var(--font-cond);font-weight:600;font-size:13px;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* ═══ RACE SCREEN ═══ */
-#race-screen{min-height:100vh;display:flex;flex-direction:column}
+#race-screen{flex-direction:column;min-height:0}
 .race-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 28px;background:linear-gradient(180deg,rgba(0,0,0,.8),rgba(0,0,0,.4));border-bottom:2px solid var(--accent);gap:12px}
 @media(max-width:640px){.race-topbar{padding:10px 14px;grid-template-columns:auto 1fr auto}.race-topbar-title{font-size:15px}.race-topbar-title .small{display:none}.race-clock{font-size:28px !important}}
 .race-topbar-l{display:flex;align-items:center;gap:14px}
@@ -299,7 +299,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 #r-play{background:var(--accent);color:var(--ink-900);border:none;width:36px;height:36px;border-radius:50%;font-size:1rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 10px rgba(255,69,0,.3)}
 
 /* ═══ PODIUM ═══ */
-#results-screen{padding:24px 28px 40px;position:relative;overflow:hidden}
+#results-screen{padding:24px 28px 40px;position:relative;overflow-y:auto;overflow-x:hidden}
 @media(max-width:640px){#results-screen{padding:18px 14px 30px}}
 .podium-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:14px;flex-wrap:wrap}
 .podium-title{font-family:var(--font-display);font-style:italic;font-size:clamp(40px,7vw,96px);line-height:.9;margin:0;color:var(--ink-50);text-transform:uppercase}
@@ -340,7 +340,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes confetti-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(120vh) rotate(720deg);opacity:0}}
 
 /* ═══ WHEEL / TEAMS / HISTORY — styled to match ═══ */
-#wheel-screen,#teams-screen,#history-screen{padding:28px 40px}
+#wheel-screen,#teams-screen,#history-screen{padding:28px 40px;overflow-y:auto}
 @media(max-width:640px){#wheel-screen,#teams-screen,#history-screen{padding:18px 16px}}
 .tool-wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
@@ -1459,13 +1459,6 @@ function renderViewerLineup(){
     </div>`).join('')+'</div>';
 }
 
-// Ticker setup
-const TICKER_MSGS = ['BALL RACE 2026','FAIR START GUARANTEED','NO DUCKS — ONLY BALLS','PLAY ANYWHERE','SHARE YOUR ROOM','SQUAD GOALS','WATCH THE UNDERDOG','WHO TAKES IT HOME?','CLASSROOM APPROVED'];
-function renderTicker(){
-  const items = [...TICKER_MSGS, ...TICKER_MSGS].map(t => `<span class="ticker-item cond" style="color:var(--ink-200);font-size:12px"><span class="ticker-dot"></span>${t}</span>`).join('');
-  $('hero-ticker').innerHTML = items;
-}
-
 // Kick off
 $('start-btn').addEventListener('click', () => {
   if(role!=='admin'){ toast('Admin only'); return; }
@@ -2216,7 +2209,6 @@ if('serviceWorker' in navigator){
 // ═══════════════════════════════════════════════════════════════════════════
 sfx.enabled = settings.sound;
 applySettings();
-renderTicker();
 renderSkinPicker();
 setRole('viewer');
 renderWheelChips(); renderTeamChips();
