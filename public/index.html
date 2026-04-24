@@ -192,6 +192,26 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .history-winner{font-family:var(--font-d);font-weight:600;font-size:.95rem;color:var(--gold)}
 .history-players{font-size:.85rem;color:var(--text-muted)}
 
+/* ADMIN */
+.admin-badge{font-family:var(--font-d);font-weight:700;font-size:.7rem;letter-spacing:1.5px;color:var(--gold);background:rgba(255,215,64,.12);padding:3px 8px;border-radius:4px;border:1px solid rgba(255,215,64,.25)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-backdrop.active{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-title{font-family:var(--font-d);font-weight:700;font-size:1.2rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.modal-sub{font-size:.85rem;color:var(--text-muted);margin-bottom:16px}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--font-b);font-size:1rem;outline:none;margin-bottom:12px}
+.modal input:focus{border-color:var(--primary)}
+.modal-actions{display:flex;gap:8px}
+.modal-actions .btn{flex:1}
+
+.status-banner{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--text-muted);flex-shrink:0}
+.status-dot.live{background:var(--danger);animation:pulse 1.5s infinite}
+.status-dot.ready{background:var(--primary)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.status-text{flex:1;font-family:var(--font-d);font-weight:500;font-size:.9rem;letter-spacing:.5px}
+.status-count{font-size:.8rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+
 @media(max-width:600px){
   header{padding:8px 14px}.logo{font-size:1.1rem}
   .cd-text{font-size:4.5rem}.winner-name{font-size:1.6rem}
@@ -207,56 +227,34 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
     <span class="logo-icon">⚽</span>
     <span class="logo">Football Race</span>
     <div class="header-right">
+      <span class="admin-badge" id="admin-badge" style="display:none">ADMIN</span>
       <button class="icon-btn" id="sound-btn" title="Toggle Sound">🔊</button>
+      <button class="icon-btn" id="admin-btn" title="Admin Login">🔒</button>
     </div>
   </header>
 
-  <nav id="tab-bar" class="hidden">
+  <nav id="tab-bar">
     <button class="tab active" data-tab="race">⚽ Race</button>
     <button class="tab" data-tab="wheel">🎡 Wheel</button>
     <button class="tab" data-tab="teams">👥 Teams</button>
     <button class="tab" data-tab="history">📋 History</button>
   </nav>
 
-  <!-- LOBBY -->
-  <div id="lobby-screen" class="screen active">
-    <div class="lobby-wrap">
-      <div class="lobby-title">FOOTBALL RACE</div>
-      <div class="lobby-sub">Race, pick names, build teams</div>
-      <div class="lobby-card">
-        <div class="lobby-card-title">CREATE A ROOM</div>
-        <button class="btn btn-p" id="create-room-btn" style="width:100%">CREATE ROOM</button>
-      </div>
-      <div class="lobby-card">
-        <div class="lobby-card-title">JOIN A ROOM</div>
-        <div class="lobby-join-row">
-          <input type="text" id="join-code-input" placeholder="Room code" maxlength="6">
-          <button class="btn btn-p" id="join-room-btn">JOIN</button>
-        </div>
-      </div>
-      <div class="lobby-divider">or</div>
-      <button class="btn btn-s" id="offline-btn" style="width:100%">PLAY OFFLINE</button>
-    </div>
-  </div>
-
   <!-- SETUP -->
-  <div id="setup-screen" class="screen">
+  <div id="setup-screen" class="screen active">
     <div class="setup-wrap">
-      <div class="room-bar" id="room-bar" style="display:none">
-        <div>
-          <div style="font-size:.75rem;color:var(--text-muted);letter-spacing:1px;font-family:var(--font-d)">ROOM CODE</div>
-          <div class="room-code" id="room-code-display"></div>
-        </div>
-        <div class="room-viewers"><span>👥</span><span id="viewer-count">1</span></div>
-        <button class="room-link-btn" id="copy-room-link">COPY LINK</button>
+      <div class="status-banner">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-text" id="status-text">Connecting...</div>
+        <div class="status-count"><span>👥</span><span id="viewer-count">0</span></div>
       </div>
 
-      <div id="host-controls">
+      <div id="host-controls" style="display:none">
         <div class="section-title">PLAYERS</div>
         <div id="player-list"></div>
         <div class="setup-row">
           <button class="btn btn-s" id="add-btn">+ ADD</button>
-          <button class="btn btn-s" id="share-btn">🔗 SHARE</button>
+          <button class="btn btn-s" id="share-btn">🔗 SHARE LINK</button>
         </div>
 
         <div class="rooms-panel">
@@ -291,18 +289,14 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
         </div>
 
         <div class="setup-row" style="margin-top:16px">
-          <button class="btn btn-s" id="leave-room-btn" style="display:none">LEAVE ROOM</button>
           <button class="btn btn-p" id="start-btn" style="flex:2">START RACE</button>
         </div>
       </div>
 
-      <div id="viewer-controls" style="display:none">
+      <div id="viewer-controls">
         <div class="section-title">PLAYERS</div>
         <div id="viewer-player-list"></div>
-        <div class="viewer-waiting"><span class="spin">⚽</span>Waiting for host to start the race...</div>
-        <div class="setup-row" style="margin-top:16px">
-          <button class="btn btn-s" id="viewer-leave-btn">LEAVE ROOM</button>
-        </div>
+        <div class="viewer-waiting" id="viewer-waiting-msg"><span class="spin">⚽</span>Waiting for admin to start the race...</div>
       </div>
     </div>
   </div>
@@ -402,6 +396,18 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 </div>
 <div class="toast" id="toast"></div>
 
+<div class="modal-backdrop" id="login-modal">
+  <div class="modal">
+    <div class="modal-title">Admin Login</div>
+    <div class="modal-sub">Only admins can start races. Viewers can watch.</div>
+    <input type="password" id="admin-password" placeholder="Password" autocomplete="off">
+    <div class="modal-actions">
+      <button class="btn btn-s" id="login-cancel">CANCEL</button>
+      <button class="btn btn-p" id="login-submit">LOGIN</button>
+    </div>
+  </div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 // ===== CONSTANTS =====
@@ -443,8 +449,9 @@ let fairStats = LS.get('fair',{});
 function saveSettings(){ LS.set('settings',{sound:sfx.enabled,duration:settings.duration,fairMode:settings.fairMode}); }
 
 // ===== STATE =====
-let mode = 'offline'; // 'offline' | 'host' | 'viewer'
-let roomCode = '';
+let role = 'viewer'; // 'admin' | 'viewer'
+let adminToken = localStorage.getItem('fb-admin-token') || '';
+let liveState = 'idle'; // server-reported state: idle | setup | countdown | racing | results
 let socket = null;
 let players = [{name:'',colorIdx:0},{name:'',colorIdx:1}];
 let racers = [], finishOrder = [], raceActive = false;
@@ -459,7 +466,7 @@ let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
 
 // ===== DOM =====
 const $id = id => document.getElementById(id);
-const $lobby = $id('lobby-screen'), $setup = $id('setup-screen'), $race = $id('race-screen');
+const $setup = $id('setup-screen'), $race = $id('race-screen');
 const $results = $id('results-screen'), $wheel = $id('wheel-screen'), $teams = $id('teams-screen'), $historyScr = $id('history-screen');
 const $pList = $id('player-list'), $addBtn = $id('add-btn'), $startBtn = $id('start-btn');
 const $canvas = $id('race-canvas'), $commBar = $id('commentary-bar'), $cdOverlay = $id('countdown-overlay');
@@ -472,36 +479,72 @@ const $wCanvas = $id('wheel-canvas');
 const ctx = $canvas.getContext('2d');
 const confCtx = $confCanvas.getContext('2d');
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$lobby,$setup,$race,$results,$wheel,$teams,$historyScr];
+const allScreens = [$setup,$race,$results,$wheel,$teams,$historyScr];
 
 function toast(msg){ const t=$id('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800); }
 function showScreen(el){ allScreens.forEach(s=>s.classList.remove('active'));el.classList.add('active'); }
 
 // ===== SOCKET =====
 function connectSocket() {
-  return new Promise((resolve, reject) => {
-    if (socket && socket.connected) { resolve(); return; }
-    socket = io();
-    socket.on('connect', resolve);
-    socket.on('connect_error', () => { socket = null; reject(); });
-    setupSocketListeners();
-  });
+  if (socket && socket.connected) return;
+  socket = io();
+  setupSocketListeners();
 }
 
 function setupSocketListeners() {
-  socket.on('viewer-count', n => { $id('viewer-count').textContent = n; });
-  socket.on('host-left', () => { toast('Host left the room'); goToLobby(); });
-
-  // Viewer events
-  socket.on('players-updated', p => {
-    if (mode !== 'viewer') return;
-    players = p.map((n,i) => ({name:n,colorIdx:i}));
-    renderViewerPlayers();
+  socket.on('connect', () => {
+    if (adminToken) {
+      socket.emit('admin-auth', adminToken, res => {
+        if (res && res.ok) setRole('admin'); else { clearAdminToken(); setRole('viewer'); }
+      });
+    }
+    updateStatusBanner();
   });
-  socket.on('settings-updated', s => { if (mode==='viewer') Object.assign(settings, s); });
+
+  socket.on('viewer-count', n => { $id('viewer-count').textContent = n; });
+
+  socket.on('state-sync', s => {
+    liveState = s.state;
+    if (s.players && s.players.length) {
+      players = s.players.map((p,i) => typeof p==='string' ? {name:p,colorIdx:i} : p);
+    }
+    if (s.settings) Object.assign(settings, s.settings);
+    $id('viewer-count').textContent = s.viewerCount || 0;
+    if (role === 'viewer') {
+      renderViewerPlayers();
+      // Jump into correct view based on live state
+      if (s.state === 'racing' && s.racers) {
+        racers = s.racers.map((r,i) => ({name:r.name,colorIdx:r.colorIdx,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+        viewerTargetPos = s.positions || racers.map(()=>0);
+        viewerCurPos = [...viewerTargetPos];
+        viewerRacing = true;
+        commentaryText = s.commentary || '';
+        showScreen($race); $tabBar.classList.add('hidden');
+        $commBar.style.display = ''; $replayBar.classList.remove('active');
+        resizeCanvas();
+        sfx.startCrowd();
+        requestAnimationFrame(viewerLoop);
+      } else if (s.state === 'results' && s.lastResults) {
+        finishOrder = s.lastResults.results || [];
+        if (s.lastResults.racers) racers = s.lastResults.racers.map((r,i)=>({name:r.name,colorIdx:r.colorIdx,position:1,speed:0,targetSpeed:0,nextSpeedChange:0,finished:true,finishTime:0}));
+        showViewerResults(s.lastResults);
+      }
+    }
+    updateStatusBanner();
+  });
+
+  socket.on('players-updated', p => {
+    players = p.map((n,i) => typeof n==='string' ? {name:n,colorIdx:i} : n);
+    if (role === 'viewer') renderViewerPlayers();
+    else renderPlayerList();
+    liveState = 'setup'; updateStatusBanner();
+  });
+
+  socket.on('settings-updated', s => { Object.assign(settings, s); if (role==='admin') applySettings(); });
 
   socket.on('race-countdown', () => {
-    if (mode !== 'viewer') return;
+    if (role !== 'viewer') return;
+    liveState = 'countdown';
     showScreen($race); $tabBar.classList.add('hidden');
     $commBar.style.display = ''; $replayBar.classList.remove('active');
     resizeCanvas();
@@ -509,7 +552,8 @@ function setupSocketListeners() {
   });
 
   socket.on('race-started', data => {
-    if (mode !== 'viewer') return;
+    if (role !== 'viewer') return;
+    liveState = 'racing';
     racers = data.racers.map((r,i) => ({name:r.name,colorIdx:r.colorIdx,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
     viewerTargetPos = racers.map(() => 0);
     viewerCurPos = racers.map(() => 0);
@@ -522,7 +566,7 @@ function setupSocketListeners() {
   });
 
   socket.on('race-frame', data => {
-    if (mode !== 'viewer') return;
+    if (role !== 'viewer') return;
     viewerTargetPos = data.positions;
     commentaryText = data.commentary;
     $commBar.textContent = commentaryText;
@@ -532,17 +576,34 @@ function setupSocketListeners() {
   });
 
   socket.on('race-ended', data => {
-    if (mode !== 'viewer') return;
+    if (role !== 'viewer') return;
+    liveState = 'results';
     viewerRacing = false;
     sfx.stopCrowd(); sfx.fanfare();
     finishOrder = data.results;
-    racers = data.racers.map((r,i) => ({...racers[i], ...r}));
+    if (data.racers) racers = data.racers.map((r,i)=>({...racers[i], ...r}));
     setTimeout(() => showViewerResults(data), 800);
   });
 
   socket.on('back-to-setup', () => {
-    if (mode !== 'viewer') return;
-    showScreen($setup); $tabBar.classList.remove('hidden');
+    liveState = 'setup';
+    if (role !== 'viewer') { updateStatusBanner(); return; }
+    showScreen($setup); $tabBar.classList.remove('hidden'); updateStatusBanner();
+  });
+
+  socket.on('race-reset', () => {
+    liveState = 'idle';
+    players = [];
+    if (role === 'viewer') { renderViewerPlayers(); showScreen($setup); $tabBar.classList.remove('hidden'); }
+    updateStatusBanner();
+  });
+
+  socket.on('race-aborted', () => {
+    toast('Race aborted');
+    liveState = 'idle'; viewerRacing = false;
+    sfx.stopCrowd(); stopConfetti();
+    if (role === 'viewer') { showScreen($setup); $tabBar.classList.remove('hidden'); }
+    updateStatusBanner();
   });
 }
 
@@ -571,74 +632,74 @@ function showViewerResults(data) {
   startConfetti();
 }
 
-// ===== LOBBY =====
-$id('create-room-btn').addEventListener('click', async () => {
-  try {
-    await connectSocket();
-    socket.emit('create-room', res => {
-      mode = 'host'; roomCode = res.code;
-      $tabBar.classList.remove('hidden');
-      showScreen($setup);
-      $id('room-bar').style.display = '';
-      $id('room-code-display').textContent = roomCode;
-      $id('leave-room-btn').style.display = '';
-      $id('host-controls').style.display = '';
-      $id('viewer-controls').style.display = 'none';
-      broadcastPlayers();
-    });
-  } catch { toast('Could not connect to server'); }
-});
-
-$id('join-room-btn').addEventListener('click', async () => {
-  const code = $id('join-code-input').value.trim();
-  if (!code) { toast('Enter a room code'); return; }
-  try {
-    await connectSocket();
-    socket.emit('join-room', code, res => {
-      if (res.error) { toast(res.error); return; }
-      mode = 'viewer'; roomCode = code.toUpperCase();
-      $tabBar.classList.remove('hidden');
-      showScreen($setup);
-      $id('room-bar').style.display = '';
-      $id('room-code-display').textContent = roomCode;
-      $id('viewer-count').textContent = res.viewerCount;
-      $id('host-controls').style.display = 'none';
-      $id('viewer-controls').style.display = '';
-      players = (res.players||[]).map((n,i) => ({name:n,colorIdx:i}));
-      renderViewerPlayers();
-    });
-  } catch { toast('Could not connect to server'); }
-});
-
-$id('join-code-input').addEventListener('keydown', e => { if(e.key==='Enter') $id('join-room-btn').click(); });
-
-$id('offline-btn').addEventListener('click', () => {
-  mode = 'offline'; roomCode = '';
-  $tabBar.classList.remove('hidden');
-  showScreen($setup);
-  $id('room-bar').style.display = 'none';
-  $id('leave-room-btn').style.display = 'none';
-  $id('host-controls').style.display = '';
-  $id('viewer-controls').style.display = 'none';
-  renderPlayerList();
-});
-
-function goToLobby() {
-  if (socket) { socket.emit('leave-room'); }
-  mode = 'offline'; roomCode = '';
-  raceActive = false; viewerRacing = false;
-  sfx.stopCrowd(); stopConfetti(); exitReplay();
-  $tabBar.classList.add('hidden');
-  showScreen($lobby);
-  $id('room-bar').style.display = 'none';
+// ===== ADMIN LOGIN / ROLE =====
+function setRole(r) {
+  role = r;
+  const isAdmin = r === 'admin';
+  $id('admin-badge').style.display = isAdmin ? '' : 'none';
+  $id('admin-btn').textContent = isAdmin ? '🔓' : '🔒';
+  $id('admin-btn').title = isAdmin ? 'Admin Logout' : 'Admin Login';
+  $id('host-controls').style.display = isAdmin ? '' : 'none';
+  $id('viewer-controls').style.display = isAdmin ? 'none' : '';
+  $id('clear-history-btn').style.display = isAdmin ? '' : 'none';
+  if (isAdmin) renderPlayerList(); else renderViewerPlayers();
+  updateStatusBanner();
 }
 
-$id('leave-room-btn').addEventListener('click', goToLobby);
-$id('viewer-leave-btn').addEventListener('click', goToLobby);
+function clearAdminToken() {
+  adminToken = '';
+  localStorage.removeItem('fb-admin-token');
+}
 
-$id('copy-room-link').addEventListener('click', () => {
-  const url = location.origin + location.pathname + '#room=' + roomCode;
-  navigator.clipboard.writeText(url).then(() => toast('Link copied!')).catch(() => toast('Could not copy'));
+function updateStatusBanner() {
+  const dot = $id('status-dot'), text = $id('status-text');
+  dot.className = 'status-dot';
+  const connected = socket && socket.connected;
+  if (!connected) { text.textContent = 'Connecting...'; return; }
+  if (liveState === 'racing' || liveState === 'countdown') {
+    dot.classList.add('live');
+    text.textContent = role === 'admin' ? 'LIVE — Race in progress' : 'LIVE — Watching race';
+  } else if (liveState === 'results') {
+    dot.classList.add('ready');
+    text.textContent = 'Race complete';
+  } else if (liveState === 'setup' && players.length > 0) {
+    dot.classList.add('ready');
+    text.textContent = role === 'admin' ? 'Setup — ready to start' : 'Setup — waiting for admin';
+  } else {
+    text.textContent = role === 'admin' ? 'Ready to set up a race' : 'Waiting for admin...';
+  }
+}
+
+$id('admin-btn').addEventListener('click', () => {
+  if (role === 'admin') {
+    // Logout
+    if (socket) socket.emit('admin-logout');
+    fetch('/api/admin/logout', { method:'POST', headers:{'x-admin-token':adminToken} }).catch(()=>{});
+    clearAdminToken();
+    setRole('viewer');
+    toast('Logged out');
+  } else {
+    $id('login-modal').classList.add('active');
+    setTimeout(() => $id('admin-password').focus(), 50);
+  }
+});
+
+$id('login-cancel').addEventListener('click', () => { $id('login-modal').classList.remove('active'); $id('admin-password').value=''; });
+$id('admin-password').addEventListener('keydown', e => { if (e.key === 'Enter') $id('login-submit').click(); if (e.key === 'Escape') $id('login-cancel').click(); });
+
+$id('login-submit').addEventListener('click', async () => {
+  const pw = $id('admin-password').value;
+  if (!pw) { toast('Enter password'); return; }
+  try {
+    const res = await fetch('/api/admin/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ password: pw }) });
+    if (!res.ok) { toast('Invalid password'); return; }
+    const { token } = await res.json();
+    adminToken = token;
+    localStorage.setItem('fb-admin-token', token);
+    $id('login-modal').classList.remove('active');
+    $id('admin-password').value = '';
+    if (socket) socket.emit('admin-auth', token, r => { if (r && r.ok) { setRole('admin'); toast('Logged in as admin'); } });
+  } catch { toast('Login failed'); }
 });
 
 // ===== TAB NAV =====
@@ -656,10 +717,13 @@ document.querySelectorAll('.tab').forEach(t => {
 
 // ===== SETUP =====
 function broadcastPlayers() {
-  if (mode==='host' && socket) {
-    const names = players.map((p,i) => p.name.trim()||'Player '+(i+1));
-    socket.emit('update-players', names);
+  if (role==='admin' && socket) {
+    const pdata = players.map((p,i) => ({ name: p.name.trim()||'Player '+(i+1), colorIdx: p.colorIdx }));
+    socket.emit('update-players', pdata);
   }
+}
+function broadcastSettings() {
+  if (role==='admin' && socket) socket.emit('update-settings', { duration: settings.duration, fairMode: settings.fairMode });
 }
 
 function renderPlayerList() {
@@ -688,8 +752,9 @@ $addBtn.addEventListener('click', () => {
 });
 
 $startBtn.addEventListener('click', () => {
+  if(role!=='admin'){toast('Admin only');return;}
   players.forEach((p,i)=>{ if(!p.name.trim()) p.name='Player '+(i+1); });
-  broadcastPlayers(); startRace();
+  broadcastPlayers(); broadcastSettings(); startRace();
 });
 
 // ===== ROOMS (local save/load) =====
@@ -727,9 +792,9 @@ function applySettings(){
   $id('fair-toggle').classList.toggle('on',settings.fairMode);
 }
 $id('sound-btn').addEventListener('click',()=>{settings.sound=!settings.sound;sfx.enabled=settings.sound;applySettings();saveSettings();});
-document.querySelectorAll('#duration-group .seg-btn').forEach(b=>{b.addEventListener('click',()=>{settings.duration=+b.dataset.val;applySettings();saveSettings();});});
-$id('duration-input').addEventListener('change',e=>{const v=Math.max(3,Math.min(60,Math.round(+e.target.value||10)));e.target.value=v;settings.duration=v;applySettings();saveSettings();});
-$id('fair-toggle').addEventListener('click',()=>{settings.fairMode=!settings.fairMode;applySettings();saveSettings();});
+document.querySelectorAll('#duration-group .seg-btn').forEach(b=>{b.addEventListener('click',()=>{settings.duration=+b.dataset.val;applySettings();saveSettings();broadcastSettings();});});
+$id('duration-input').addEventListener('change',e=>{const v=Math.max(3,Math.min(60,Math.round(+e.target.value||10)));e.target.value=v;settings.duration=v;applySettings();saveSettings();broadcastSettings();});
+$id('fair-toggle').addEventListener('click',()=>{settings.fairMode=!settings.fairMode;applySettings();saveSettings();broadcastSettings();});
 
 // ===== FAIR MODE =====
 function getFairMult(name){if(!settings.fairMode)return 1;const s=fairStats[name];if(!s||s.races<2)return 1;const wr=s.wins/s.races,target=1/racers.length;return Math.max(.75,Math.min(1.25,1-(wr-target)*2.5));}
@@ -744,14 +809,14 @@ function startRace(){
   $commBar.style.display='';$replayBar.classList.remove('active');
   resizeCanvas();
 
-  if(mode==='host' && socket) socket.emit('race-countdown');
+  if(role==='admin' && socket) socket.emit('race-countdown');
   runCountdown().then(()=>{
     initRacers(); recording=[]; raceActive=true; lastTime=0;
     lastLeader=-1;lastCommentaryTime=0;commentaryText='';
     raceStartRealTime=performance.now();
     $commBar.textContent="And they're off!";
     sfx.whistle();sfx.startCrowd();
-    if(mode==='host' && socket){
+    if(role==='admin' && socket){
       socket.emit('race-start',{racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx}))});
       startBroadcasting();
     }
@@ -801,8 +866,8 @@ function raceLoop(ts){
   if(finishOrder.length<racers.length){requestAnimationFrame(raceLoop);}
   else{
     raceActive=false;lastTime=0;clearInterval(broadcastTimer);sfx.stopCrowd();sfx.fanfare();
-    updateFairStats();saveRaceHistory();
-    if(mode==='host'&&socket) socket.emit('race-end',{results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime})),racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,position:r.position}))});
+    updateFairStats();if(role==='admin')saveRaceHistory();
+    if(role==='admin'&&socket) socket.emit('race-end',{results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime})),racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,position:r.position}))});
     setTimeout(showResults,800);
   }
 }
@@ -837,6 +902,25 @@ function drawRace(){
   const bR=Math.min(Math.min(w,h)*RACE_CFG.ballRadius,lH*.35);
   ctx.clearRect(0,0,w,h);ctx.fillStyle='#0b1120';ctx.fillRect(0,rH,w,cbH);
   for(let i=0;i<n;i++){ctx.fillStyle=i%2===0?'#1a6b30':'#1d7a37';ctx.fillRect(0,i*lH,w,lH);}
+  // Logo watermark on the side of the field
+  if(logoLoaded){
+    const lsz=Math.min(rH*.7,rW*.18);
+    const lx=(sX+fX)/2-lsz/2, ly=rH/2-lsz/2;
+    ctx.save();ctx.globalAlpha=.12;
+    ctx.drawImage(logoImg,lx,ly,lsz,lsz);
+    ctx.restore();
+    // Side panels (like pitch-side ad boards)
+    const panelH=rH*.18, panelY=rH-panelH-2*devicePixelRatio;
+    const panelW=Math.min(panelH*1.8,sX-8*devicePixelRatio);
+    if(panelW>40*devicePixelRatio){
+      ctx.save();
+      ctx.fillStyle='rgba(11,17,32,.85)';ctx.fillRect(4*devicePixelRatio,panelY,panelW,panelH);
+      ctx.strokeStyle='rgba(255,215,64,.35)';ctx.lineWidth=1.5*devicePixelRatio;
+      ctx.strokeRect(4*devicePixelRatio,panelY,panelW,panelH);
+      ctx.drawImage(logoImg,8*devicePixelRatio,panelY+4*devicePixelRatio,panelW-8*devicePixelRatio,panelH-8*devicePixelRatio);
+      ctx.restore();
+    }
+  }
   ctx.setLineDash([8*devicePixelRatio,8*devicePixelRatio]);ctx.strokeStyle='rgba(255,255,255,.15)';ctx.lineWidth=devicePixelRatio;
   for(let i=1;i<n;i++){ctx.beginPath();ctx.moveTo(sX,i*lH);ctx.lineTo(fX,i*lH);ctx.stroke();}ctx.setLineDash([]);
   ctx.strokeStyle='rgba(255,255,255,.4)';ctx.lineWidth=2*devicePixelRatio;ctx.beginPath();ctx.moveTo(sX,0);ctx.lineTo(sX,rH);ctx.stroke();
@@ -879,7 +963,7 @@ async function saveRaceHistory(){
     duration:settings.duration,
     recording:sampled,
   };
-  try{await fetch('/api/races',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+  try{await fetch('/api/races',{method:'POST',headers:{'Content-Type':'application/json','x-admin-token':adminToken},body:JSON.stringify(body)});}
   catch(e){console.error('Failed to save race:',e);}
 }
 async function loadHistory(){
@@ -917,7 +1001,8 @@ async function playHistoryReplay(raceId){
   }catch(e){toast('Failed to load replay');console.error(e);}
 }
 $id('clear-history-btn').addEventListener('click',async()=>{
-  try{await fetch('/api/races',{method:'DELETE'});raceHistory=[];renderHistory();toast('History cleared');}
+  if(role!=='admin'){toast('Admin only');return;}
+  try{await fetch('/api/races',{method:'DELETE',headers:{'x-admin-token':adminToken}});raceHistory=[];renderHistory();toast('History cleared');}
   catch{toast('Failed to clear history');}
 });
 
@@ -948,7 +1033,7 @@ $id('replay-btn').addEventListener('click',()=>{replayFromHistory=false;enterRep
 $id('r-back').addEventListener('click',()=>{
   exitReplay();$tabBar.classList.remove('hidden');
   if(replayFromHistory){replayFromHistory=false;loadHistory().then(()=>renderHistory());showScreen($historyScr);document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='history'));currentTab='history';}
-  else if(mode==='viewer')showViewerResults({results:finishOrder});
+  else if(role==='viewer')showViewerResults({results:finishOrder});
   else showResults();
 });
 $rPlay.addEventListener('click',()=>{if(replayFrame>=recording.length-1){replayFrame=0;replayAccum=0;replayLastTime=0;replayPlaying=true;}else{replayPlaying=!replayPlaying;if(replayPlaying){replayLastTime=0;replayAccum=0;}}updPlayBtn();});
@@ -959,7 +1044,7 @@ $id('race-again-btn').addEventListener('click',()=>{stopConfetti();startRace();}
 $id('new-race-btn').addEventListener('click',()=>{
   stopConfetti();$tabBar.classList.remove('hidden');showScreen($setup);renderPlayerList();
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='race'));
-  if(mode==='host'&&socket) socket.emit('back-to-setup');
+  if(role==='admin'&&socket) socket.emit('back-to-setup');
 });
 
 // ===== WHEEL =====
@@ -1028,14 +1113,22 @@ function loadFromHash(){
 // ===== PWA =====
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
+// ===== LOGO =====
+const logoImg = new Image();
+let logoLoaded = false;
+logoImg.onload = () => { logoLoaded = true; if (raceActive || viewerRacing || replayMode) drawRace(); };
+logoImg.onerror = () => { logoLoaded = false; };
+logoImg.src = 'logo.png';
+
 // ===== INIT =====
 sfx.enabled=settings.sound;
 applySettings();
 loadFromHash();
-renderPlayerList();
+setRole('viewer'); // default
 renderSavedRooms();
 renderWheelChips();
 renderTeamChips();
+connectSocket();
 </script>
 </body>
 </html>
