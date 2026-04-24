@@ -309,22 +309,37 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 
 .podium-stage{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;align-items:end;padding:40px 24px 0;background:radial-gradient(ellipse 60% 40% at 50% 100%,rgba(255,215,0,.15),transparent 70%),linear-gradient(180deg,rgba(0,0,0,.2),rgba(0,0,0,.6));border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);min-height:420px;position:relative;overflow:hidden}
 .spotlight{position:absolute;top:-60px;left:50%;transform:translateX(-50%);width:300px;height:120px;background:radial-gradient(ellipse at center top,rgba(255,215,0,.3),transparent 70%);pointer-events:none}
-.podium-block{background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:8px 8px 0 0;padding:16px 12px 24px;text-align:center;position:relative}
-.podium-block.p1{order:2;background:linear-gradient(180deg,rgba(255,215,0,.3),rgba(255,215,0,.05));border-color:rgba(255,215,0,.5);height:380px;box-shadow:0 0 80px rgba(255,215,0,.2)}
-.podium-block.p2{order:1;background:linear-gradient(180deg,rgba(192,192,192,.25),rgba(192,192,192,.03));border-color:rgba(192,192,192,.4);height:300px}
-.podium-block.p3{order:3;background:linear-gradient(180deg,rgba(205,127,50,.25),rgba(205,127,50,.03));border-color:rgba(205,127,50,.4);height:240px}
-.podium-rank{font-family:var(--font-display);font-style:italic;font-size:80px;line-height:.8;color:var(--ink-50);opacity:.9}
-.podium-block.p1 .podium-rank{color:var(--accent-2);font-size:100px}
+.podium-block{display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:6px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:8px 8px 0 0;padding:14px 8px 16px;text-align:center;position:relative;min-width:0}
+.podium-block.p1{order:2;background:linear-gradient(180deg,rgba(255,215,0,.3),rgba(255,215,0,.05));border-color:rgba(255,215,0,.5);min-height:360px;box-shadow:0 0 80px rgba(255,215,0,.2)}
+.podium-block.p2{order:1;background:linear-gradient(180deg,rgba(192,192,192,.25),rgba(192,192,192,.03));border-color:rgba(192,192,192,.4);min-height:290px}
+.podium-block.p3{order:3;background:linear-gradient(180deg,rgba(205,127,50,.25),rgba(205,127,50,.03));border-color:rgba(205,127,50,.4);min-height:240px}
+.podium-rank{font-family:var(--font-display);font-style:italic;font-size:72px;line-height:.8;color:var(--ink-50);opacity:.9}
+.podium-block.p1 .podium-rank{color:var(--accent-2);font-size:92px}
 .podium-block.p2 .podium-rank{color:#c0c0c0}
 .podium-block.p3 .podium-rank{color:#cd7f32}
-.podium-ball{margin:14px auto 10px;animation:podium-float 3s ease-in-out infinite}
+.podium-ball{animation:podium-float 3s ease-in-out infinite;line-height:0}
+.podium-ball svg{display:block;max-width:100%;height:auto}
 .podium-block.p2 .podium-ball{animation-delay:.3s}
 .podium-block.p3 .podium-ball{animation-delay:.6s}
-@keyframes podium-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-.podium-name{font-family:var(--font-cond);font-weight:700;font-size:18px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-50);margin-top:6px;word-break:break-word}
-.podium-block.p1 .podium-name{font-size:22px;color:var(--accent-2)}
-.podium-medal{font-size:36px;margin-bottom:6px}
-@media(max-width:640px){.podium-stage{padding:30px 10px 0;gap:8px;min-height:340px}.podium-block.p1{height:300px}.podium-block.p2{height:240px}.podium-block.p3{height:200px}.podium-rank{font-size:54px}.podium-block.p1 .podium-rank{font-size:68px}.podium-name{font-size:13px}.podium-block.p1 .podium-name{font-size:15px}.podium-medal{font-size:26px}}
+@keyframes podium-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.podium-name-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.podium-champion-tag{font-family:var(--font-display);font-style:italic;font-size:10px;letter-spacing:.18em;color:var(--accent-2);background:rgba(255,215,0,.12);padding:2px 8px;border-radius:3px;text-transform:uppercase}
+.podium-name{font-family:var(--font-cond);font-weight:700;font-size:15px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-50);line-height:1.15;word-break:break-word;hyphens:auto;max-width:100%;overflow-wrap:anywhere}
+.podium-block.p1 .podium-name{font-size:17px;color:var(--accent-2)}
+.podium-medal{font-size:28px;line-height:1}
+@media(max-width:640px){
+  .podium-stage{padding:22px 8px 0;gap:6px;min-height:320px}
+  .podium-block{padding:10px 6px 12px;gap:4px}
+  .podium-block.p1{min-height:290px}
+  .podium-block.p2{min-height:240px}
+  .podium-block.p3{min-height:200px}
+  .podium-rank{font-size:46px}
+  .podium-block.p1 .podium-rank{font-size:60px}
+  .podium-name{font-size:12px}
+  .podium-block.p1 .podium-name{font-size:14px}
+  .podium-medal{font-size:22px}
+  .podium-champion-tag{font-size:9px;padding:1px 6px}
+}
 
 .results-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
 .result-row{display:grid;grid-template-columns:36px 32px 1fr 60px;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md)}
@@ -1907,13 +1922,18 @@ function showPodium(data, isViewer){
 }
 function podiumBlock(r, place){
   const medal = ['🏆','🥈','🥉'][place-1];
-  const ballSize = place===1 ? 120 : place===2 ? 80 : 60;
+  const mobile = window.innerWidth < 640;
+  const ballSize = mobile
+    ? (place===1 ? 64 : place===2 ? 48 : 40)
+    : (place===1 ? 110 : place===2 ? 78 : 58);
   return `<div class="podium-block p${place}">
     <div class="podium-medal">${medal}</div>
     <div class="podium-rank">${place}</div>
     <div class="podium-ball">${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[r.colorIdx%TEAM_COLORS.length], ballSize)}</div>
-    <div class="podium-name">${escapeHtml(r.name)}</div>
-    ${place===1?'<div class="label" style="margin-top:8px;color:var(--accent-2)">CHAMPION</div>':''}
+    <div class="podium-name-wrap">
+      ${place===1?'<div class="podium-champion-tag">CHAMPION</div>':''}
+      <div class="podium-name">${escapeHtml(r.name)}</div>
+    </div>
   </div>`;
 }
 
