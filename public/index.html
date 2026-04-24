@@ -724,8 +724,10 @@ const RACE_CFG = { speedChangeMsMin:250, speedChangeMsMax:700, lerpFactor:2.5, s
 const COMMS = {
   start: ['KICK OFF! AND WE ARE UNDERWAY!','THE WHISTLE BLOWS — AND THEY\'RE OFF!','HERE WE GO!'],
   lead: ['🔥 {n} LEADS THE PACK!','{n} IS OUT IN FRONT!','{n} SURGES AHEAD!'],
-  boost: ['⚡ {n} FINDS A BURST!','{n} HITS THE AFTERBURNERS!','BLISTERING PACE FROM {n}!'],
-  stumble: ['💥 {n} GETS TACKLED!','{n} STUMBLES!','BAD BREAK FOR {n}!'],
+  sprint: ['⚡ {n} BREAKS INTO A SPRINT!','💨 {n} PICKS UP THE PACE!','{n} IS FLYING NOW!','BLISTERING SPEED FROM {n}!'],
+  tired: ['😮‍💨 {n} IS RUNNING ON FUMES!','{n} LOOKS EXHAUSTED!','{n} IS OUT OF GAS!','{n} HITS THE WALL!'],
+  secondWind: ['🔥 {n} FINDS A SECOND WIND!','{n} DIGS DEEP — AND GOES!','UNBELIEVABLE — {n} COMES BACK!'],
+  stumble: ['💥 {n} LOSES THE BALL!','{n} FUMBLES!','BAD TOUCH FROM {n}!'],
   close: ["IT'S NECK AND NECK!",'TOO CLOSE TO CALL!','WHAT A BATTLE!'],
   finish: ["APPROACHING THE LINE!",'FINAL STRETCH!','HERE COMES THE FINISH!'],
   overtake: ['{n} OVERTAKES!','{n} PUSHES PAST!','WHAT A MOVE BY {n}!'],
@@ -797,6 +799,160 @@ function showScreen(el){allScreens.forEach(s=>s.classList.remove('active'));el.c
 // ═══════════════════════════════════════════════════════════════════════════
 // BALL RENDERING — Canvas port of SVG skin system
 // ═══════════════════════════════════════════════════════════════════════════
+// Runner figure dribbling a ball — for the race canvas
+function drawRunner(c, cx, cy, height, strideFrame, colorIdx, skin, phase, stamina) {
+  const color = TEAM_COLORS[colorIdx % TEAM_COLORS.length];
+  const stride = Math.sin(strideFrame * Math.PI * 2);
+  const tired = phase === 'tired';
+  const sprinting = phase === 'sprinting';
+  // Lean forward when sprinting, upright when tired
+  const lean = sprinting ? -0.15 : tired ? 0.04 : -0.05;
+  // Vertical bob from stride
+  const bob = Math.abs(stride) * height * 0.04;
+
+  const headR = height * 0.13;
+  const bodyTopY = cy - height * 0.32 + bob;
+  const bodyBotY = cy + height * 0.08 + bob;
+  const hipY = cy + height * 0.1 + bob;
+  const kneeY = cy + height * 0.28;
+  const footY = cy + height * 0.42;
+
+  c.save();
+  c.translate(cx, 0);
+  c.rotate(lean);
+  c.translate(-cx, 0);
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+
+  // Ground shadow
+  c.fillStyle = 'rgba(0,0,0,0.35)';
+  c.beginPath();
+  c.ellipse(cx, cy + height*0.45, height*0.26, height*0.06, 0, 0, Math.PI*2);
+  c.fill();
+
+  // Back leg (behind body)
+  const strideX = stride * height * 0.22;
+  c.strokeStyle = '#f4c49a';  // skin legs
+  c.lineWidth = height * 0.075;
+  c.beginPath();
+  c.moveTo(cx - height*0.04, hipY);
+  c.quadraticCurveTo(cx - height*0.02 - strideX*0.6, kneeY, cx - strideX, footY);
+  c.stroke();
+  // Shoe on back foot
+  c.fillStyle = '#111';
+  c.beginPath(); c.ellipse(cx - strideX, footY, height*0.07, height*0.035, -0.1, 0, Math.PI*2); c.fill();
+
+  // Shorts
+  c.fillStyle = '#111';
+  c.beginPath();
+  c.moveTo(cx - height*0.13, bodyBotY - 1);
+  c.lineTo(cx + height*0.13, bodyBotY - 1);
+  c.lineTo(cx + height*0.11, hipY + height*0.03);
+  c.lineTo(cx - height*0.11, hipY + height*0.03);
+  c.closePath(); c.fill();
+
+  // Torso / jersey (team color)
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(cx - height*0.17, bodyTopY);
+  c.lineTo(cx + height*0.17, bodyTopY);
+  c.lineTo(cx + height*0.14, bodyBotY);
+  c.lineTo(cx - height*0.14, bodyBotY);
+  c.closePath(); c.fill();
+  c.strokeStyle = 'rgba(0,0,0,0.3)';
+  c.lineWidth = Math.max(1, height*0.015);
+  c.stroke();
+
+  // Jersey number (the team number, simple)
+  c.fillStyle = 'rgba(255,255,255,0.85)';
+  const numFs = height * 0.17;
+  c.font = `italic 900 ${numFs}px 'Archivo Black', sans-serif`;
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(String((colorIdx % 12) + 1), cx, (bodyTopY + bodyBotY)/2);
+
+  // Arms — swing opposite of stride
+  const armStride = -stride;
+  c.strokeStyle = '#f4c49a';
+  c.lineWidth = height * 0.058;
+  // Left arm
+  c.beginPath();
+  c.moveTo(cx - height*0.15, bodyTopY + height*0.05);
+  c.quadraticCurveTo(cx - height*0.22 + armStride*height*0.05, cy, cx - height*0.18 + armStride*height*0.14, cy + height*0.12);
+  c.stroke();
+  // Right arm
+  c.beginPath();
+  c.moveTo(cx + height*0.15, bodyTopY + height*0.05);
+  c.quadraticCurveTo(cx + height*0.22 - armStride*height*0.05, cy, cx + height*0.18 - armStride*height*0.14, cy + height*0.12);
+  c.stroke();
+
+  // Head
+  c.fillStyle = '#f4c49a';
+  c.beginPath();
+  c.arc(cx, bodyTopY - headR*0.55, headR, 0, Math.PI*2);
+  c.fill();
+  c.strokeStyle = '#1a1a1a';
+  c.lineWidth = Math.max(1, height*0.01);
+  c.stroke();
+  // Hair / cap (team colored crown)
+  c.fillStyle = color;
+  c.beginPath();
+  c.arc(cx, bodyTopY - headR*0.55, headR*0.98, Math.PI*1.1, Math.PI*1.9);
+  c.lineTo(cx + headR*0.3, bodyTopY - headR*0.55);
+  c.lineTo(cx - headR*0.3, bodyTopY - headR*0.55);
+  c.closePath(); c.fill();
+
+  // Front leg (on top of ball-side)
+  c.strokeStyle = '#f4c49a';
+  c.lineWidth = height * 0.075;
+  c.beginPath();
+  c.moveTo(cx + height*0.04, hipY);
+  c.quadraticCurveTo(cx + height*0.06 + strideX*0.6, kneeY, cx + strideX, footY);
+  c.stroke();
+  // Shoe on front foot
+  c.fillStyle = '#111';
+  c.beginPath(); c.ellipse(cx + strideX, footY, height*0.07, height*0.035, 0.1, 0, Math.PI*2); c.fill();
+
+  c.restore();
+
+  // Ball — drawn in page-space (no lean) so it rolls forward naturally
+  const ballSize = height * 0.22;
+  // Ball bounces slightly as the player dribbles
+  const ballBob = Math.abs(Math.sin(strideFrame * Math.PI * 2 + 0.3)) * height * 0.05;
+  const ballX = cx + height * 0.22;
+  const ballY = cy + height * 0.4 - ballBob;
+  const ballRot = strideFrame * Math.PI * 2;
+  drawBall(c, ballX, ballY, ballSize, ballRot, colorIdx, skin);
+
+  // State indicators
+  if(tired){
+    // Sweat drops above head
+    c.fillStyle = 'rgba(0,229,255,0.9)';
+    const dropY = bodyTopY - headR - height*0.08;
+    for(let k=0;k<3;k++){
+      c.beginPath();
+      c.arc(cx - height*0.1 + k*height*0.1, dropY + Math.sin(strideFrame*4+k)*2, height*0.025, 0, Math.PI*2);
+      c.fill();
+    }
+    // "!" symbol when really drained
+    if(stamina < 0.2){
+      c.fillStyle = '#ff2d2d';
+      c.font = `italic 900 ${height*0.18}px 'Archivo Black', sans-serif`;
+      c.textAlign = 'center';
+      c.fillText('!', cx + height*0.25, bodyTopY - headR*0.3);
+    }
+  } else if(sprinting){
+    // Speed lines behind sprinter
+    c.strokeStyle = 'rgba(255,255,255,0.6)';
+    c.lineWidth = height*0.02;
+    for(let k=0;k<3;k++){
+      c.beginPath();
+      c.moveTo(cx - height*0.25 - k*height*0.1, cy + (k-1)*height*0.08);
+      c.lineTo(cx - height*0.42 - k*height*0.1, cy + (k-1)*height*0.08);
+      c.stroke();
+    }
+  }
+}
+
 function drawBall(c, cx, cy, r, rot, colorIdx, skin) {
   const color = TEAM_COLORS[colorIdx % TEAM_COLORS.length];
   c.save();
@@ -1374,7 +1530,18 @@ function initRacers(){
   const sp = durationToSpeed(settings.duration);
   racers = players.map((p,i) => {
     const speed = sp.min + Math.random()*(sp.max-sp.min);
-    return {id:p.id, name:p.name.trim()||'Player '+(i+1), colorIdx:p.colorIdx, position:0, speed, targetSpeed:speed, boosting:0, stumbling:0, nextSpeedChange:randInt(), finished:false, finishTime:0};
+    return {
+      id:p.id, name:p.name.trim()||'Player '+(i+1), colorIdx:p.colorIdx,
+      position:0, speed, targetSpeed:speed, nextSpeedChange:randInt(),
+      finished:false, finishTime:0,
+      // Stamina system
+      stamina: 0.7 + Math.random()*0.3, // starting stamina varies
+      phase: 'running',   // 'running' | 'sprinting' | 'tired'
+      phaseTime: 0,
+      speedMult: 1,
+      strideFrame: Math.random(),  // randomize starting stride so they don't all sync
+      stumbling: 0,
+    };
   });
 }
 function randInt(){ return RACE_CFG.speedChangeMsMin + Math.random()*(RACE_CFG.speedChangeMsMax-RACE_CFG.speedChangeMsMin); }
@@ -1410,6 +1577,8 @@ function updateRacers(dt){
   const sp = durationToSpeed(settings.duration);
   racers.forEach((r, i) => {
     if(r.finished) return;
+
+    // Base target pace (random drift, lerped)
     r.nextSpeedChange -= dt;
     if(r.nextSpeedChange<=0){
       let t = sp.min + Math.random()*(sp.max-sp.min);
@@ -1417,22 +1586,74 @@ function updateRacers(dt){
       r.targetSpeed = t;
       r.nextSpeedChange = randInt();
     }
-    // boost/stumble
-    if(r.boosting>0){ r.speed += 0.002; r.boosting -= dtS; }
-    else if(r.stumbling>0){ r.speed *= 0.85; r.stumbling -= dtS; }
-    else {
-      const roll = Math.random();
-      if(roll<0.003){ r.boosting = .6+Math.random()*.4; if(Math.random()<.4) setCommentary(pick(COMMS.boost).replace('{n}', r.name.toUpperCase()), 'boost'); }
-      else if(roll<0.005){ r.stumbling = .4+Math.random()*.3; if(Math.random()<.4) setCommentary(pick(COMMS.stumble).replace('{n}', r.name.toUpperCase()), 'stumble'); }
-    }
     r.speed += (r.targetSpeed - r.speed) * RACE_CFG.lerpFactor * dtS;
-    r.position += r.speed * dtS;
-    if(r.position>=1){
-      r.position = 1; r.finished = true; r.finishTime = performance.now()-raceStartRealTime;
+
+    // Stamina state machine — creates dynamic pace changes
+    r.phaseTime += dtS;
+    const NAME = r.name.toUpperCase();
+
+    if(r.phase === 'sprinting'){
+      r.speedMult = 1.75;
+      r.stamina -= 0.42 * dtS;
+      if(r.stamina <= 0 || r.phaseTime > 2.2){
+        r.stamina = Math.max(0, r.stamina);
+        r.phase = 'tired';
+        r.phaseTime = 0;
+        if(Math.random() < 0.35) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+      }
+    } else if(r.phase === 'tired'){
+      r.speedMult = 0.42 + r.stamina * 0.25;
+      r.stamina = Math.min(1, r.stamina + 0.16 * dtS);
+      // Rare "second wind" — tired runner suddenly finds a burst
+      if(r.phaseTime > 1.2 && r.stamina > 0.35 && Math.random() < 0.02){
+        r.phase = 'sprinting';
+        r.phaseTime = 0;
+        r.stamina = Math.max(r.stamina, 0.75);
+        if(Math.random() < 0.5) setCommentary(pick(COMMS.secondWind).replace('{n}', NAME), 'boost');
+      } else if(r.stamina >= 0.65){
+        r.phase = 'running';
+        r.phaseTime = 0;
+      }
+    } else {
+      // running — speed scales with stamina so it fluctuates naturally
+      r.speedMult = 0.78 + r.stamina * 0.44;   // range ~0.78 – 1.22
+      r.stamina = Math.min(1, r.stamina + 0.055 * dtS);
+
+      // Trigger sprint burst when fresh
+      if(r.stamina > 0.55 && Math.random() < 0.006){
+        r.phase = 'sprinting';
+        r.phaseTime = 0;
+        if(Math.random() < 0.45) setCommentary(pick(COMMS.sprint).replace('{n}', NAME), 'boost');
+      }
+      // Occasional voluntary tire-out (drama)
+      else if(r.phaseTime > 3 && Math.random() < 0.0018){
+        r.phase = 'tired';
+        r.phaseTime = 0;
+        if(Math.random() < 0.45) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+      }
+    }
+
+    // Rare ball fumble (can happen in any phase)
+    if(r.stumbling > 0){
+      r.speedMult *= 0.3;
+      r.stumbling -= dtS;
+    } else if(Math.random() < 0.0015){
+      r.stumbling = 0.3 + Math.random()*0.2;
+      if(Math.random() < 0.3) setCommentary(pick(COMMS.stumble).replace('{n}', NAME), 'stumble');
+    }
+
+    // Advance position
+    r.position += r.speed * r.speedMult * dtS;
+
+    // Advance stride animation based on apparent speed
+    r.strideFrame += Math.max(0.3, r.speedMult) * 3.2 * dtS;
+
+    if(r.position >= 1){
+      r.position = 1; r.finished = true; r.finishTime = performance.now() - raceStartRealTime;
       finishOrder.push(r);
       const place = finishOrder.length;
       const medal = ['🥇','🥈','🥉'][place-1] || '🏁';
-      setCommentary(`${medal} ${r.name.toUpperCase()} ${place===1?'TAKES THE WIN!':`CROSSES IN ${place===2?'2ND':place===3?'3RD':place+'TH'}`}`, place===1?'win':'finish');
+      setCommentary(`${medal} ${NAME} ${place===1?'TAKES THE WIN!':`CROSSES IN ${place===2?'2ND':place===3?'3RD':place+'TH'}`}`, place===1?'win':'finish');
     }
   });
 }
@@ -1486,7 +1707,8 @@ function drawRace(){
   if(!n){ ctx.clearRect(0,0,w,h); return; }
   const sX = w*RACE_CFG.startX, fX = w*RACE_CFG.finishX, rW = fX - sX;
   const laneH = h/n;
-  const bR = Math.min(Math.min(w,h)*.03, laneH*.38);
+  const runnerH = Math.min(laneH*.82, Math.min(w,h)*.1);
+  const bR = runnerH * 0.22; // ball at feet
 
   // Pitch with mow stripes
   ctx.clearRect(0,0,w,h);
@@ -1548,25 +1770,25 @@ function drawRace(){
     ctx.fillRect(0, i*laneH+2, 4*devicePixelRatio, laneH-4);
     ctx.globalAlpha = 1;
 
-    // Trail
+    // Trail (at ball/foot level)
     const tL = Math.min(rW*RACE_CFG.trailLength, bx-sX);
+    const footY = cy + runnerH*0.38;
     if(tL > 2){
-      const g = ctx.createLinearGradient(bx-tL, cy, bx, cy);
+      const g = ctx.createLinearGradient(bx-tL, footY, bx, footY);
       g.addColorStop(0, colA(TEAM_COLORS[r.colorIdx%TEAM_COLORS.length], 0));
       g.addColorStop(1, colA(TEAM_COLORS[r.colorIdx%TEAM_COLORS.length], .35));
       ctx.fillStyle = g;
-      ctx.beginPath(); ctx.ellipse(bx-tL/2, cy, tL/2, bR*.7, 0, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(bx-tL/2, footY, tL/2, bR*.6, 0, 0, Math.PI*2); ctx.fill();
     }
 
-    // Ball (rotation based on distance)
-    const rot = (r.position * rW / bR) * 0.4;
-    drawBall(ctx, bx, cy, bR, rot, r.colorIdx, settings.ballSkin);
+    // Runner + dribbled ball
+    drawRunner(ctx, bx, cy, runnerH, r.strideFrame, r.colorIdx, settings.ballSkin, r.phase, r.stamina);
 
-    // Place bubble (top 3)
+    // Place bubble (top 3) — floats above head
     const rank = rankMap[i];
     if(rank<=3 && (r.position>.05 || r.finished)){
       const bubbleR = 10*devicePixelRatio;
-      const bxB = bx+bR*.9, byB = cy-bR*.9;
+      const bxB = bx + runnerH*0.22, byB = cy - runnerH*0.55;
       const cols = ['#ffd700', '#c0c0c0', '#cd7f32'];
       ctx.beginPath(); ctx.arc(bxB, byB, bubbleR, 0, Math.PI*2);
       ctx.fillStyle = cols[rank-1]; ctx.fill();
