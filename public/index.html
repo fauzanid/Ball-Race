@@ -438,7 +438,7 @@ const LS = {
 let settings = { sound:true, duration:10, fairMode:false, ...LS.get('settings',{}) };
 if(typeof settings.duration==='string') settings.duration=10;
 let savedRooms = LS.get('rooms',[]);
-let raceHistory = LS.get('history',[]);
+let raceHistory = [];
 let fairStats = LS.get('fair',{});
 function saveSettings(){ LS.set('settings',{sound:sfx.enabled,duration:settings.duration,fairMode:settings.fairMode}); }
 
@@ -650,7 +650,7 @@ document.querySelectorAll('.tab').forEach(t => {
     if (currentTab==='race') { exitReplay(); showScreen($setup); }
     else if (currentTab==='wheel') { showScreen($wheel); resizeWheelCanvas(); drawWheel(); }
     else if (currentTab==='teams') showScreen($teams);
-    else if (currentTab==='history') { renderHistory(); showScreen($historyScr); }
+    else if (currentTab==='history') { loadHistory().then(()=>renderHistory()); showScreen($historyScr); }
   });
 });
 
@@ -867,44 +867,59 @@ function showResults(){
   startConfetti();
 }
 
-// ===== HISTORY =====
-function saveRaceHistory(){
-  const sampled = recording.filter((_,i) => i%3===0 || i===recording.length-1);
-  raceHistory.unshift({
-    date:Date.now(),
+// ===== HISTORY (Database API) =====
+async function saveRaceHistory(){
+  const sampled=recording.filter((_,i)=>i%3===0||i===recording.length-1);
+  const body={
+    room_code:roomCode||null,
     players:racers.map(r=>r.name),
     colors:racers.map(r=>r.colorIdx),
     winner:finishOrder[0]?.name||'',
-    results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,time:r.finishTime})),
+    results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime})),
     duration:settings.duration,
     recording:sampled,
-  });
-  if(raceHistory.length>30)raceHistory.length=30;
-  LS.set('history',raceHistory);
+  };
+  try{await fetch('/api/races',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}
+  catch(e){console.error('Failed to save race:',e);}
+}
+async function loadHistory(){
+  try{
+    const res=await fetch('/api/races?limit=50');
+    if(res.ok) raceHistory=await res.json();
+    else raceHistory=[];
+  }catch{raceHistory=[];}
 }
 function renderHistory(){
   const el=$id('history-list');
   if(!raceHistory.length){el.innerHTML='<div class="empty-msg">No races yet</div>';return;}
-  el.innerHTML=raceHistory.map((h,idx)=>{
-    const d=new Date(h.date),ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-    const hasReplay=h.recording&&h.recording.length>0;
-    return`<div class="history-item"><div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${h.winner}</span></div><div class="history-players">${h.players.join(', ')}</div>${hasReplay?`<button class="btn btn-g history-replay-btn" data-hidx="${idx}" style="margin-top:8px;padding:6px 14px;font-size:.8rem;width:100%">WATCH REPLAY</button>`:''}</div>`;
+  el.innerHTML=raceHistory.map(h=>{
+    const d=new Date(h.created_at),ds=d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const hasReplay=h.has_replay;
+    return`<div class="history-item"><div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${h.winner}</span></div><div class="history-players">${h.players.join(', ')}</div>${hasReplay?`<button class="btn btn-g history-replay-btn" data-rid="${h.id}" style="margin-top:8px;padding:6px 14px;font-size:.8rem;width:100%">WATCH REPLAY</button>`:''}</div>`;
   }).join('');
   el.querySelectorAll('.history-replay-btn').forEach(b=>b.addEventListener('click',e=>{
-    playHistoryReplay(+e.target.dataset.hidx);
+    playHistoryReplay(+e.target.dataset.rid);
   }));
 }
-function playHistoryReplay(idx){
-  const h=raceHistory[idx];
-  if(!h||!h.recording||!h.recording.length)return;
-  const colors=h.colors||h.players.map((_,i)=>i);
-  racers=h.players.map((name,i)=>({name,colorIdx:colors[i],position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
-  finishOrder=h.results||[];
-  recording=h.recording;
-  replayFromHistory=true;
-  enterReplay();
+async function playHistoryReplay(raceId){
+  try{
+    toast('Loading replay...');
+    const res=await fetch('/api/races/'+raceId);
+    if(!res.ok){toast('Failed to load replay');return;}
+    const h=await res.json();
+    if(!h.recording||!h.recording.length){toast('No replay data');return;}
+    const colors=h.colors||h.players.map((_,i)=>i);
+    racers=h.players.map((name,i)=>({name,colorIdx:colors[i],position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+    finishOrder=h.results||[];
+    recording=h.recording;
+    replayFromHistory=true;
+    enterReplay();
+  }catch(e){toast('Failed to load replay');console.error(e);}
 }
-$id('clear-history-btn').addEventListener('click',()=>{raceHistory=[];LS.set('history',raceHistory);renderHistory();toast('History cleared');});
+$id('clear-history-btn').addEventListener('click',async()=>{
+  try{await fetch('/api/races',{method:'DELETE'});raceHistory=[];renderHistory();toast('History cleared');}
+  catch{toast('Failed to clear history');}
+});
 
 // ===== REPLAY =====
 function fmtTime(ms){const s=Math.floor(ms/1000),t=Math.floor((ms%1000)/100);return`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}.${t}`;}
@@ -932,7 +947,7 @@ function updSpeedBtns(){document.querySelectorAll('.speed-btn').forEach(b=>b.cla
 $id('replay-btn').addEventListener('click',()=>{replayFromHistory=false;enterReplay();});
 $id('r-back').addEventListener('click',()=>{
   exitReplay();$tabBar.classList.remove('hidden');
-  if(replayFromHistory){replayFromHistory=false;renderHistory();showScreen($historyScr);document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='history'));currentTab='history';}
+  if(replayFromHistory){replayFromHistory=false;loadHistory().then(()=>renderHistory());showScreen($historyScr);document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab==='history'));currentTab='history';}
   else if(mode==='viewer')showViewerResults({results:finishOrder});
   else showResults();
 });
