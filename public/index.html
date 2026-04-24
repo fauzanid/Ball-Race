@@ -385,6 +385,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .history-date{font-family:var(--font-mono);font-size:11px;color:var(--ink-400)}
 .history-winner{font-family:var(--font-display);font-style:italic;font-size:14px;color:var(--accent-2);text-transform:uppercase}
 .history-players{font-family:var(--font-cond);font-size:12px;letter-spacing:.04em;color:var(--ink-200);text-transform:uppercase}
+.history-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 
 /* Modal */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
@@ -1134,7 +1135,7 @@ function setupSocketListeners(){
     liveState = s.state;
     if(s.players && s.players.length) players = s.players.map((p,i)=>({id:nextId(),name:p.name||p,colorIdx:p.colorIdx!=null?p.colorIdx:i}));
     if(s.settings) Object.assign(settings, s.settings);
-    if(role==='viewer'){
+    if(role==='viewer' && !replayMode){
       renderViewerLineup();
       if(s.state==='racing' && s.racers){
         racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
@@ -1159,13 +1160,13 @@ function setupSocketListeners(){
   });
   socket.on('settings-updated', s => { Object.assign(settings, s); applySettings(); });
   socket.on('race-countdown', () => {
-    if(role!=='viewer') return;
+    if(role!=='viewer' || replayMode) return;
     liveState = 'countdown';
     showScreen($race); $tabBar.classList.add('hidden');
     resizeCanvas(); runCountdown();
   });
   socket.on('race-started', data => {
-    if(role!=='viewer') return;
+    if(role!=='viewer' || replayMode) return;
     liveState = 'racing';
     racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
     viewerTargetPos = racers.map(()=>0);
@@ -1177,14 +1178,14 @@ function setupSocketListeners(){
     requestAnimationFrame(viewerLoop);
   });
   socket.on('race-frame', data => {
-    if(role!=='viewer') return;
+    if(role!=='viewer' || replayMode) return;
     viewerTargetPos = data.positions;
     setCommentary(data.commentary);
     sfx.setCrowdLevel(Math.min(Math.max(...data.positions), 1));
     recording.push({positions:[...data.positions], commentary:data.commentary, time:performance.now()-raceStartRealTime});
   });
   socket.on('race-ended', data => {
-    if(role!=='viewer') return;
+    if(role!=='viewer' || replayMode) return;
     liveState = 'results'; viewerRacing = false;
     sfx.stopCrowd(); sfx.fanfare();
     finishOrder = data.results;
@@ -1943,13 +1944,29 @@ function renderHistory(){
   if(!raceHistory.length){ el.innerHTML = '<div class="empty-msg">No races yet</div>'; return; }
   el.innerHTML = raceHistory.map(h=>{
     const d = new Date(h.created_at), ds = d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    const btns = h.has_replay
+      ? `<div class="history-actions">
+           <button class="btn btn-ghost btn-xs history-replay-btn" data-rid="${h.id}">▶ Watch Replay</button>
+           <button class="btn btn-ghost btn-xs history-share-btn" data-rid="${h.id}">🔗 Share</button>
+         </div>`
+      : '';
     return `<div class="history-item">
       <div class="history-meta"><span class="history-date">${ds}</span><span class="history-winner">🏆 ${escapeHtml(h.winner)}</span></div>
       <div class="history-players">${h.players.map(escapeHtml).join(' · ')}</div>
-      ${h.has_replay?`<button class="btn btn-ghost btn-xs history-replay-btn" data-rid="${h.id}" style="margin-top:10px">▶ Watch Replay</button>`:''}
+      ${btns}
     </div>`;
   }).join('');
   el.querySelectorAll('.history-replay-btn').forEach(b=>b.addEventListener('click', e=>playHistoryReplay(+e.target.dataset.rid)));
+  el.querySelectorAll('.history-share-btn').forEach(b=>b.addEventListener('click', e=>{
+    const id = +e.target.dataset.rid;
+    const url = location.origin + location.pathname + '#replay=' + id;
+    (navigator.clipboard?.writeText(url) || Promise.reject())
+      .then(()=>toast('Replay link copied!'))
+      .catch(()=>{
+        // Fallback: show the URL in the toast
+        toast(url);
+      });
+  }));
 }
 async function playHistoryReplay(raceId){
   try {
@@ -2228,6 +2245,17 @@ setRole('viewer');
 renderWheelChips();
 loadWheelHistory();
 connectSocket();
+
+// Deep-link: /#replay=<id> auto-loads that race into the replay view
+(function handleReplayLink(){
+  const m = /#replay=(\d+)/.exec(location.hash);
+  if(!m) return;
+  const id = +m[1];
+  // Clear the hash so a reload doesn't re-trigger
+  history.replaceState(null, '', location.pathname);
+  // Small delay so the socket state-sync doesn't yank us off the race screen
+  setTimeout(() => playHistoryReplay(id), 250);
+})();
 
 // Autofocus name input
 setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); }, 300);
