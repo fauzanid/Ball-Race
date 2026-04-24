@@ -432,6 +432,96 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .modal input:focus{border-color:var(--accent)}
 .modal-actions{display:flex;gap:8px}
 .modal-actions .btn{flex:1}
+
+/* ═══ LIGHT THEME ═══
+   Race pitch + scoreboard + commentary chyron + podium are kept dark
+   on both themes for broadcast contrast. Only the "app chrome" flips. */
+body[data-theme="light"]{background:#f2efe6;color:#1a1a16}
+body[data-theme="light"] .bg-stadium{
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%,rgba(255,69,0,.1),transparent 60%),
+    radial-gradient(ellipse 80% 60% at 80% 100%,rgba(0,229,255,.06),transparent 60%),
+    linear-gradient(180deg,#f8f5ea 0%,#e8e2d0 100%)
+}
+body[data-theme="light"] .bg-stadium::before{background-image:radial-gradient(rgba(0,0,0,.06) 1px,transparent 1px);opacity:.5}
+body[data-theme="light"] .scanlines{background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.015) 3px,rgba(0,0,0,.015) 4px)}
+body[data-theme="light"] header{background:rgba(248,245,234,.92);border-bottom-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .logo{color:#1a1a16}
+body[data-theme="light"] .icon-btn{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.12);color:#4a4a45}
+body[data-theme="light"] .icon-btn:hover{background:rgba(0,0,0,.08);color:#1a1a16;border-color:rgba(0,0,0,.2)}
+body[data-theme="light"] #tab-bar{background:rgba(255,255,255,.8);border-bottom-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .tab{color:#6b6a62}
+body[data-theme="light"] .tab:hover{color:#1a1a16}
+
+body[data-theme="light"] .panel{background:#ffffff;border-color:rgba(0,0,0,.09);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+body[data-theme="light"] .panel-hd{background:rgba(0,0,0,.02);border-bottom-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .input{background:#ffffff;border-color:rgba(0,0,0,.15);color:#1a1a16}
+body[data-theme="light"] .input::placeholder{color:#8a8a85}
+body[data-theme="light"] .team-add .input{background:rgba(255,69,0,.04);border-color:rgba(255,69,0,.5)}
+body[data-theme="light"] .team-add .input:focus{background:rgba(255,69,0,.08)}
+body[data-theme="light"] .racer-chip{background:#fafaf5;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .racer-chip:hover{border-color:rgba(0,0,0,.2)}
+body[data-theme="light"] .racer-chip-num{color:var(--accent)}
+body[data-theme="light"] .empty-team{border-color:rgba(0,0,0,.1);color:#6b6a62}
+body[data-theme="light"] .bulk-box{background:rgba(0,0,0,.02);border-top-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .bulk-box textarea{background:#ffffff;border-color:rgba(0,0,0,.1);color:#1a1a16}
+body[data-theme="light"] .duration-slider{background:rgba(0,0,0,.12)}
+body[data-theme="light"] .duration-preset{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.08);color:#4a4a45}
+body[data-theme="light"] .duration-preset:hover:not(.active){border-color:rgba(0,0,0,.22)}
+body[data-theme="light"] .skin-tile{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .skin-tile.active{background:rgba(255,69,0,.08)}
+body[data-theme="light"] .toggle{background:rgba(0,0,0,.15)}
+body[data-theme="light"] .toggle::after{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+body[data-theme="light"] .hero-strip{border-bottom-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .hero-title{color:#1a1a16}
+body[data-theme="light"] .hero-meta,body[data-theme="light"] .hero-kicker{color:#4a4a45}
+body[data-theme="light"] .setting-label{color:#1a1a16}
+body[data-theme="light"] .setting-hint{color:#6b6a62}
+
+/* Kick-off bar fade to light */
+body[data-theme="light"] .kick-off-row{background:linear-gradient(180deg,transparent,rgba(242,239,230,.9) 40%,rgba(242,239,230,.98))}
+body[data-theme="light"] .kick-off-row .meta{color:#4a4a45}
+
+/* Viewer lobby */
+body[data-theme="light"] .v-title{color:#1a1a16}
+body[data-theme="light"] .v-sub,body[data-theme="light"] .v-label{color:#4a4a45}
+body[data-theme="light"] .v-status-card{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .v-status-text{color:#1a1a16}
+body[data-theme="light"] .v-lineup{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .v-racer{background:#fafaf5;border-color:rgba(0,0,0,.08)}
+
+/* Buttons */
+body[data-theme="light"] .btn-s,body[data-theme="light"] .btn-ghost{background:#ffffff;color:#1a1a16;border-color:rgba(0,0,0,.15)}
+body[data-theme="light"] .btn-s:hover,body[data-theme="light"] .btn-ghost:hover{background:#f0ede3;color:#0e0e0c;border-color:rgba(0,0,0,.25)}
+body[data-theme="light"] .btn-dark{background:#1a1a16;color:#fff}
+
+/* Tool tabs (wheel, history, teams) */
+body[data-theme="light"] .tool-title{color:#1a1a16}
+body[data-theme="light"] .name-chips{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .chip{background:rgba(0,0,0,.05);color:#1a1a16}
+body[data-theme="light"] .add-row input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .empty-msg{color:#6b6a62}
+body[data-theme="light"] .wheel-history-section{border-top-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .wheel-hist-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .wheel-hist-summary:hover{background:rgba(0,0,0,.03)}
+body[data-theme="light"] .wheel-hist-meta{color:#6b6a62}
+body[data-theme="light"] .wheel-hist-label{border-top-color:rgba(0,0,0,.06);color:#8a8a85}
+body[data-theme="light"] .wheel-hist-chip{background:rgba(0,0,0,.05);color:#1a1a16}
+body[data-theme="light"] .wheel-viewer-note{color:#8a8a85}
+
+/* History tab */
+body[data-theme="light"] .history-item{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .history-players{color:#4a4a45}
+body[data-theme="light"] .history-date{color:#8a8a85}
+
+/* Results / podium keep most bits dark for contrast */
+body[data-theme="light"] .result-row{background:#ffffff;border-color:rgba(0,0,0,.08);color:#1a1a16}
+body[data-theme="light"] .result-row .name{color:#1a1a16}
+body[data-theme="light"] .result-row .rank,body[data-theme="light"] .result-row .time{color:#6b6a62}
+body[data-theme="light"] .results-title{color:#6b6a62}
+body[data-theme="light"] .podium-title{color:#1a1a16}
+
+/* Modal stays dark for focus */
 </style>
 </head>
 <body>
@@ -451,6 +541,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
     <span class="logo"><span class="accent">Ball</span> Race <span style="font-size:.7em;color:var(--ink-200)">'26</span></span>
     <div class="header-right">
       <span class="admin-badge-head" id="admin-badge" style="display:none">ADMIN</span>
+      <button class="icon-btn" id="theme-btn" title="Toggle theme">🌙</button>
       <button class="icon-btn" id="header-sound-btn" title="Toggle Sound">🔊</button>
       <button class="icon-btn" id="admin-btn" title="Admin Login">🔒</button>
     </div>
@@ -2636,6 +2727,22 @@ if('serviceWorker' in navigator){
 // ═══════════════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════════════
+// ═══ THEME ═══
+function applyTheme(theme){
+  document.body.setAttribute('data-theme', theme);
+  const btn = $('theme-btn');
+  if(btn){
+    btn.textContent = theme === 'light' ? '☀️' : '🌙';
+    btn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  }
+  localStorage.setItem('br-theme', theme);
+}
+$('theme-btn').addEventListener('click', () => {
+  const cur = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  applyTheme(cur === 'light' ? 'dark' : 'light');
+});
+applyTheme(localStorage.getItem('br-theme') === 'light' ? 'light' : 'dark');
+
 sfx.enabled = settings.sound;
 applySettings();
 renderSkinPicker();
