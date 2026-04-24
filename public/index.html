@@ -63,7 +63,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 @keyframes live-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.8)}}
 
 /* Role strip (admin) */
-.role-strip{position:fixed;top:0;left:0;right:0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:6px 20px;background:linear-gradient(90deg,var(--accent),#ff7638);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid rgba(0,0,0,.15);box-shadow:0 4px 20px rgba(0,0,0,.3);display:none}
+.role-strip{display:none;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:4px 16px;background:linear-gradient(90deg,var(--accent),#ff7638);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:10px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1px solid rgba(0,0,0,.15)}
 .role-strip.active{display:flex}
 .role-strip-l{display:flex;align-items:center;gap:12px;min-width:0}
 .role-strip-badge{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;background:var(--ink-900);color:var(--accent);border-radius:3px;font-size:11px}
@@ -109,45 +109,39 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .ticker-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
 
 /* ═══ SETUP SCREEN ═══ */
-#setup-screen{padding:28px 48px 120px}
-.setup-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.7fr);gap:40px;align-items:start}
-.setup-wrap>*{min-width:0}
-@media(max-width:1024px){#setup-screen{padding:24px 20px 140px}.setup-wrap{grid-template-columns:1fr;gap:24px}}
-@media(max-width:640px){#setup-screen{padding:16px 14px 160px}.setup-wrap{gap:18px}}
+#setup-screen{padding:24px 20px 88px;justify-content:center}
+.setup-wrap{width:100%;max-width:780px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+@media(max-width:640px){#setup-screen{padding:16px 12px 100px}.setup-wrap{gap:12px}}
 
-.hero-col{position:sticky;top:32px;min-width:0}
-@media(max-width:1024px){.hero-col{position:static;order:2}}
-.hero-kicker{display:flex;align-items:center;gap:12px;margin-bottom:24px;font-family:var(--font-cond);font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-200)}
-.hero-kicker .hr{flex:1;height:1px;background:rgba(255,255,255,.2);max-width:80px}
-.hero-title{font-family:var(--font-display);font-style:italic;font-size:clamp(44px,7.5vw,112px);line-height:.88;letter-spacing:-.02em;text-transform:uppercase;margin:0;color:var(--ink-50)}
-.hero-title .accent{color:var(--accent);display:block}
-.hero-title .underscore{display:inline-block;width:.6em;height:.14em;background:var(--accent);vertical-align:middle;margin:0 .08em}
-.hero-blurb{margin-top:20px;max-width:480px;font-size:16px;line-height:1.6;color:var(--ink-200)}
-.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin-top:32px;background:rgba(255,255,255,.08);border-radius:var(--r-md);overflow:hidden}
-@media(max-width:420px){.hero-stats{grid-template-columns:1fr 1fr}.hero-stats .hero-stat:nth-child(3){grid-column:1/-1}}
-.hero-stat{background:rgba(0,0,0,.4);padding:16px 18px}
-.hero-stat-n{font-family:var(--font-display);font-style:italic;font-size:28px;color:var(--accent);line-height:1}
-.hero-stat-l{font-family:var(--font-cond);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);margin-top:6px}
+/* Compact hero strip (single row on desktop, stacked on mobile) */
+.hero-strip{display:flex;flex-direction:column;gap:6px;padding:6px 2px 10px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:4px}
+.hero-kicker{display:flex;align-items:center;gap:12px;font-family:var(--font-cond);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-200)}
+.hero-title{font-family:var(--font-display);font-style:italic;font-size:clamp(36px,6.5vw,68px);line-height:.9;letter-spacing:-.02em;text-transform:uppercase;margin:0;color:var(--ink-50);display:flex;align-items:baseline;gap:.12em;flex-wrap:wrap}
+.hero-title .accent{color:var(--accent)}
+.hero-title .accent-small{color:var(--ink-200);font-size:.5em;letter-spacing:.08em}
+.hero-meta{display:flex;align-items:center;gap:10px;font-family:var(--font-cond);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-200);flex-wrap:wrap}
+.hero-meta strong{color:var(--accent);font-weight:700;font-size:14px}
+.hero-meta .sep{opacity:.5}
 
 /* Panels */
 .panel{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden}
-.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);flex-wrap:wrap;gap:8px}
-.panel-hd-title{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-style:italic;font-size:15px;letter-spacing:.04em;text-transform:uppercase}
-.panel-hd-badge{display:inline-block;min-width:22px;text-align:center;padding:2px 8px;background:var(--accent);color:var(--ink-900);font-family:var(--font-mono);font-size:11px;font-weight:700;border-radius:3px}
-.panel-hd-actions{display:flex;gap:6px;flex-wrap:wrap}
-.step-badge{display:inline-block;padding:3px 8px;background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:11px;letter-spacing:.04em;border-radius:3px;margin-right:8px}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.06);background:rgba(0,0,0,.3);gap:8px}
+.panel-hd-title{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.panel-hd-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 7px;background:var(--accent);color:var(--ink-900);font-family:var(--font-mono);font-size:11px;font-weight:700;border-radius:3px}
+.step-badge{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:10px;border-radius:50%;margin:0}
 
 /* Team sheet */
-.team-sheet{padding:14px 18px 6px}
-.team-add{display:flex;gap:10px;align-items:stretch;margin-bottom:14px;position:relative;flex-wrap:wrap}
-.team-add .input{flex:1 1 160px;min-width:0;font-family:var(--font-cond);font-weight:700;text-transform:uppercase;letter-spacing:.05em;font-size:16px;padding:16px 18px;border-width:2px;border-color:var(--accent);background:rgba(255,69,0,.06);box-shadow:0 0 0 4px rgba(255,69,0,.12),0 8px 30px -8px rgba(255,69,0,.3)}
-.team-add .input:focus{background:rgba(255,69,0,.1);box-shadow:0 0 0 6px rgba(255,69,0,.18),0 8px 40px -6px rgba(255,69,0,.5)}
-.team-add .input.empty{animation:input-pulse 2s ease-in-out infinite}
-@keyframes input-pulse{0%,100%{box-shadow:0 0 0 4px rgba(255,69,0,.12),0 8px 30px -8px rgba(255,69,0,.3)}50%{box-shadow:0 0 0 10px rgba(255,69,0,.22),0 8px 40px -6px rgba(255,69,0,.6)}}
-.arrow-hint{position:absolute;top:-44px;left:14px;font-family:var(--font-display);font-style:italic;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);display:flex;align-items:center;gap:8px}
-.arrow-hint::after{content:"↓";font-size:20px;animation:arrow-bounce 1s ease-in-out infinite}
-@keyframes arrow-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
-.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;max-height:420px;overflow-y:auto;padding:2px 2px 14px}
+.team-sheet{padding:12px 16px 8px}
+.team-add{display:flex;gap:8px;align-items:stretch;position:relative;flex-wrap:wrap}
+.team-add .input{flex:1 1 220px;min-width:0;font-family:var(--font-cond);font-weight:600;letter-spacing:.03em;font-size:15px;padding:13px 16px;border-width:1.5px;border-color:rgba(255,69,0,.5);background:rgba(255,69,0,.04);box-shadow:0 0 0 3px rgba(255,69,0,.08)}
+.team-add .input:focus{border-color:var(--accent);background:rgba(255,69,0,.08);box-shadow:0 0 0 4px rgba(255,69,0,.15)}
+.team-add .input.empty{animation:input-pulse 2.2s ease-in-out infinite}
+@keyframes input-pulse{0%,100%{box-shadow:0 0 0 3px rgba(255,69,0,.08)}50%{box-shadow:0 0 0 6px rgba(255,69,0,.18)}}
+.arrow-hint{position:absolute;top:-22px;left:4px;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.arrow-hint::after{content:"";display:inline-block;margin-left:4px;width:6px;height:6px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg) translateY(-2px);animation:arrow-bounce 1s ease-in-out infinite}
+@keyframes arrow-bounce{0%,100%{transform:rotate(45deg) translateY(-2px)}50%{transform:rotate(45deg) translateY(2px)}}
+.team-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.team-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;max-height:280px;overflow-y:auto;padding:10px 2px 4px;margin-top:10px;border-top:1px solid rgba(255,255,255,.05)}
 .team-list::-webkit-scrollbar{width:6px}
 .team-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:6px}
 .racer-chip{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 8px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);position:relative;transition:transform .12s,border-color .15s}
@@ -200,12 +194,13 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .toggle.on::after{transform:translateX(20px)}
 
 /* Kick off bar */
-.kick-off-row{position:fixed;bottom:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,transparent,rgba(0,0,0,.9) 30%,rgba(0,0,0,.95));padding:30px 48px 24px;display:flex;justify-content:flex-end;align-items:center;gap:16px;pointer-events:none;flex-wrap:wrap}
-.kick-off-row>*{pointer-events:auto}
-.kick-off-row .meta{margin-right:auto;font-family:var(--font-cond);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);min-width:0}
-.kick-off-btn{font-size:20px;padding:18px 40px;box-shadow:0 8px 0 #c53500,0 16px 50px -10px rgba(255,69,0,.7)}
-.kick-off-btn:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 10px 0 #c53500,0 20px 60px -10px rgba(255,69,0,.8)}
-@media(max-width:640px){.kick-off-row{padding:18px 14px 14px;flex-direction:column-reverse;gap:10px}.kick-off-row .meta{width:100%;margin-right:0;text-align:center;font-size:11px;letter-spacing:.1em}.kick-off-btn{width:100%;font-size:18px;padding:16px 20px}.kick-off-row .btn-ghost{width:100%}}
+.kick-off-row{position:fixed;bottom:0;left:0;right:0;z-index:50;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85) 40%,rgba(0,0,0,.95));padding:16px 20px 14px;display:flex;justify-content:center;align-items:center;gap:16px;pointer-events:none;flex-wrap:wrap}
+.kick-off-inner{display:flex;align-items:center;gap:16px;pointer-events:auto;flex-wrap:wrap;width:100%;max-width:780px;justify-content:space-between}
+.kick-off-row .meta{font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-200);min-width:0;flex:1;text-align:left}
+.kick-off-btn{font-size:16px;padding:14px 28px;box-shadow:0 5px 0 #c53500,0 10px 30px -8px rgba(255,69,0,.55)}
+.kick-off-btn:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 6px 0 #c53500,0 14px 40px -8px rgba(255,69,0,.7)}
+.kick-off-btn:disabled{background:#2a2a25;color:#6b6a62;box-shadow:0 3px 0 #15140f}
+@media(max-width:640px){.kick-off-row{padding:12px 12px}.kick-off-inner{flex-direction:column-reverse;gap:8px;align-items:stretch}.kick-off-row .meta{text-align:center;font-size:11px}.kick-off-btn{width:100%;font-size:15px;padding:13px 20px}}
 
 /* Viewer lobby */
 .viewer-lobby{padding:28px 40px}
@@ -246,11 +241,15 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes clock-pulse{50%{opacity:.6}}
 .race-topbar-r{display:flex;justify-content:flex-end;gap:8px}
 
-.track-wrap{flex:1;padding:24px 28px 14px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;min-height:0}
+.track-wrap{flex:1;padding:20px 24px 10px;display:flex;gap:16px;min-height:0}
 .track-wrap>*{min-width:0}
-@media(max-width:900px){.track-wrap{grid-template-columns:minmax(0,1fr);padding:16px 14px 10px}.scoreboard-col{display:none}}
-
-.pitch-wrap{position:relative;background:linear-gradient(180deg,#0a1f0f,#15411f);border:1px solid rgba(124,255,0,.2);border-radius:var(--r-lg);overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.4);min-height:320px}
+.pitch-wrap{flex:1;min-width:0;position:relative;background:linear-gradient(180deg,#0a1f0f,#15411f);border:1px solid rgba(124,255,0,.2);border-radius:var(--r-lg);overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.4);min-height:340px}
+.scoreboard-col{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+@media(max-width:900px){
+  .track-wrap{flex-direction:column;padding:14px 14px 8px;gap:12px}
+  .scoreboard-col{width:100%;max-height:180px}
+  .pitch-wrap{min-height:260px}
+}
 #race-canvas{display:block;width:100%;height:100%;position:absolute;inset:0}
 
 .countdown-overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.75);z-index:10;backdrop-filter:blur(6px)}
@@ -259,8 +258,7 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes count-pop{0%{transform:scale(2);opacity:0}30%{transform:scale(1);opacity:1}100%{transform:scale(.6);opacity:0}}
 
 /* Scoreboard */
-.scoreboard-col{display:flex;flex-direction:column;gap:12px}
-.scoreboard{background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden;flex:1;display:flex;flex-direction:column}
+.scoreboard{background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0}
 .scoreboard-hd{padding:10px 14px;background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:14px;letter-spacing:.04em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
 .scoreboard-list{flex:1;overflow-y:auto;padding:4px}
 .score-row{display:grid;grid-template-columns:28px 28px 1fr 50px;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--font-cond);transition:background .2s}
@@ -425,91 +423,89 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
   <div id="setup-screen" class="screen active">
     <!-- Admin view -->
     <div class="setup-wrap" id="admin-setup" style="display:none">
-      <!-- LEFT: Hero -->
-      <div class="hero-col">
+      <!-- Compact hero strip -->
+      <div class="hero-strip">
         <div class="hero-kicker">
           <span class="live-badge">LIVE</span>
           <span>Match Day · Pitch 01</span>
-          <span class="hr"></span>
         </div>
         <h1 class="hero-title">
-          <span>Ball</span>
-          <span class="accent">Race<span class="underscore"></span></span>
-          <span>'26</span>
+          <span>Ball</span><span class="accent">Race</span><span class="accent-small">'26</span>
         </h1>
-        <p class="hero-blurb">
-          Line them up. Kick them off. Add a squad of names and watch the balls sprint, bump, and chaos their way to the whistle. Perfect for classrooms, draft nights, whose-round-is-it, or picking a winner when nobody can agree.
-        </p>
-        <div class="hero-stats">
-          <div class="hero-stat"><div class="hero-stat-n mono" id="stat-racers">00</div><div class="hero-stat-l">Racers</div></div>
-          <div class="hero-stat"><div class="hero-stat-n mono" id="stat-duration">20s</div><div class="hero-stat-l">Duration</div></div>
-          <div class="hero-stat"><div class="hero-stat-n mono">1v∞</div><div class="hero-stat-l">Format</div></div>
-        </div>
-        <div style="margin-top:28px;overflow:hidden;border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1);padding:10px 0">
-          <div class="ticker" id="hero-ticker"></div>
+        <div class="hero-meta">
+          <span><strong id="stat-racers">0</strong> racers</span>
+          <span class="sep">·</span>
+          <span><strong id="stat-duration">20s</strong> match</span>
+          <span class="sep">·</span>
+          <span>Single race</span>
         </div>
       </div>
 
-      <!-- RIGHT: Controls -->
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <!-- Team Sheet -->
+      <!-- Team Sheet -->
+      <div class="panel">
+        <div class="panel-hd">
+          <div class="panel-hd-title">
+            <span class="step-badge">1</span>
+            <span>Team Sheet</span>
+          </div>
+          <span class="panel-hd-badge" id="team-count">0</span>
+        </div>
+        <div class="team-sheet">
+          <div class="team-add">
+            <div class="arrow-hint" id="arrow-hint">Type a name here ↓</div>
+            <input class="input empty" id="name-input" placeholder="Type a player name … then press ENTER" maxlength="24">
+            <button class="btn btn-primary btn-sm" id="add-btn">+ Add</button>
+          </div>
+          <div class="team-actions">
+            <button class="btn btn-ghost btn-xs" id="demo-btn">+ Demo Lineup</button>
+            <button class="btn btn-ghost btn-xs" id="bulk-toggle-btn">⇡ Bulk Add</button>
+            <button class="btn btn-ghost btn-xs" id="shuffle-btn">Shuffle Colors</button>
+            <button class="btn btn-ghost btn-xs" id="clear-btn">Clear</button>
+          </div>
+          <div id="team-list-wrap"></div>
+        </div>
+        <div class="bulk-box" id="bulk-box" style="display:none">
+          <div class="label" style="margin-bottom:8px">Bulk Import · One name per line</div>
+          <textarea id="bulk-input" placeholder="Messi&#10;Mbappé&#10;Haaland&#10;Salah"></textarea>
+          <div class="bulk-actions">
+            <button class="btn btn-primary btn-sm" id="bulk-apply">Add All</button>
+            <button class="btn btn-ghost btn-sm" id="bulk-cancel">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Duration + Skin -->
+      <div class="control-grid">
         <div class="panel">
           <div class="panel-hd">
-            <div class="panel-hd-title"><span class="step-badge">1</span><span>Team Sheet</span><span class="panel-hd-badge" id="team-count">0</span></div>
-            <div class="panel-hd-actions">
-              <button class="btn btn-ghost btn-xs" id="demo-btn">+ Demo</button>
-              <button class="btn btn-ghost btn-xs" id="shuffle-btn">Shuffle Colors</button>
-              <button class="btn btn-ghost btn-xs" id="clear-btn">Clear</button>
-            </div>
+            <div class="panel-hd-title"><span class="step-badge">2</span>Match Length</div>
           </div>
-          <div class="team-sheet">
-            <div class="team-add">
-              <div class="arrow-hint" id="arrow-hint"><span class="step-badge">STEP 1</span>Type a name here</div>
-              <input class="input empty" id="name-input" placeholder="Type a player name … then press ENTER" maxlength="24">
-              <button class="btn btn-primary btn-sm" id="add-btn">+ Add</button>
-              <button class="btn btn-ghost btn-sm" id="bulk-toggle-btn">⇡ Bulk</button>
+          <div class="duration-slot">
+            <div class="duration-row">
+              <span class="duration-num mono" id="dur-num">20</span>
+              <span class="duration-unit">Seconds</span>
             </div>
-            <div id="team-list-wrap"></div>
-          </div>
-          <div class="bulk-box" id="bulk-box" style="display:none">
-            <div class="label" style="margin-bottom:8px">Bulk Import · One name per line</div>
-            <textarea id="bulk-input" placeholder="Messi&#10;Mbappé&#10;Haaland&#10;Salah"></textarea>
-            <div class="bulk-actions">
-              <button class="btn btn-primary btn-sm" id="bulk-apply">Add All</button>
-              <button class="btn btn-ghost btn-sm" id="bulk-cancel">Cancel</button>
+            <input type="range" class="duration-slider" id="dur-slider" min="5" max="90" step="1" value="20">
+            <div class="duration-presets" id="dur-presets">
+              <button class="duration-preset" data-val="10">10s</button>
+              <button class="duration-preset active" data-val="20">20s</button>
+              <button class="duration-preset" data-val="30">30s</button>
+              <button class="duration-preset" data-val="60">60s</button>
             </div>
           </div>
         </div>
-
-        <!-- Duration + Skin -->
-        <div class="control-grid">
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-hd-title"><span class="step-badge">2</span>Match Length</div></div>
-            <div class="duration-slot">
-              <div class="duration-row">
-                <span class="duration-num mono" id="dur-num">20</span>
-                <span class="duration-unit">Seconds</span>
-              </div>
-              <input type="range" class="duration-slider" id="dur-slider" min="5" max="90" step="1" value="20">
-              <div class="duration-presets" id="dur-presets">
-                <button class="duration-preset" data-val="10">10s</button>
-                <button class="duration-preset active" data-val="20">20s</button>
-                <button class="duration-preset" data-val="30">30s</button>
-                <button class="duration-preset" data-val="60">60s</button>
-              </div>
-            </div>
-          </div>
-          <div class="panel">
-            <div class="panel-hd"><div class="panel-hd-title"><span class="step-badge">3</span>Ball Skin</div></div>
-            <div class="skin-picker" id="skin-picker"></div>
-          </div>
-        </div>
-
         <div class="panel">
-          <div class="setting-row">
-            <div><div class="setting-label">Fair Mode</div><div class="setting-hint">Balances wins over time</div></div>
-            <button class="toggle" id="fair-toggle"></button>
+          <div class="panel-hd">
+            <div class="panel-hd-title"><span class="step-badge">3</span>Ball Skin</div>
           </div>
+          <div class="skin-picker" id="skin-picker"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="setting-row">
+          <div><div class="setting-label">Fair Mode</div><div class="setting-hint">Balances wins over time</div></div>
+          <button class="toggle" id="fair-toggle"></button>
         </div>
       </div>
     </div>
@@ -685,8 +681,10 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 
   <!-- Admin Kick-Off bar (shown on admin setup) -->
   <div class="kick-off-row" id="kick-off-row" style="display:none">
-    <div class="meta" id="kick-off-meta">← Add at least 2 names to enable kick-off</div>
-    <button class="btn btn-primary kick-off-btn" id="start-btn" disabled>⚽ Kick Off (add names)</button>
+    <div class="kick-off-inner">
+      <div class="meta" id="kick-off-meta">Add at least 2 names to enable kick-off</div>
+      <button class="btn btn-primary kick-off-btn" id="start-btn" disabled>⚽ Kick Off</button>
+    </div>
   </div>
 </div>
 
