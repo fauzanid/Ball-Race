@@ -395,9 +395,21 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes spin-dot{to{transform:rotate(360deg)}}
 .wheel-history-section{margin-top:18px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px}
 .wheel-history-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.wheel-hist-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 12px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);margin-bottom:4px}
-.wheel-hist-winner{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-2)}
+.wheel-hist-row{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);margin-bottom:6px;overflow:hidden;transition:border-color .15s}
+.wheel-hist-row.open{border-color:rgba(255,215,64,.35)}
+.wheel-hist-summary{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer;user-select:none}
+.wheel-hist-summary:hover{background:rgba(255,255,255,.03)}
+.wheel-hist-winner{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;text-transform:uppercase;color:var(--accent-2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .wheel-hist-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-200);text-transform:uppercase;white-space:nowrap}
+.wheel-hist-toggle{font-size:12px;color:var(--ink-400);transition:transform .2s}
+.wheel-hist-row.open .wheel-hist-toggle{transform:rotate(180deg);color:var(--accent-2)}
+.wheel-hist-details{display:grid;grid-template-rows:0fr;transition:grid-template-rows .25s ease}
+.wheel-hist-row.open .wheel-hist-details{grid-template-rows:1fr}
+.wheel-hist-details>*{overflow:hidden}
+.wheel-hist-label{font-family:var(--font-cond);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);padding:0 14px 4px;padding-top:4px;border-top:1px solid rgba(255,255,255,.05)}
+.wheel-hist-chips{display:flex;flex-wrap:wrap;gap:4px;padding:6px 14px 12px}
+.wheel-hist-chip{font-family:var(--font-cond);font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--ink-200)}
+.wheel-hist-chip.winner{background:rgba(255,215,64,.18);color:var(--accent-2);border-left-color:var(--accent-2) !important;font-weight:700}
 
 
 .history-item{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px}
@@ -2485,14 +2497,30 @@ function renderWheelHistory(){
   const el = $('wheel-history');
   if(!el) return;
   if(!wheelHistory.length){ el.innerHTML = '<div class="empty-msg">No spins yet</div>'; return; }
-  el.innerHTML = wheelHistory.map(h => {
+  el.innerHTML = wheelHistory.map((h, idx) => {
     const d = new Date(h.created_at);
     const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    return `<div class="wheel-hist-row">
-      <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
-      <span class="wheel-hist-meta">${h.names.length} names · ${ds}</span>
+    // Put the winner first, then the rest in the original wheel order (winner dedup'd)
+    const names = Array.isArray(h.names) ? h.names : [];
+    const chips = names.map((n, i) => {
+      const isWinner = n === h.winner;
+      return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${escapeHtml(n)}</span>`;
+    }).join('');
+    return `<div class="wheel-hist-row" data-idx="${idx}">
+      <div class="wheel-hist-summary">
+        <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
+        <span class="wheel-hist-meta">${names.length} names · ${ds}</span>
+        <span class="wheel-hist-toggle" aria-hidden="true">▾</span>
+      </div>
+      <div class="wheel-hist-details">
+        <div class="wheel-hist-label">Wheel entries</div>
+        <div class="wheel-hist-chips">${chips}</div>
+      </div>
     </div>`;
   }).join('');
+  el.querySelectorAll('.wheel-hist-summary').forEach(s => {
+    s.addEventListener('click', () => s.parentElement.classList.toggle('open'));
+  });
 }
 async function clearWheelHistory(){
   if(role !== 'admin'){ toast('Admin only'); return; }
