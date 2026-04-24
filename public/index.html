@@ -1117,7 +1117,11 @@ if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch
 const logoImg = new Image();
 let logoLoaded = false;
 logoImg.onload = () => { logoLoaded = true; if (raceActive || viewerRacing || replayMode) drawRace(); };
-logoImg.onerror = () => { logoLoaded = false; };
+logoImg.onerror = () => {
+  // Fallback to SVG if PNG not found
+  logoImg.onerror = () => { logoLoaded = false; };
+  logoImg.src = 'logo.svg';
+};
 logoImg.src = 'logo.png';
 
 // ===== INIT =====
