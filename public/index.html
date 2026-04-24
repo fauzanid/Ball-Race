@@ -1931,7 +1931,17 @@ $('sound-btn').addEventListener('click', toggleSound);
 // ═══════════════════════════════════════════════════════════════════════════
 // PWA
 // ═══════════════════════════════════════════════════════════════════════════
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  // When a new SW takes control (after a deploy), reload once so the user
+  // gets the fresh HTML without manually clearing the cache.
+  let swRefreshing = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if(swRefreshing) return;
+    swRefreshing = true;
+    location.reload();
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // INIT

@@ -1,8 +1,9 @@
-const CACHE = 'football-race-v1';
+const CACHE = 'ball-race-v2';
 const ASSETS = [
   './',
   './index.html',
-  'https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@400;500;600;700&display=swap',
+  './logo.svg',
+  './manifest.json',
 ];
 
 self.addEventListener('install', e => {
@@ -11,18 +12,50 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).then(resp => {
-      if (resp.ok && e.request.method === 'GET') {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  const accept = req.headers.get('accept') || '';
+  const isHTML = req.mode === 'navigate' || accept.includes('text/html');
+  const isAPI = url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io/');
+
+  // Never intercept API or socket.io — always hit network
+  if (isAPI) return;
+
+  if (isHTML) {
+    // Network-first for HTML so updates are visible immediately.
+    // Only fall back to cache when offline.
+    e.respondWith(
+      fetch(req).then(resp => {
         const clone = resp.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-      }
-      return resp;
-    }).catch(() => caches.match('./index.html')))
+        caches.open(CACHE).then(c => c.put(req, clone));
+        return resp;
+      }).catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Stale-while-revalidate for everything else (fonts, images, CSS, JS).
+  // Serve cached version instantly but refresh in the background.
+  e.respondWith(
+    caches.match(req).then(cached => {
+      const fetchPromise = fetch(req).then(resp => {
+        if (resp && resp.ok) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(req, clone));
+        }
+        return resp;
+      }).catch(() => cached);
+      return cached || fetchPromise;
+    })
   );
 });
