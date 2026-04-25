@@ -72,8 +72,9 @@ input,textarea,select{font-family:inherit;color:inherit}
 
 /* Header */
 header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(5,5,4,.9);backdrop-filter:blur(10px);z-index:10;flex-shrink:0}
-.logo{font-family:var(--font-display);font-style:italic;font-size:1.2rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-50)}
-.logo .accent{color:var(--accent)}
+.logo{display:inline-flex;align-items:center;line-height:0;text-decoration:none}
+.logo img{height:52px;width:auto;display:block}
+@media(max-width:520px){.logo img{height:38px}}
 .header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
 .icon-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--ink-200);width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .icon-btn:hover{background:rgba(255,255,255,.08);color:var(--ink-50);border-color:rgba(255,255,255,.2)}
@@ -365,8 +366,38 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @keyframes confetti-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(120vh) rotate(720deg);opacity:0}}
 
 /* ═══ WHEEL / TEAMS / HISTORY — styled to match ═══ */
-#wheel-screen,#history-screen{padding:28px 40px;overflow-y:auto}
-@media(max-width:640px){#wheel-screen,#history-screen{padding:18px 16px}}
+#wheel-screen,#history-screen,#track-screen{padding:28px 40px;overflow-y:auto}
+@media(max-width:640px){#wheel-screen,#history-screen,#track-screen{padding:18px 16px}}
+.track-lookup{background:rgba(10,10,8,.5);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:16px;margin-bottom:24px}
+.track-result{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.track-result-empty{font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);text-align:center;padding:14px}
+.track-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--accent);border-radius:var(--r-md);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
+.track-card-code{font-family:var(--font-mono);font-weight:700;font-size:14px;letter-spacing:.04em;color:var(--ink-50);word-break:break-all}
+.track-card-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-300);grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px}
+.track-card-meta .sep{opacity:.4}
+.track-card-note{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);grid-column:1/-1;font-style:italic;opacity:.85}
+.track-card-copy{font-size:11px;cursor:pointer;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ink-100);padding:5px 9px;border-radius:6px;font-family:var(--font-cond);text-transform:uppercase;letter-spacing:.08em}
+.track-card-copy:hover{background:rgba(255,255,255,.12)}
+.track-section-hd{display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px}
+.track-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.track-form input{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;color:var(--ink-50);font-family:var(--font-cond);font-weight:600;letter-spacing:.04em;outline:none}
+.track-form input:focus{border-color:var(--accent)}
+.track-form #track-save-btn{grid-column:1/-1}
+@media(max-width:520px){.track-form{grid-template-columns:1fr}}
+.track-row{display:grid;grid-template-columns:1fr auto;gap:6px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);padding:10px 14px;margin-bottom:6px;align-items:center}
+.track-row-main{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline}
+.track-row-phone{font-family:var(--font-cond);font-weight:700;font-size:13px;letter-spacing:.06em;color:var(--accent-2)}
+.track-row-code{font-family:var(--font-mono);font-size:12px;color:var(--ink-100)}
+.track-row-meta{font-family:var(--font-cond);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-400);grid-column:1/-1}
+.track-row-del{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.3);color:#ff8888;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.track-row-del:hover{background:rgba(255,80,80,.2)}
+body[data-theme="light"] .track-lookup{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .track-card{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .track-card-code{color:#1a1a16}
+body[data-theme="light"] .track-card-meta,body[data-theme="light"] .track-row-meta{color:#6b6a62}
+body[data-theme="light"] .track-form input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .track-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .track-row-code{color:#1a1a16}
 .tool-wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
 .tool-title .accent{color:var(--accent)}
@@ -378,6 +409,12 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .add-row{display:flex;gap:8px;flex-wrap:wrap}
 .add-row input{flex:1 1 160px;min-width:0;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;color:var(--ink-50);font-family:var(--font-cond);font-weight:600;letter-spacing:.04em;text-transform:uppercase;outline:none}
 .add-row input:focus{border-color:var(--accent)}
+.add-row input[type="number"]{flex:0 1 110px;text-align:center}
+.range-sep{align-self:center;color:var(--ink-300);font-family:var(--font-cond);font-weight:700;letter-spacing:.1em}
+.wheel-mode-toggle{display:flex;gap:6px;margin-bottom:10px;background:rgba(10,10,8,.5);padding:4px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.06)}
+.wheel-mode-btn{flex:1;padding:8px 12px;background:transparent;border:none;color:var(--ink-300);border-radius:6px;cursor:pointer;font-family:var(--font-cond);font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:12px;transition:all .18s}
+.wheel-mode-btn:hover:not(.active){color:var(--ink-50);background:rgba(255,255,255,.04)}
+.wheel-mode-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(255,69,0,.4)}
 .empty-msg{font-size:12px;color:var(--ink-400);padding:14px;text-align:center;font-family:var(--font-cond);letter-spacing:.1em;text-transform:uppercase}
 
 .wheel-canvas-wrap{position:relative;width:100%;aspect-ratio:1;max-width:440px;margin:0 auto;padding:12px}
@@ -446,7 +483,7 @@ body[data-theme="light"] .bg-stadium{
 body[data-theme="light"] .bg-stadium::before{background-image:radial-gradient(rgba(0,0,0,.06) 1px,transparent 1px);opacity:.5}
 body[data-theme="light"] .scanlines{background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.015) 3px,rgba(0,0,0,.015) 4px)}
 body[data-theme="light"] header{background:rgba(248,245,234,.92);border-bottom-color:rgba(0,0,0,.08)}
-body[data-theme="light"] .logo{color:#1a1a16}
+body[data-theme="light"] .logo img{filter:brightness(.45) saturate(1.6) contrast(1.2)}
 body[data-theme="light"] .icon-btn{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.12);color:#4a4a45}
 body[data-theme="light"] .icon-btn:hover{background:rgba(0,0,0,.08);color:#1a1a16;border-color:rgba(0,0,0,.2)}
 body[data-theme="light"] #tab-bar{background:rgba(255,255,255,.8);border-bottom-color:rgba(0,0,0,.08)}
@@ -500,6 +537,10 @@ body[data-theme="light"] .tool-title{color:#1a1a16}
 body[data-theme="light"] .name-chips{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .chip{background:rgba(0,0,0,.05);color:#1a1a16}
 body[data-theme="light"] .add-row input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .wheel-mode-toggle{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .wheel-mode-btn{color:#6b6a62}
+body[data-theme="light"] .wheel-mode-btn:hover:not(.active){background:rgba(0,0,0,.05);color:#1a1a16}
+body[data-theme="light"] .range-sep{color:#6b6a62}
 body[data-theme="light"] .empty-msg{color:#6b6a62}
 body[data-theme="light"] .wheel-history-section{border-top-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .wheel-hist-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
@@ -532,25 +573,26 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   <div class="role-strip" id="role-strip">
     <div class="role-strip-l">
       <span class="role-strip-badge">★ Admin</span>
-      <span>You control the match</span>
+      <span>Kamu yang pegang kendali</span>
     </div>
-    <button class="icon-btn" id="sound-btn" title="Toggle Sound" style="width:28px;height:28px;font-size:13px">🔊</button>
+    <button class="icon-btn" id="sound-btn" title="Suara" style="width:28px;height:28px;font-size:13px">🔊</button>
   </div>
 
   <header>
-    <span class="logo"><span class="accent">Ball</span> Race <span style="font-size:.7em;color:var(--ink-200)">'26</span></span>
+    <a class="logo" href="#" aria-label="Karboluxe"><img src="logo.svg" alt="Karboluxe" /></a>
     <div class="header-right">
       <span class="admin-badge-head" id="admin-badge" style="display:none">ADMIN</span>
-      <button class="icon-btn" id="theme-btn" title="Toggle theme">🌙</button>
-      <button class="icon-btn" id="header-sound-btn" title="Toggle Sound">🔊</button>
-      <button class="icon-btn" id="admin-btn" title="Admin Login">🔒</button>
+      <button class="icon-btn" id="theme-btn" title="Ganti tema">🌙</button>
+      <button class="icon-btn" id="header-sound-btn" title="Suara">🔊</button>
+      <button class="icon-btn" id="admin-btn" title="Login Admin">🔒</button>
     </div>
   </header>
 
   <nav id="tab-bar">
-    <button class="tab active" data-tab="race">⚽ Race</button>
-    <button class="tab" data-tab="wheel">🎡 Wheel</button>
-    <button class="tab" data-tab="history">📋 History</button>
+    <button class="tab active" data-tab="race">⚽ Balapan</button>
+    <button class="tab" data-tab="wheel">🎡 Roda</button>
+    <button class="tab" data-tab="track">📦 Track</button>
+    <button class="tab" data-tab="history">📋 Riwayat</button>
   </nav>
 
   <!-- SETUP -->
@@ -561,17 +603,17 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="hero-strip">
         <div class="hero-kicker">
           <span class="live-badge">LIVE</span>
-          <span>Match Day · Pitch 01</span>
+          <span>Hari Pertandingan · Lapangan 01</span>
         </div>
         <h1 class="hero-title">
           <span>Ball</span><span class="accent">Race</span><span class="accent-small">'26</span>
         </h1>
         <div class="hero-meta">
-          <span><strong id="stat-racers">0</strong> racers</span>
+          <span><strong id="stat-racers">0</strong> pemain</span>
           <span class="sep">·</span>
-          <span><strong id="stat-duration">20s</strong> match</span>
+          <span><strong id="stat-duration">20s</strong> balapan</span>
           <span class="sep">·</span>
-          <span>Single race</span>
+          <span>Satu balapan</span>
         </div>
       </div>
 
@@ -580,30 +622,30 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <div class="panel-hd">
           <div class="panel-hd-title">
             <span class="step-badge">1</span>
-            <span>Team Sheet</span>
+            <span>Daftar Pemain</span>
           </div>
           <span class="panel-hd-badge" id="team-count">0</span>
         </div>
         <div class="team-sheet">
           <div class="team-add">
-            <div class="arrow-hint" id="arrow-hint">Type a name here ↓</div>
-            <input class="input empty" id="name-input" placeholder="Type a player name … then press ENTER" maxlength="24">
-            <button class="btn btn-primary btn-sm" id="add-btn">+ Add</button>
+            <div class="arrow-hint" id="arrow-hint">Ketik nama di sini ↓</div>
+            <input class="input empty" id="name-input" placeholder="Ketik nama pemain … lalu tekan ENTER" maxlength="24">
+            <button class="btn btn-primary btn-sm" id="add-btn">+ Tambah</button>
           </div>
           <div class="team-actions">
-            <button class="btn btn-ghost btn-xs" id="demo-btn">+ Demo Lineup</button>
-            <button class="btn btn-ghost btn-xs" id="bulk-toggle-btn">⇡ Bulk Add</button>
-            <button class="btn btn-ghost btn-xs" id="shuffle-btn">Shuffle Colors</button>
-            <button class="btn btn-ghost btn-xs" id="clear-btn">Clear</button>
+            <button class="btn btn-ghost btn-xs" id="demo-btn">+ Demo Pemain</button>
+            <button class="btn btn-ghost btn-xs" id="bulk-toggle-btn">⇡ Import</button>
+            <button class="btn btn-ghost btn-xs" id="shuffle-btn">Acak Warna</button>
+            <button class="btn btn-ghost btn-xs" id="clear-btn">Hapus</button>
           </div>
           <div id="team-list-wrap"></div>
         </div>
         <div class="bulk-box" id="bulk-box" style="display:none">
-          <div class="label" style="margin-bottom:8px">Bulk Import · One name per line</div>
+          <div class="label" style="margin-bottom:8px">Import Banyak · Satu nama per baris</div>
           <textarea id="bulk-input" placeholder="Messi&#10;Mbappé&#10;Haaland&#10;Salah"></textarea>
           <div class="bulk-actions">
-            <button class="btn btn-primary btn-sm" id="bulk-apply">Add All</button>
-            <button class="btn btn-ghost btn-sm" id="bulk-cancel">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="bulk-apply">Tambah Semua</button>
+            <button class="btn btn-ghost btn-sm" id="bulk-cancel">Batal</button>
           </div>
         </div>
       </div>
@@ -612,12 +654,12 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="control-grid">
         <div class="panel">
           <div class="panel-hd">
-            <div class="panel-hd-title"><span class="step-badge">2</span>Match Length</div>
+            <div class="panel-hd-title"><span class="step-badge">2</span>Durasi Balapan</div>
           </div>
           <div class="duration-slot">
             <div class="duration-row">
               <span class="duration-num mono" id="dur-num">20</span>
-              <span class="duration-unit">Seconds</span>
+              <span class="duration-unit">Detik</span>
             </div>
             <input type="range" class="duration-slider" id="dur-slider" min="5" max="90" step="1" value="20">
             <div class="duration-presets" id="dur-presets">
@@ -630,7 +672,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
         <div class="panel">
           <div class="panel-hd">
-            <div class="panel-hd-title"><span class="step-badge">3</span>Ball Skin</div>
+            <div class="panel-hd-title"><span class="step-badge">3</span>Tampilan Bola</div>
           </div>
           <div class="skin-picker" id="skin-picker"></div>
         </div>
@@ -638,7 +680,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 
       <div class="panel">
         <div class="setting-row">
-          <div><div class="setting-label">Fair Mode</div><div class="setting-hint">Balances wins over time</div></div>
+          <div><div class="setting-label">Mode Adil</div><div class="setting-hint">Menyeimbangkan kemenangan</div></div>
           <button class="toggle" id="fair-toggle"></button>
         </div>
       </div>
@@ -655,17 +697,17 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       </div>
       <div class="v-waiting">
         <div>
-          <div class="v-label">Stand By</div>
-          <h1 class="v-title">WAITING FOR<br><span class="accent">KICK-OFF</span></h1>
-          <p class="v-sub">The admin is setting up the match. You're locked in as a spectator — when the whistle goes, you'll be pitch-side.</p>
+          <div class="v-label">Siap-Siap</div>
+          <h1 class="v-title">MENUNGGU<br><span class="accent">KICK-OFF</span></h1>
+          <p class="v-sub">Admin sedang menyiapkan pertandingan. Kamu terkunci sebagai penonton — saat peluit dibunyikan, kamu akan berada di pinggir lapangan.</p>
           <div class="v-status-card">
             <div class="v-status-dots"><i></i><i></i><i></i></div>
-            <div class="v-status-text" id="v-status-text">Waiting for admin to open the room</div>
+            <div class="v-status-text" id="v-status-text">Menunggu admin membuka ruangan</div>
           </div>
           <div class="v-lineup">
             <div class="v-lineup-hd">
-              <div class="v-lineup-hd-t">Match Sheet</div>
-              <div class="v-lineup-meta" id="v-meta">0 racers · 20s match</div>
+              <div class="v-lineup-hd-t">Daftar Pemain</div>
+              <div class="v-lineup-meta" id="v-meta">0 pemain · 20s balapan</div>
             </div>
             <div id="v-lineup-grid"></div>
           </div>
@@ -686,7 +728,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <div class="race-clock mono" id="race-clock">00:00</div>
       </div>
       <div class="race-topbar-r">
-        <button class="btn btn-ghost btn-sm" id="race-exit-btn">↰ Exit</button>
+        <button class="btn btn-ghost btn-sm" id="race-exit-btn">↰ Keluar</button>
       </div>
     </div>
     <div class="track-wrap">
@@ -697,7 +739,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="scoreboard-col">
         <div class="scoreboard">
           <div class="scoreboard-hd">
-            <span>Live Standings</span>
+            <span>Klasemen Live</span>
             <span id="race-status" class="mono" style="font-size:12px">—</span>
           </div>
           <div class="scoreboard-list" id="scoreboard-list"></div>
@@ -706,9 +748,9 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     </div>
     <div class="commentary-bar">
       <div class="commentary-chyron">
-        <div class="commentary-tag">Commentary</div>
+        <div class="commentary-tag">Komentar</div>
         <div class="commentary-body" id="commentary-body">
-          <span class="commentary-text" id="commentary-text">AWAITING KICK-OFF…</span>
+          <span class="commentary-text" id="commentary-text">MENUNGGU KICK-OFF…</span>
         </div>
       </div>
     </div>
@@ -716,7 +758,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="replay-label-row">
         <span class="replay-label">REPLAY</span>
         <span class="replay-winner-line" id="replay-winner-line"></span>
-        <span class="replay-hotkeys" title="Keyboard shortcuts">⌨ Space · ← → · [ ]</span>
+        <span class="replay-hotkeys" title="Pintasan keyboard">⌨ Space · ← → · [ ]</span>
       </div>
       <div class="replay-tl">
         <span class="replay-time" id="r-time-cur">0:00.0</span>
@@ -734,7 +776,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <button class="r-ctrl speed-btn act" data-speed="1">1×</button>
         <button class="r-ctrl speed-btn" data-speed="2">2×</button>
         <button class="r-ctrl speed-btn" data-speed="4">4×</button>
-        <button class="r-ctrl" id="r-share-moment" title="Copy link to this moment">🔗 Moment</button>
+        <button class="r-ctrl" id="r-share-moment" title="Salin tautan momen ini">🔗 Momen</button>
       </div>
     </div>
   </div>
@@ -743,12 +785,12 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   <div id="results-screen" class="screen">
     <div class="podium-topbar">
       <div>
-        <div class="label" style="margin-bottom:8px">Full Time · Final Standings</div>
-        <h1 class="podium-title">WE HAVE A <span class="accent">WINNER</span></h1>
+        <div class="label" style="margin-bottom:8px">Waktu Habis · Hasil Akhir</div>
+        <h1 class="podium-title">ADA YANG <span class="accent">MENANG</span></h1>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-ghost btn-sm" id="replay-btn">▶ Replay</button>
-        <button class="btn btn-ghost btn-sm" id="new-race-btn">↰ New Race</button>
+        <button class="btn btn-ghost btn-sm" id="new-race-btn">↰ Balapan Baru</button>
       </div>
     </div>
     <div class="podium-wrap">
@@ -756,14 +798,14 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <div class="spotlight"></div>
       </div>
       <div>
-        <div class="label" style="margin-bottom:10px">Final Leaderboard</div>
+        <div class="label" style="margin-bottom:10px">Papan Skor Akhir</div>
         <div class="results-list" id="leaderboard"></div>
         <div class="actions-row" id="result-actions">
-          <button class="btn btn-primary" id="rematch-btn">⚽ Rematch</button>
-          <button class="btn btn-dark btn-sm" id="save-room-btn">☆ Save Room</button>
+          <button class="btn btn-primary" id="rematch-btn">⚽ Ulang Balapan</button>
+          <button class="btn btn-dark btn-sm" id="save-room-btn">☆ Simpan Ruangan</button>
         </div>
         <div class="viewer-result-msg" id="viewer-result-msg">
-          Waiting for admin to start next race...
+          Menunggu admin memulai balapan berikutnya...
         </div>
       </div>
     </div>
@@ -772,12 +814,22 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   <!-- WHEEL -->
   <div id="wheel-screen" class="screen">
     <div class="tool-wrap">
-      <h2 class="tool-title">Wheel of <span class="accent">Names</span></h2>
+      <h2 class="tool-title">Roda <span class="accent" id="wheel-title-mode">Acak</span></h2>
+      <div class="wheel-mode-toggle wheel-admin-only" id="wheel-mode-toggle">
+        <button class="wheel-mode-btn active" data-mode="names">📝 Nama</button>
+        <button class="wheel-mode-btn" data-mode="numbers">🍀 Nomor</button>
+      </div>
       <div class="name-chips" id="wheel-chips"></div>
-      <div class="add-row wheel-admin-only" id="wheel-add-row">
-        <input id="wheel-name-input" placeholder="Add a name…" maxlength="20">
+      <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-add-row">
+        <input id="wheel-name-input" placeholder="Tambah nama…" maxlength="20">
         <button class="btn btn-ghost btn-sm" id="wheel-add-btn">+ Add</button>
-        <button class="btn btn-ghost btn-sm" id="wheel-use-players">Use Players</button>
+        <button class="btn btn-ghost btn-sm" id="wheel-use-players">Pakai Pemain</button>
+      </div>
+      <div class="add-row wheel-admin-only wheel-mode-numbers" id="wheel-range-row" style="display:none">
+        <input type="number" id="wheel-num-min" placeholder="Min" value="1" min="0" max="9999">
+        <span class="range-sep">—</span>
+        <input type="number" id="wheel-num-max" placeholder="Max" value="10" min="1" max="9999">
+        <button class="btn btn-primary btn-sm" id="wheel-num-apply">Pakai Nomor</button>
       </div>
       <div class="wheel-canvas-wrap">
         <div class="wheel-pointer" aria-hidden="true">
@@ -797,12 +849,12 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       </div>
       <div class="wheel-result" id="wheel-result"></div>
       <button class="btn btn-primary wheel-admin-only" id="wheel-spin-btn" style="width:100%">⚡ Spin</button>
-      <div class="wheel-viewer-note" id="wheel-viewer-note" style="display:none;text-align:center;padding:12px;color:var(--ink-400);font-family:var(--font-cond);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Only the admin can add names or spin</div>
+      <div class="wheel-viewer-note" id="wheel-viewer-note" style="display:none;text-align:center;padding:12px;color:var(--ink-400);font-family:var(--font-cond);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Hanya admin yang bisa tambah nama atau putar</div>
 
       <div class="wheel-history-section">
         <div class="wheel-history-hd">
-          <span class="label">Recent Spins</span>
-          <button class="btn btn-ghost btn-xs" id="wheel-clear-hist-btn">Clear</button>
+          <span class="label">Putaran Terbaru</span>
+          <button class="btn btn-ghost btn-xs" id="wheel-clear-hist-btn">Hapus</button>
         </div>
         <div id="wheel-history"></div>
       </div>
@@ -813,17 +865,54 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   <div id="history-screen" class="screen">
     <div class="tool-wrap">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-        <h2 class="tool-title">Race <span class="accent">History</span></h2>
-        <button class="btn btn-ghost btn-sm" id="clear-history-btn">Clear</button>
+        <h2 class="tool-title">Riwayat <span class="accent">Balapan</span></h2>
+        <button class="btn btn-ghost btn-sm" id="clear-history-btn">Hapus</button>
       </div>
       <div id="history-list"></div>
+    </div>
+  </div>
+
+  <!-- TRACK (shipment tracking) -->
+  <div id="track-screen" class="screen">
+    <div class="tool-wrap">
+      <h2 class="tool-title">Cek <span class="accent">Resi</span></h2>
+
+      <!-- Viewer lookup (visible to everyone) -->
+      <div class="track-lookup">
+        <div class="label" style="margin-bottom:8px">Masukkan nomor HP untuk cek resi</div>
+        <div class="add-row">
+          <input id="track-phone-input" type="tel" inputmode="tel" placeholder="08xx-xxxx-xxxx" maxlength="32">
+          <button class="btn btn-primary btn-sm" id="track-lookup-btn">🔍 Cek</button>
+        </div>
+        <div id="track-lookup-result" class="track-result"></div>
+      </div>
+
+      <!-- Admin form -->
+      <div class="track-admin track-admin-only" style="display:none">
+        <div class="track-section-hd">
+          <span class="label">Tambah resi baru</span>
+        </div>
+        <div class="track-form">
+          <input id="track-add-phone" type="tel" inputmode="tel" placeholder="Nomor HP penerima" maxlength="32">
+          <input id="track-add-code" placeholder="Kode resi / tracking" maxlength="120">
+          <input id="track-add-courier" placeholder="Kurir (opsional, mis. JNE)" maxlength="60">
+          <input id="track-add-note" placeholder="Catatan (opsional)" maxlength="255">
+          <button class="btn btn-primary btn-sm" id="track-save-btn">+ Simpan Resi</button>
+        </div>
+
+        <div class="track-section-hd">
+          <span class="label">Daftar resi tersimpan</span>
+          <button class="btn btn-ghost btn-xs" id="track-refresh-btn">↻ Refresh</button>
+        </div>
+        <div id="track-admin-list"></div>
+      </div>
     </div>
   </div>
 
   <!-- Admin Kick-Off bar (shown on admin setup) -->
   <div class="kick-off-row" id="kick-off-row" style="display:none">
     <div class="kick-off-inner">
-      <div class="meta" id="kick-off-meta">Add at least 2 names to enable kick-off</div>
+      <div class="meta" id="kick-off-meta">Tambah minimal 2 nama untuk mulai</div>
       <button class="btn btn-primary kick-off-btn" id="start-btn" disabled>⚽ Kick Off</button>
     </div>
   </div>
@@ -833,12 +922,12 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 
 <div class="modal-backdrop" id="login-modal">
   <div class="modal">
-    <div class="modal-title">Admin Login</div>
-    <div class="modal-sub">Only admins can start races. Viewers can watch.</div>
-    <input type="password" id="admin-password" placeholder="Password" autocomplete="off">
+    <div class="modal-title">Login Admin</div>
+    <div class="modal-sub">Hanya admin yang bisa mulai balapan. Penonton bisa menonton.</div>
+    <input type="password" id="admin-password" placeholder="Kata sandi" autocomplete="off">
     <div class="modal-actions">
-      <button class="btn btn-ghost" id="login-cancel">Cancel</button>
-      <button class="btn btn-primary" id="login-submit">Login</button>
+      <button class="btn btn-ghost" id="login-cancel">Batal</button>
+      <button class="btn btn-primary" id="login-submit">Masuk</button>
     </div>
   </div>
 </div>
@@ -860,16 +949,134 @@ const BALL_SKINS = [
 const MAX_P = 32, MIN_P = 2;
 const RACE_CFG = { speedChangeMsMin:250, speedChangeMsMax:700, lerpFactor:2.5, startX:.12, finishX:.94, trailLength:.06 };
 const COMMS = {
-  start: ['KICK OFF! AND WE ARE UNDERWAY!','THE WHISTLE BLOWS — AND THEY\'RE OFF!','HERE WE GO!'],
-  lead: ['🔥 {n} LEADS THE PACK!','{n} IS OUT IN FRONT!','{n} SURGES AHEAD!'],
-  sprint: ['⚡ {n} BREAKS INTO A SPRINT!','💨 {n} PICKS UP THE PACE!','{n} IS FLYING NOW!','BLISTERING SPEED FROM {n}!'],
-  tired: ['😮‍💨 {n} IS RUNNING ON FUMES!','{n} LOOKS EXHAUSTED!','{n} IS OUT OF GAS!','{n} HITS THE WALL!'],
-  secondWind: ['🔥 {n} FINDS A SECOND WIND!','{n} DIGS DEEP — AND GOES!','UNBELIEVABLE — {n} COMES BACK!'],
-  stumble: ['💥 {n} LOSES THE BALL!','{n} FUMBLES!','BAD TOUCH FROM {n}!'],
-  close: ["IT'S NECK AND NECK!",'TOO CLOSE TO CALL!','WHAT A BATTLE!'],
-  finish: ["APPROACHING THE LINE!",'FINAL STRETCH!','HERE COMES THE FINISH!'],
-  overtake: ['{n} OVERTAKES!','{n} PUSHES PAST!','WHAT A MOVE BY {n}!'],
+  start: [
+    'KICK OFF! BALAPAN DIMULAI!','PELUIT BERBUNYI — MEREKA BERLARI!','GASKEUN!',
+    'DAN MEREKA JALAN!','INI DIA SAATNYA!','SEMUANYA SIAP — GAS POLLLL!',
+    'BALAPAN UDAH MULAI, GILA!','YUK LIAT SIAPA YANG PALING KENCENG!',
+    'BISMILLAH — DIMULAI!','WAKTUNYA UNJUK GIGI!',
+  ],
+  lead: [
+    '🔥 {n} MEMIMPIN!','{n} ADA DI DEPAN!','{n} TANCAP GAS!',
+    '{n} NGASIH JARAK BUAT YANG LAIN!','{n} JAUH DI DEPAN SEKARANG!',
+    'LIHAT {n} — NGEBUT SENDIRIAN!','{n} LANGSUNG AMBIL ALIH!',
+    '{n} GAK MAU DIGANGGU!','POSISI PERTAMA BUAT {n}!',
+    '{n} KASIH DEBU BUAT YANG LAIN!',
+  ],
+  sprint: [
+    '⚡ {n} SPRINT SEKARANG!','💨 {n} NGEBUT BANGET!','{n} KENCENG BANGET!',
+    'CEPET BANGET NIH {n}!','{n} PASANG TURBO!','WOI {n} NGEBUT!',
+    '{n} GASSS POLL!','ADA YANG BISA NGEJAR {n}?',
+    '{n} KAYAK ROKET!','{n} SERIUS BANGET LARINYA!',
+  ],
+  tired: [
+    '😮‍💨 {n} UDAH NGOS-NGOSAN!','{n} KELIATAN KELELAHAN!',
+    '{n} KEHABISAN TENAGA!','{n} NABRAK TEMBOK!',
+    'ADUH, {n} MULAI MELAMBAT!','{n} KAYAKNYA BUTUH NAPAS DULU!',
+    '{n} UDAH KASIH SEMUA, GAK KUAT LAGI!','NAFAS {n} UDAH BERAT NIH!',
+    '{n} KAKINYA UDAH BERAT!','KASIHAN {n}, TENAGANYA HABIS!',
+  ],
+  secondWind: [
+    '🔥 {n} DAPET TENAGA LAGI!','{n} SEMANGAT LAGI — GAS!',
+    'GAK NYANGKA — {n} BALIK LAGI!','{n} BANGKIT DARI MATI!',
+    'ENTAH DARI MANA, {n} KENCENG LAGI!','{n} GAK KENAL NYERAH!',
+    'INI LUAR BIASA — {n} MASIH ADA!','{n} KAYAK DAPAT SUNTIKAN ENERGI!',
+    'JANGAN DIANGGAP REMEH — {n} BALIK!','APA-APAAN INI {n}! HEBAT BANGET!',
+  ],
+  stumble: [
+    '💥 {n} KEHILANGAN BOLA!','{n} LEPAS BOLANYA!','SENTUHAN BURUK DARI {n}!',
+    'ADUH {n}, HAMPIR!','{n} KEPLESET DIKIT!','OOF! {n} GOYAH SEBENTAR!',
+    '{n} HAMPIR JATUH!','GAK FOKUS TUH {n}!',
+    '{n} KESENGGOL ANGIN!','HATI-HATI {n}!',
+  ],
+  close: [
+    'TIPIS BANGET BEDANYA!','SUSAH DIPREDIKSI!','SERU BANGET INI!',
+    'BEDA TIPIS DOANG!','FOTO FINISH NIH KAYAKNYA!',
+    'SEMUA MASIH BISA MENANG!','KETAT BANGET PERSAINGANNYA!',
+    'GAK ADA YANG BISA PREDIKSI INI!','DRAMA BANGET BALAPAN INI!',
+    'DUA-DUANYA SETARA BANGET!',
+  ],
+  finish: [
+    'UDAH MEPET FINISH!','SEDIKIT LAGI!','INI DIA GARIS FINISHNYA!',
+    'HAMPIR SAMPAI!','SIAPA YANG DULUAN?!',
+    'GARIS FINISH UDAH KELIHATAN!','DETIK-DETIK MENENTUKAN!',
+    'SIAP-SIAP LIAT SIAPA JUARANYA!','TINGGAL BENTAR LAGI!',
+    'YANG PALING KENCENG SEKARANG, MENANG!',
+  ],
+  overtake: [
+    '{n} NYALIP!','{n} MAJU KE DEPAN!','KEREN BANGET {n}!',
+    '{n} NAIK SATU POSISI!','ADA PERUBAHAN DI DEPAN — {n} NYALIP!',
+    '{n} GAK MAU KETINGGALAN!','GERAKAN INDAH DARI {n}!',
+    '{n} AMBIL ALIH PIMPINAN!','LIAT TUH {n} — NYALIP DARI LUAR!',
+    '{n} SUSUL-MENYUSUL TERUS!',
+  ],
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STRATEGIES — every racer is assigned one at race start. Modifiers tune
+// sprint/tire/recovery probabilities and base-pace by race progress, so the
+// pack behaves differently from start to finish. All return a multiplier
+// object: { sprint, tire, secondWind, base }.
+// ═══════════════════════════════════════════════════════════════════════════
+const STRATEGIES = {
+  saver: {
+    name: 'Hemat Energi', icon: '🐢',
+    fn(progress){
+      // Conserves until the final 25% then dumps everything
+      if(progress < 0.6)  return { sprint: 0.25, tire: 1.8, secondWind: 0.6, base: 0.92 };
+      if(progress < 0.75) return { sprint: 0.7,  tire: 0.6, secondWind: 1.2, base: 1.02 };
+      return                       { sprint: 5.0, tire: 0.25, secondWind: 4.0, base: 1.16 };
+    }
+  },
+  sprinter: {
+    name: 'Pelari Cepat', icon: '⚡',
+    fn(progress){
+      // Aggressive early — pays for it later
+      if(progress < 0.5) return { sprint: 3.0, tire: 0.6, secondWind: 0.9, base: 1.08 };
+      if(progress < 0.75) return { sprint: 0.8, tire: 1.6, secondWind: 0.7, base: 0.97 };
+      return                      { sprint: 0.4, tire: 2.2, secondWind: 0.6, base: 0.93 };
+    }
+  },
+  marathon: {
+    name: 'Stabil', icon: '🛡️',
+    fn(){
+      // Boring but reliable — rarely sprints, rarely crashes
+      return { sprint: 0.3, tire: 0.3, secondWind: 0.5, base: 1.02 };
+    }
+  },
+  burster: {
+    name: 'Meledak', icon: '💥',
+    fn(){
+      // Yo-yo — constant sprints and crashes, big position swings
+      return { sprint: 1.9, tire: 1.7, secondWind: 1.6, base: 1.0 };
+    }
+  },
+  lateBloomer: {
+    name: 'Bangkit Akhir', icon: '🌱',
+    fn(progress){
+      // Slow start, ramps up steadily
+      if(progress < 0.4) return { sprint: 0.4, tire: 1.5, secondWind: 0.8, base: 0.9 };
+      if(progress < 0.7) return { sprint: 1.2, tire: 0.8, secondWind: 1.4, base: 1.02 };
+      return                      { sprint: 2.5, tire: 0.5, secondWind: 2.5, base: 1.12 };
+    }
+  },
+  comeback: {
+    name: 'Drama', icon: '🎭',
+    fn(){
+      // Crashes hard, recovers harder — wild ride
+      return { sprint: 1.1, tire: 2.2, secondWind: 3.5, base: 1.0 };
+    }
+  },
+  tactician: {
+    name: 'Taktis', icon: '🎯',
+    fn(progress, behind, lead){
+      // Adapts — sprints when chasing, conserves when leading
+      if(behind > 0.06) return { sprint: 3.0, tire: 0.6, secondWind: 2.5, base: 1.05 };
+      if(lead   > 0.06) return { sprint: 0.4, tire: 1.4, secondWind: 0.7, base: 0.97 };
+      return                     { sprint: 1.0, tire: 1.0, secondWind: 1.0, base: 1.0 };
+    }
+  },
+};
+const STRATEGY_KEYS = Object.keys(STRATEGIES);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SOUND ENGINE
@@ -908,7 +1115,17 @@ let liveState = 'idle';
 let socket = null;
 let players = [];
 let racers = [], finishOrder = [], raceActive = false;
-let raceStartRealTime = 0, lastCommentaryTime = 0, commentaryText = '', lastLeader = -1;
+let raceStartRealTime = 0, lastCommentaryTime = 0, nextCommentaryDelay = 800, commentaryText = '', lastLeader = -1;
+
+// Fire commentary and schedule the next slot with randomised delay.
+// urgent=true → commentator is excited, next line comes sooner.
+function fireCommentary(text, type, now, urgent = false){
+  setCommentary(text, type);
+  lastCommentaryTime = now;
+  nextCommentaryDelay = urgent
+    ? 700  + Math.random() * 700   // 0.7–1.4 s — back-to-back energy
+    : 1100 + Math.random() * 1700; // 1.1–2.8 s — natural pause
+}
 let recording = [], replayMode = false, replayPlaying = false, replayFrame = 0;
 let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0, replayFromHistory = false;
 let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
@@ -923,12 +1140,12 @@ let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 const ctx = $canvas.getContext('2d');
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$setup,$race,$results,$wheel,$historyScr];
+const allScreens = [$setup,$race,$results,$wheel,$historyScr,$trackScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -1291,7 +1508,7 @@ function setupSocketListeners(){
     if(role==='viewer' && !replayMode){
       renderViewerLineup();
       if(s.state==='racing' && s.racers){
-        racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+        racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
         viewerTargetPos = s.positions || racers.map(()=>0);
         viewerCurPos = [...viewerTargetPos];
         viewerRacing = true; commentaryText = s.commentary || '';
@@ -1300,7 +1517,7 @@ function setupSocketListeners(){
         requestAnimationFrame(viewerLoop);
       } else if(s.state==='results' && s.lastResults){
         finishOrder = s.lastResults.results || [];
-        if(s.lastResults.racers) racers = s.lastResults.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:1,finished:true,finishTime:0}));
+        if(s.lastResults.racers) racers = s.lastResults.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:1,finished:true,finishTime:0}));
         showPodium(s.lastResults, true);
       }
     }
@@ -1321,7 +1538,7 @@ function setupSocketListeners(){
   socket.on('race-started', data => {
     if(role!=='viewer' || replayMode) return;
     liveState = 'racing';
-    racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+    racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
     viewerTargetPos = racers.map(()=>0);
     viewerCurPos = racers.map(()=>0);
     viewerRacing = true; recording = [];
@@ -1411,6 +1628,8 @@ function setRole(r){
   $('wheel-clear-hist-btn').style.display = isAdmin ? '' : 'none';
   document.querySelectorAll('.wheel-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   $('wheel-viewer-note').style.display = isAdmin ? 'none' : '';
+  document.querySelectorAll('.track-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  if(isAdmin && currentTab==='track') loadTrackAdminList();
   renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
@@ -1455,6 +1674,7 @@ document.querySelectorAll('.tab').forEach(t => {
     $('kick-off-row').style.display = (role==='admin' && currentTab==='race' && !raceActive) ? '' : 'none';
     if(currentTab==='race'){ exitReplay(); showScreen($setup); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
+    else if(currentTab==='track'){ showScreen($trackScr); if(role==='admin') loadTrackAdminList(); }
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
   });
 });
@@ -1464,7 +1684,7 @@ document.querySelectorAll('.tab').forEach(t => {
 // ═══════════════════════════════════════════════════════════════════════════
 function broadcastPlayers(){
   if(role==='admin' && socket){
-    socket.emit('update-players', players.map((p,i)=>({name:p.name.trim()||'Player '+(i+1), colorIdx:p.colorIdx})));
+    socket.emit('update-players', players.map((p,i)=>({name:p.name.trim()||'Pemain '+(i+1), colorIdx:p.colorIdx})));
   }
 }
 function broadcastSettings(){
@@ -1478,9 +1698,9 @@ function renderPlayerList(){
   const wrap = $('team-list-wrap');
   if(players.length===0){
     wrap.innerHTML = `<div class="empty-team">
-      <div class="empty-team-title">NO PLAYERS YET</div>
-      <div style="font-size:13px;color:var(--ink-200);margin-bottom:16px">Use the field above — or hit "+ Demo" for a quick-start lineup.</div>
-      <button class="btn btn-primary btn-sm" onclick="demoFill()">⚡ Load Demo Lineup</button>
+      <div class="empty-team-title">BELUM ADA PEMAIN</div>
+      <div style="font-size:13px;color:var(--ink-200);margin-bottom:16px">Gunakan kolom di atas — atau klik "+ Demo Pemain" untuk langsung mulai.</div>
+      <button class="btn btn-primary btn-sm" onclick="demoFill()">⚡ Muat Demo Pemain</button>
     </div>`;
     $('arrow-hint').style.display = '';
     $('name-input').classList.add('empty');
@@ -1489,12 +1709,12 @@ function renderPlayerList(){
       <div class="racer-chip">
         <div class="racer-chip-ball">${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[p.colorIdx%TEAM_COLORS.length], 28)}</div>
         <span class="racer-chip-num mono">${String(i+1).padStart(2,'0')}</span>
-        <span class="racer-chip-name">${escapeHtml(p.name || 'Player '+(i+1))}</span>
+        <span class="racer-chip-name">${escapeHtml(p.name || 'Pemain '+(i+1))}</span>
         <button class="racer-chip-rm" data-id="${p.id}">×</button>
       </div>`).join('') + '</div>';
     $('arrow-hint').style.display = 'none';
     $('name-input').classList.remove('empty');
-    $('name-input').placeholder = 'ADD ANOTHER NAME — PRESS ENTER';
+    $('name-input').placeholder = 'TAMBAH NAMA LAGI — TEKAN ENTER';
     wrap.querySelectorAll('.racer-chip-rm').forEach(b => b.addEventListener('click', e => removePlayer(e.target.dataset.id)));
   }
   updateKickOffUI();
@@ -1520,12 +1740,12 @@ $('add-btn').addEventListener('click', () => { const v = $('name-input').value; 
 $('demo-btn').addEventListener('click', demoFill);
 $('shuffle-btn').addEventListener('click', () => { const s=[...TEAM_COLORS].sort(()=>Math.random()-.5); players.forEach((p,i)=>p.colorIdx = TEAM_COLORS.indexOf(s[i%s.length])); renderPlayerList(); broadcastPlayers(); });
 $('clear-btn').addEventListener('click', () => { players=[]; renderPlayerList(); broadcastPlayers(); });
-$('bulk-toggle-btn').addEventListener('click', () => { const b=$('bulk-box'); const open = b.style.display!=='none'; b.style.display = open ? 'none' : ''; $('bulk-toggle-btn').textContent = open ? '⇡ Bulk' : '× Bulk'; });
+$('bulk-toggle-btn').addEventListener('click', () => { const b=$('bulk-box'); const open = b.style.display!=='none'; b.style.display = open ? 'none' : ''; $('bulk-toggle-btn').textContent = open ? '⇡ Import' : '× Import'; });
 $('bulk-apply').addEventListener('click', () => {
   const lines = $('bulk-input').value.split(/[\n,]/).map(s=>s.trim()).filter(Boolean);
-  lines.forEach(addPlayerName); $('bulk-input').value=''; $('bulk-box').style.display='none'; $('bulk-toggle-btn').textContent = '⇡ Bulk';
+  lines.forEach(addPlayerName); $('bulk-input').value=''; $('bulk-box').style.display='none'; $('bulk-toggle-btn').textContent = '⇡ Import';
 });
-$('bulk-cancel').addEventListener('click', () => { $('bulk-box').style.display='none'; $('bulk-toggle-btn').textContent = '⇡ Bulk'; });
+$('bulk-cancel').addEventListener('click', () => { $('bulk-box').style.display='none'; $('bulk-toggle-btn').textContent = '⇡ Import'; });
 
 // Skin picker
 function renderSkinPicker(){
@@ -1574,46 +1794,47 @@ function updateKickOffUI(){
   const canStart = players.length >= 2;
   const $start = $('start-btn'), $meta = $('kick-off-meta');
   $start.disabled = !canStart;
-  $start.innerHTML = canStart ? '⚽ Kick Off →' : '⚽ Kick Off (add names)';
+  $start.innerHTML = canStart ? '⚽ Mulai Balapan →' : '⚽ Mulai (tambah nama)';
   $meta.textContent = canStart
-    ? `✓ Ready · ${players.length} racers · ${settings.duration}s`
-    : players.length===0 ? '← Add at least 2 names to enable kick-off'
-    : `Add ${2-players.length} more racer to kick off`;
+    ? `✓ Siap · ${players.length} pemain · ${settings.duration}s`
+    : players.length===0 ? '← Tambah minimal 2 nama untuk mulai'
+    : `Tambah ${2-players.length} pemain lagi untuk mulai`;
 }
 
 function updateStatusUI(){
   if(role==='viewer'){
     const status = $('v-status-text');
     if(!status) return;
-    if(liveState==='racing' || liveState==='countdown') status.textContent = 'Race is live — loading view';
-    else if(liveState==='results') status.textContent = 'Race complete';
-    else if(liveState==='setup' && players.length>0) status.textContent = `Lineup ready · Waiting for kick-off`;
-    else status.textContent = 'Waiting for admin to open the room';
+    if(liveState==='racing' || liveState==='countdown') status.textContent = 'Balapan sedang berlangsung — memuat tampilan';
+    else if(liveState==='results') status.textContent = 'Balapan selesai';
+    else if(liveState==='setup' && players.length>0) status.textContent = `Pemain siap · Menunggu kick-off`;
+    else status.textContent = 'Menunggu admin membuka ruangan';
   }
 }
 
 function renderViewerLineup(){
-  const meta = $('v-meta'); if(meta) meta.textContent = `${players.length} racers · ${settings.duration}s match`;
+  const meta = $('v-meta'); if(meta) meta.textContent = `${players.length} pemain · ${settings.duration}s balapan`;
   const grid = $('v-lineup-grid');
   if(!grid) return;
-  if(!players.length){ grid.innerHTML = '<div class="empty-msg">Lineup pending…</div>'; return; }
+  if(!players.length){ grid.innerHTML = '<div class="empty-msg">Pemain belum lengkap…</div>'; return; }
   grid.innerHTML = '<div class="v-lineup-grid">'+players.map((p,i)=>`
     <div class="v-racer">${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[p.colorIdx%TEAM_COLORS.length], 24)}
       <span class="v-racer-num">${String(i+1).padStart(2,'0')}</span>
-      <span class="v-racer-name">${escapeHtml(p.name||'Player '+(i+1))}</span>
+      <span class="v-racer-name">${escapeHtml(p.name||'Pemain '+(i+1))}</span>
     </div>`).join('')+'</div>';
 }
 
 // Kick off
 $('start-btn').addEventListener('click', () => {
-  if(role!=='admin'){ toast('Admin only'); return; }
+  if(role!=='admin'){ toast('Khusus admin'); return; }
   if(players.length<2) return;
-  players.forEach((p,i) => { if(!p.name.trim()) p.name = 'Player '+(i+1); });
+  players.forEach((p,i) => { if(!p.name.trim()) p.name = 'Pemain '+(i+1); });
   broadcastPlayers(); broadcastSettings(); startRace();
 });
 $('race-exit-btn').addEventListener('click', () => {
   if(role==='admin' && socket) socket.emit('back-to-setup');
   raceActive = false; viewerRacing = false;
+  stopTickDriver();
   sfx.stopCrowd(); clearInterval(broadcastTimer);
   $tabBar.classList.remove('hidden');
   $('kick-off-row').style.display = role==='admin' ? '' : 'none';
@@ -1654,15 +1875,15 @@ function startRace(){
   if(role==='admin' && socket) socket.emit('race-countdown');
   runCountdown().then(() => {
     initRacers(); recording=[]; raceActive=true; lastTime=0;
-    lastLeader=-1; lastCommentaryTime=0;
+    lastLeader=-1; lastCommentaryTime=0; nextCommentaryDelay=400;
     raceStartRealTime = performance.now();
     setCommentary(pick(COMMS.start));
     sfx.whistle(); sfx.startCrowd();
     if(role==='admin' && socket){
-      socket.emit('race-start', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx}))});
+      socket.emit('race-start', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
       startBroadcasting();
     }
-    requestAnimationFrame(raceLoop);
+    startTickDriver(() => raceLoop(performance.now()));
   });
 }
 
@@ -1702,7 +1923,7 @@ function initRacers(){
   racers = players.map((p,i) => {
     const speed = sp.min + Math.random()*(sp.max-sp.min);
     return {
-      id:p.id, name:p.name.trim()||'Player '+(i+1), colorIdx:p.colorIdx,
+      id:p.id, name:p.name.trim()||'Pemain '+(i+1), colorIdx:p.colorIdx,
       position:0, speed, targetSpeed:speed, nextSpeedChange:randInt(),
       finished:false, finishTime:0,
       // Stamina system
@@ -1712,22 +1933,38 @@ function initRacers(){
       speedMult: 1,
       strideFrame: Math.random(),  // randomize starting stride so they don't all sync
       stumbling: 0,
+      strategy: STRATEGY_KEYS[Math.floor(Math.random() * STRATEGY_KEYS.length)],
     };
   });
 }
 function randInt(){ return RACE_CFG.speedChangeMsMin + Math.random()*(RACE_CFG.speedChangeMsMax-RACE_CFG.speedChangeMsMin); }
 
 let lastTime = 0;
+
+// Background-resilient timer — Web Workers keep ticking when the tab is
+// hidden, so the race keeps running. Browsers throttle setInterval/rAF on
+// hidden tabs, but worker timers stay close to full speed.
+let _tickWorker = null, _tickCallback = null;
+function ensureTickWorker(){
+  if(_tickWorker) return _tickWorker;
+  const code = "let id;onmessage=e=>{if(e.data==='start'){if(id)clearInterval(id);id=setInterval(()=>postMessage(0),16);}else if(e.data==='stop'){if(id){clearInterval(id);id=null;}}};";
+  _tickWorker = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+  _tickWorker.onmessage = () => { if(_tickCallback) _tickCallback(); };
+  return _tickWorker;
+}
+function startTickDriver(cb){ _tickCallback = cb; ensureTickWorker().postMessage('start'); }
+function stopTickDriver(){ _tickCallback = null; if(_tickWorker) _tickWorker.postMessage('stop'); }
+
 function raceLoop(ts){
   if(!lastTime) lastTime = ts;
   const dt = Math.min(ts-lastTime, 50); lastTime = ts;
-  updateRacers(dt); updateCommentary(ts); drawRace(); updateScoreboard();
+  updateRacers(dt, ts); updateCommentary(ts); drawRace(); updateScoreboard();
   const elapsed = performance.now() - raceStartRealTime;
   recording.push({positions:racers.map(r=>r.position), commentary:commentaryText, time:elapsed});
   sfx.setCrowdLevel(Math.min(Math.max(...racers.map(r=>r.position)), 1));
   updateRaceClock(elapsed);
-  if(finishOrder.length < racers.length){ requestAnimationFrame(raceLoop); }
-  else {
+  if(finishOrder.length >= racers.length){
+    stopTickDriver();
     raceActive = false; lastTime = 0;
     clearInterval(broadcastTimer);
     sfx.stopCrowd(); sfx.fanfare();
@@ -1735,55 +1972,77 @@ function raceLoop(ts){
     if(role==='admin'){
       saveRaceHistory();
       if(socket) socket.emit('race-end', {
-        results: finishOrder.map(r=>({name:r.name, colorIdx:r.colorIdx, finishTime:r.finishTime})),
-        racers: racers.map(r=>({name:r.name, colorIdx:r.colorIdx, position:r.position, finishTime:r.finishTime})),
+        results: finishOrder.map(r=>({name:r.name, colorIdx:r.colorIdx, finishTime:r.finishTime, strategy:r.strategy})),
+        racers: racers.map(r=>({name:r.name, colorIdx:r.colorIdx, position:r.position, finishTime:r.finishTime, strategy:r.strategy})),
       });
     }
-    setTimeout(() => showPodium({results: finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime}))}, false), 1000);
+    setTimeout(() => showPodium({results: finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime,strategy:r.strategy}))}, false), 1000);
   }
 }
 
-function updateRacers(dt){
+function updateRacers(dt, now){
   const dtS = dt/1000;
   const sp = durationToSpeed(settings.duration);
+
+  // Pack standings (one pass) — drives comeback boost, leader drag, sprint bias
+  let leaderPos = 0, secondPos = 0;
+  for(const r of racers){
+    if(r.position > leaderPos){ secondPos = leaderPos; leaderPos = r.position; }
+    else if(r.position > secondPos) secondPos = r.position;
+  }
+  const lateRace = leaderPos > 0.65;        // last 35% — chaos zone
+  const volMult  = lateRace ? 2.0 : 1.0;    // late-race event multiplier
+
   racers.forEach((r, i) => {
     if(r.finished) return;
 
-    // Base target pace (random drift, lerped)
+    const behind   = leaderPos - r.position;
+    const isLeader = r.position >= leaderPos - 0.0001;
+    const lead     = isLeader ? r.position - secondPos : 0;
+
+    // Base target pace — shifts more often late in the race
     r.nextSpeedChange -= dt;
-    if(r.nextSpeedChange<=0){
+    if(r.nextSpeedChange <= 0){
       let t = sp.min + Math.random()*(sp.max-sp.min);
       t *= getFairMult(r.name);
       r.targetSpeed = t;
-      r.nextSpeedChange = randInt();
+      r.nextSpeedChange = randInt() * (lateRace ? 0.55 : 1);
     }
     r.speed += (r.targetSpeed - r.speed) * RACE_CFG.lerpFactor * dtS;
 
     // Stamina state machine — creates dynamic pace changes
     r.phaseTime += dtS;
     const NAME = r.name.toUpperCase();
+    const canComment = now - lastCommentaryTime > nextCommentaryDelay;
+
+    // Per-racer strategy modifiers (varies by race progress + position)
+    const strat = STRATEGIES[r.strategy] || STRATEGIES.marathon;
+    const mod = strat.fn(leaderPos, behind, lead);
+
+    // Trailers burst far more often; runaway leaders rein it in
+    const sprintBias = behind > 0.04 ? Math.min(4, 1 + (behind - 0.04) * 14)
+                     : (isLeader && lead > 0.08 ? 0.4 : 1);
 
     if(r.phase === 'sprinting'){
-      r.speedMult = 1.5;
+      r.speedMult = 1.55;
       r.stamina -= 0.55 * dtS;
       if(r.stamina <= 0.05 || r.phaseTime > 1.6){
         r.stamina = Math.max(0, r.stamina);
         r.phase = 'tired';
         r.phaseTime = 0;
-        if(Math.random() < 0.3) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+        if(canComment && Math.random() < 0.3) fireCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble', now);
       }
     } else if(r.phase === 'tired'){
       // 0.6 – 0.78x while recovering — slow but not crawling
       r.speedMult = 0.6 + r.stamina * 0.18;
       r.stamina = Math.min(1, r.stamina + 0.3 * dtS);
-      // Cap total tired duration at 1.3s
       if(r.phaseTime > 1.3){
         r.phase = 'running'; r.phaseTime = 0;
-      } else if(r.phaseTime > 0.6 && r.stamina > 0.35 && Math.random() < 0.025){
-        // Second wind! Tired → sprinting
+      } else if(r.phaseTime > 0.6 && r.stamina > 0.35 && Math.random() < 0.025 * volMult * mod.secondWind){
+        // Second wind — extra likely late in the race; strategy-amplified
         r.phase = 'sprinting'; r.phaseTime = 0;
         r.stamina = Math.max(r.stamina, 0.7);
-        if(Math.random() < 0.6) setCommentary(pick(COMMS.secondWind).replace('{n}', NAME), 'boost');
+        if(canComment && Math.random() < 0.6) fireCommentary(pick(COMMS.secondWind).replace('{n}', NAME), 'boost', now, true);
       } else if(r.stamina >= 0.55){
         r.phase = 'running'; r.phaseTime = 0;
       }
@@ -1792,31 +2051,34 @@ function updateRacers(dt){
       r.speedMult = 0.88 + r.stamina * 0.24;
       r.stamina = Math.min(1, r.stamina + 0.09 * dtS);
 
-      // Sprint burst (fresh runners burst more often)
-      if(r.stamina > 0.5 && Math.random() < 0.008){
+      // Sprint burst — biased by position, amplified late, shaped by strategy
+      if(r.stamina > 0.5 && Math.random() < 0.008 * sprintBias * volMult * mod.sprint){
         r.phase = 'sprinting'; r.phaseTime = 0;
-        if(Math.random() < 0.5) setCommentary(pick(COMMS.sprint).replace('{n}', NAME), 'boost');
+        if(canComment && Math.random() < 0.5) fireCommentary(pick(COMMS.sprint).replace('{n}', NAME), 'boost', now);
       }
-      // Occasional voluntary tire-out
-      else if(r.phaseTime > 2.5 && Math.random() < 0.002){
+      // Voluntary tire-out (slightly more in late race; strategy-shaped)
+      else if(r.phaseTime > 2.5 && Math.random() < 0.002 * volMult * mod.tire){
         r.phase = 'tired'; r.phaseTime = 0;
-        if(Math.random() < 0.4) setCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble');
+        if(canComment && Math.random() < 0.4) fireCommentary(pick(COMMS.tired).replace('{n}', NAME), 'stumble', now);
       }
     }
 
-    // Ball fumble — rare, brief slowdown
+    // Strategy base-pace modifier — applied as a constant speed multiplier
+    r.speedMult *= mod.base;
+
+    // Ball fumble — slightly more likely late in the race
     if(r.stumbling > 0){
       r.speedMult *= 0.45;
       r.stumbling -= dtS;
-    } else if(Math.random() < 0.0005){
-      r.stumbling = 0.25 + Math.random()*0.2;
-      if(Math.random() < 0.4) setCommentary(pick(COMMS.stumble).replace('{n}', NAME), 'stumble');
+    } else if(Math.random() < 0.0005 * volMult){
+      r.stumbling = 0.25 + Math.random()*0.25;
+      if(canComment && Math.random() < 0.4) fireCommentary(pick(COMMS.stumble).replace('{n}', NAME), 'stumble', now);
     }
 
-    // Rubber-band catch-up — keeps the pack close, more dramatic finishes
-    const leaderPos = Math.max(...racers.map(x => x.position));
-    const behind = leaderPos - r.position;
-    if(behind > 0.15) r.speedMult *= (1 + Math.min(0.4, behind * 0.6));
+    // Comeback boost: kicks in earlier (4% behind), ramps hard, capped at +80%
+    if(behind > 0.04) r.speedMult *= (1 + Math.min(0.8, (behind - 0.04) * 3.5));
+    // Leader drag: being out front isn't free — capped at -15%
+    else if(isLeader && lead > 0.07) r.speedMult *= (1 - Math.min(0.15, (lead - 0.07) * 1.2));
 
     // Advance position
     r.position += r.speed * r.speedMult * dtS;
@@ -1829,19 +2091,19 @@ function updateRacers(dt){
       finishOrder.push(r);
       const place = finishOrder.length;
       const medal = ['🥇','🥈','🥉'][place-1] || '🏁';
-      setCommentary(`${medal} ${NAME} ${place===1?'TAKES THE WIN!':`CROSSES IN ${place===2?'2ND':place===3?'3RD':place+'TH'}`}`, place===1?'win':'finish');
+      setCommentary(`${medal} ${NAME} ${place===1?'JUARA!':`FINIS POSISI ${place}`}`, place===1?'win':'finish');
     }
   });
 }
 
 function updateCommentary(now){
-  if(now-lastCommentaryTime<1800) return;
+  if(now - lastCommentaryTime < nextCommentaryDelay) return;
   const sorted = [...racers].sort((a,b)=>b.position-a.position);
   const leader = racers.indexOf(sorted[0]), maxPos = sorted[0].position;
-  if(maxPos>.82){ setCommentary(pick(COMMS.finish)); lastCommentaryTime=now; }
-  else if(leader!==lastLeader && lastLeader!==-1){ setCommentary(pick(COMMS.overtake).replace('{n}', sorted[0].name.toUpperCase())); lastCommentaryTime=now; }
-  else if(sorted.length>1 && sorted[0].position-sorted[1].position<.04){ setCommentary(pick(COMMS.close)); lastCommentaryTime=now; }
-  else if(sorted[0].position - (sorted[1]?.position||0) > .1){ setCommentary(pick(COMMS.lead).replace('{n}', sorted[0].name.toUpperCase()), 'lead'); lastCommentaryTime=now; }
+  if(maxPos > .82){ fireCommentary(pick(COMMS.finish), '', now, true); }
+  else if(leader !== lastLeader && lastLeader !== -1){ fireCommentary(pick(COMMS.overtake).replace('{n}', sorted[0].name.toUpperCase()), '', now, true); }
+  else if(sorted.length > 1 && sorted[0].position - sorted[1].position < .04){ fireCommentary(pick(COMMS.close), '', now, true); }
+  else if(sorted[0].position - (sorted[1]?.position||0) > .1){ fireCommentary(pick(COMMS.lead).replace('{n}', sorted[0].name.toUpperCase()), 'lead', now); }
   lastLeader = leader;
 }
 
@@ -1854,7 +2116,15 @@ function setCommentary(text, type=''){
   $t.replaceWith(old);
   old.id = 'commentary-text';
 }
-function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+const _pickLast = new Map();
+function pick(a){
+  if(a.length === 1) return a[0];
+  const last = _pickLast.get(a) ?? -1;
+  let idx;
+  do { idx = Math.floor(Math.random() * a.length); } while(idx === last);
+  _pickLast.set(a, idx);
+  return a[idx];
+}
 
 function formatTime(t){
   const m = Math.floor(t/60), s = Math.floor(t%60), ms = Math.floor((t%1)*10);
@@ -1891,19 +2161,45 @@ function drawRace(){
     ctx.fillStyle = i%2===0 ? '#15411f' : '#1c5929';
     ctx.fillRect(0, i*laneH, w, laneH);
   }
-  // Mow pattern verticals
-  ctx.globalAlpha = .02;
-  for(let x=0;x<w;x+=160*devicePixelRatio){
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(x, 0, 80*devicePixelRatio, h);
+  // Track-flow scroll — moves opposite to racer direction so the field
+  // appears to flow past, creating a sense of speed even at fixed camera.
+  const avgPos = racers.reduce((s,r) => s + r.position, 0) / n;
+  const scroll = avgPos * w * 4;
+  // Mow pattern verticals (scroll left as racers advance)
+  const stripeW = 160 * devicePixelRatio;
+  const stripeOffset = ((-scroll) % stripeW + stripeW) % stripeW;
+  ctx.globalAlpha = .035;
+  ctx.fillStyle = '#fff';
+  for(let x = -stripeW + stripeOffset; x < w + stripeW; x += stripeW){
+    ctx.fillRect(x, 0, stripeW * 0.5, h);
   }
   ctx.globalAlpha = 1;
+  // Per-lane scrolling chevrons — subtle track-direction markers
+  const chevSpacing = 70 * devicePixelRatio;
+  const chevSize = Math.min(10 * devicePixelRatio, laneH * 0.18);
+  const chevOffset = ((-scroll * 1.6) % chevSpacing + chevSpacing) % chevSpacing;
+  ctx.strokeStyle = 'rgba(255,255,255,.07)';
+  ctx.lineWidth = 1.5 * devicePixelRatio;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for(let i = 0; i < n; i++){
+    const cy = i * laneH + laneH * 0.5;
+    for(let x = sX - chevSpacing + chevOffset; x < fX + chevSpacing; x += chevSpacing){
+      ctx.beginPath();
+      ctx.moveTo(x - chevSize, cy - chevSize * 0.6);
+      ctx.lineTo(x, cy);
+      ctx.lineTo(x - chevSize, cy + chevSize * 0.6);
+      ctx.stroke();
+    }
+  }
 
-  // Logo watermark
+  // Logo watermark — preserve aspect ratio so wordmarks don't stretch
   if(logoLoaded){
-    const lsz = Math.min(h*.6, rW*.2);
+    const ar = (logoImg.naturalWidth || 1) / (logoImg.naturalHeight || 1);
+    const maxW = rW * 0.45, maxH = h * 0.55;
+    let lw = maxW, lh = lw / ar;
+    if(lh > maxH){ lh = maxH; lw = lh * ar; }
     ctx.save(); ctx.globalAlpha = .1;
-    ctx.drawImage(logoImg, (sX+fX)/2 - lsz/2, h/2 - lsz/2, lsz, lsz);
+    ctx.drawImage(logoImg, (sX+fX)/2 - lw/2, h/2 - lh/2, lw, lh);
     ctx.restore();
   }
 
@@ -1917,12 +2213,25 @@ function drawRace(){
   ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2*devicePixelRatio;
   ctx.beginPath(); ctx.moveTo(sX, 0); ctx.lineTo(sX, h); ctx.stroke();
 
-  // Finish checker
-  const checkSz = 10*devicePixelRatio;
-  const rows = Math.ceil(h/checkSz);
-  for(let r=0;r<rows;r++) for(let col=0;col<2;col++){
-    ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
-    ctx.fillRect(fX + col*checkSz, r*checkSz, checkSz, checkSz);
+  // Finish checker — slides into view from off-screen right as leader closes
+  // in, meeting the leader at fX exactly when they finish (duck-race style).
+  const leadPos = racers.length ? Math.max(...racers.map(r => r.position)) : 0;
+  const slideProg   = Math.min(1, Math.max(0, (leadPos - 0.65) / 0.35));   // 0 → 1 over leadPos 0.65 → 1.0
+  const finishAlpha = Math.min(1, Math.max(0, (leadPos - 0.65) / 0.08));   // fades in faster
+  if(finishAlpha > 0){
+    const slideStart = w + 80 * devicePixelRatio;        // off-screen right
+    const visualFinishX = fX + (1 - slideProg) * (slideStart - fX);
+    ctx.save(); ctx.globalAlpha = finishAlpha;
+    const checkSz = 10*devicePixelRatio;
+    // Vertical ripple sync'd to field scroll — checkered flag flutter
+    const period = checkSz * 2;
+    const flagScroll = ((scroll * 0.55) % period + period) % period;
+    const startRow = -2, endRow = Math.ceil(h/checkSz) + 2;
+    for(let r = startRow; r < endRow; r++) for(let col = 0; col < 2; col++){
+      ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
+      ctx.fillRect(visualFinishX + col*checkSz, r*checkSz + flagScroll, checkSz, checkSz);
+    }
+    ctx.restore();
   }
 
   // Ranking for place bubbles
@@ -2052,7 +2361,7 @@ function podiumBlock(r, place){
     <div class="podium-rank">${place}</div>
     <div class="podium-ball">${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[r.colorIdx%TEAM_COLORS.length], ballSize)}</div>
     <div class="podium-name-wrap">
-      ${place===1?'<div class="podium-champion-tag">CHAMPION</div>':''}
+      ${place===1?'<div class="podium-champion-tag">JUARA</div>':''}
       <div class="podium-name">${escapeHtml(r.name)}</div>
     </div>
   </div>`;
@@ -2067,9 +2376,9 @@ $('new-race-btn').addEventListener('click', () => {
   currentTab='race';
 });
 $('save-room-btn').addEventListener('click', () => {
-  const name = prompt('Room name:'); if(!name) return;
-  savedRooms.unshift({id:'room-'+Date.now(), name, players:players.map(p=>p.name.trim()||'Player'), duration:settings.duration, created:Date.now()});
-  LS.set('rooms', savedRooms); toast('Room saved');
+  const name = prompt('Nama ruangan:'); if(!name) return;
+  savedRooms.unshift({id:'room-'+Date.now(), name, players:players.map(p=>p.name.trim()||'Pemain'), duration:settings.duration, created:Date.now()});
+  LS.set('rooms', savedRooms); toast('Ruangan tersimpan');
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2081,7 +2390,7 @@ async function saveRaceHistory(){
     players: racers.map(r=>r.name),
     colors: racers.map(r=>r.colorIdx),
     winner: finishOrder[0]?.name || '',
-    results: finishOrder.map(r=>({name:r.name, colorIdx:r.colorIdx, finishTime:r.finishTime})),
+    results: finishOrder.map(r=>({name:r.name, colorIdx:r.colorIdx, finishTime:r.finishTime, strategy:r.strategy})),
     duration: settings.duration,
     recording: sampled,
   };
@@ -2094,13 +2403,13 @@ async function loadHistory(){
 }
 function renderHistory(){
   const el = $('history-list');
-  if(!raceHistory.length){ el.innerHTML = '<div class="empty-msg">No races yet</div>'; return; }
+  if(!raceHistory.length){ el.innerHTML = '<div class="empty-msg">Belum ada balapan</div>'; return; }
   el.innerHTML = raceHistory.map(h=>{
     const d = new Date(h.created_at), ds = d.toLocaleDateString()+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     const btns = h.has_replay
       ? `<div class="history-actions">
-           <button class="btn btn-ghost btn-xs history-replay-btn" data-rid="${h.id}">▶ Watch Replay</button>
-           <button class="btn btn-ghost btn-xs history-share-btn" data-rid="${h.id}">🔗 Share</button>
+           <button class="btn btn-ghost btn-xs history-replay-btn" data-rid="${h.id}">▶ Tonton Replay</button>
+           <button class="btn btn-ghost btn-xs history-share-btn" data-rid="${h.id}">🔗 Bagikan</button>
          </div>`
       : '';
     return `<div class="history-item">
@@ -2114,32 +2423,33 @@ function renderHistory(){
     const id = +e.target.dataset.rid;
     const url = location.origin + location.pathname + '#replay=' + id;
     (navigator.clipboard?.writeText(url) || Promise.reject())
-      .then(()=>toast('Replay link copied!'))
+      .then(()=>toast('Link replay disalin!'))
       .catch(()=>{
-        // Fallback: show the URL in the toast
         toast(url);
       });
   }));
 }
 async function playHistoryReplay(raceId, seekMs){
   try {
-    toast('Loading replay…');
+    toast('Memuat replay…');
     const res = await fetch('/api/races/'+raceId);
-    if(!res.ok){ toast('Failed to load'); return; }
+    if(!res.ok){ toast('Gagal memuat'); return; }
     const h = await res.json();
-    if(!h.recording?.length){ toast('No replay data'); return; }
+    if(!h.recording?.length){ toast('Tidak ada data replay'); return; }
     const colors = h.colors || h.players.map((_,i)=>i);
-    racers = h.players.map((name,i)=>({id:nextId(),name,colorIdx:colors[i],position:0,finished:false,finishTime:0}));
+    const stratByName = {};
+    (h.results || []).forEach(r => { if(r.strategy) stratByName[r.name] = r.strategy; });
+    racers = h.players.map((name,i)=>({id:nextId(),name,colorIdx:colors[i],strategy:stratByName[name],position:0,finished:false,finishTime:0}));
     finishOrder = (h.results || []).map(r=>({...r, colorIdx:r.colorIdx!=null?r.colorIdx:0}));
     recording = h.recording; replayFromHistory = true;
     replayCurrentRaceId = raceId;
     enterReplay(seekMs);
-  } catch(e){ toast('Failed to load'); console.error(e); }
+  } catch(e){ toast('Gagal memuat'); console.error(e); }
 }
 $('clear-history-btn').addEventListener('click', async () => {
-  if(role!=='admin'){ toast('Admin only'); return; }
-  try{ await fetch('/api/races', {method:'DELETE', headers:{'x-admin-token':adminToken}}); raceHistory=[]; renderHistory(); toast('Cleared'); }
-  catch{ toast('Failed'); }
+  if(role!=='admin'){ toast('Khusus admin'); return; }
+  try{ await fetch('/api/races', {method:'DELETE', headers:{'x-admin-token':adminToken}}); raceHistory=[]; renderHistory(); toast('Dihapus'); }
+  catch{ toast('Gagal'); }
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2161,12 +2471,11 @@ function computeReplayMarkers(){
         const place = finished.size;
         const r = racers[i] || {};
         const color = TEAM_COLORS[(r.colorIdx!=null?r.colorIdx:i) % TEAM_COLORS.length];
-        const suffix = place===1?'1st':place===2?'2nd':place===3?'3rd':place+'th';
         markers.push({
           time: f.time,
           pct: Math.max(0, Math.min(100, (f.time / total) * 100)),
           color, place,
-          label: `${(r.name || '?').toUpperCase()} · ${suffix}`,
+          label: `${(r.name || '?').toUpperCase()} · ke-${place}`,
         });
       }
     }
@@ -2210,7 +2519,7 @@ function enterReplay(seekMs){
   updSpeedBtns(); updPlayBtn();
   renderReplayMarkers();
   updateReplayTopbar();
-  $('r-back').textContent = replayFromHistory ? '↩ History' : '↩ Results';
+  $('r-back').textContent = replayFromHistory ? '↩ Riwayat' : '↩ Hasil';
   // Seek if requested
   if(seekMs != null && seekMs > 0){
     let idx = 0;
@@ -2247,7 +2556,7 @@ function applyFrame(idx){
     r.stamina = 0.7;   // stable stamina for replay indicators
   });
   drawRace(); updateScoreboard();
-  setCommentary(f.commentary || '');
+  if((f.commentary || '') !== commentaryText) setCommentary(f.commentary || '');
   $('r-time-cur').textContent = replayFmt(f.time);
   $('replay-slider').value = Math.round((idx/(recording.length-1))*1000);
   updateRaceClock(f.time);
@@ -2291,11 +2600,11 @@ $('replay-slider').addEventListener('input', () => {
 
 // Share link to current moment in replay
 $('r-share-moment').addEventListener('click', () => {
-  if(!replayMode || !replayCurrentRaceId){ toast('Only saved races can be shared'); return; }
+  if(!replayMode || !replayCurrentRaceId){ toast('Hanya balapan tersimpan yang bisa dibagikan'); return; }
   const ms = recording[replayFrame]?.time || 0;
   const url = `${location.origin}${location.pathname}#replay=${replayCurrentRaceId}&t=${(ms/1000).toFixed(1)}`;
   (navigator.clipboard?.writeText(url) || Promise.reject())
-    .then(()=>toast('Link copied (jumps to this moment)'))
+    .then(()=>toast('Link disalin (langsung ke momen ini)'))
     .catch(()=>toast(url));
 });
 
@@ -2340,8 +2649,8 @@ function renderWheelChips(){
   const el = $('wheel-chips');
   if(!wheelNames.length){
     el.innerHTML = role==='admin'
-      ? '<span class="empty-msg">Add names to spin</span>'
-      : '<span class="empty-msg">Waiting for admin to set up the wheel</span>';
+      ? '<span class="empty-msg">Tambah nama untuk putar</span>'
+      : '<span class="empty-msg">Menunggu admin menyiapkan roda</span>';
     return;
   }
   const isAdmin = role === 'admin';
@@ -2371,7 +2680,7 @@ function drawWheel(){
     wCtx.fillStyle='rgba(255,255,255,.5)';
     wCtx.font=`italic 900 ${Math.min(18*devicePixelRatio, r*.11)}px 'Archivo Black',sans-serif`;
     wCtx.textAlign='center'; wCtx.textBaseline='middle';
-    wCtx.fillText(role==='admin' ? 'ADD AT LEAST 2 NAMES' : 'WAITING FOR ADMIN', cx, cy);
+    wCtx.fillText(role==='admin' ? 'TAMBAH MINIMAL 2 NAMA' : 'TUNGGU ADMIN', cx, cy);
     return;
   }
 
@@ -2511,7 +2820,7 @@ function spinWheel(){
   const btn = $('wheel-spin-btn');
   btn.classList.add('spinning');
   btn.disabled = true;
-  btn.innerHTML = 'SPINNING';
+  btn.innerHTML = 'BERPUTAR';
   $('wheel-result').classList.remove('announce');
   $('wheel-result').textContent = '';
   sfx.beep(660,.1,.15);
@@ -2520,7 +2829,7 @@ function spinWheel(){
 
 function replaySpinFromHistory(h){
   if(wheelSpinning) return;
-  if(h.initial_velocity == null || h.deceleration == null){ toast('No replay data for this spin'); return; }
+  if(h.initial_velocity == null || h.deceleration == null){ toast('Tidak ada data replay'); return; }
   // Set names list exactly as it was
   wheelNames = Array.isArray(h.names) ? [...h.names] : [];
   resetWheelState();
@@ -2536,7 +2845,7 @@ function replaySpinFromHistory(h){
   isReplayingSpin = true;
   pendingSpinPhysics = null;
   const btn = $('wheel-spin-btn');
-  if(btn){ btn.classList.add('spinning'); btn.disabled = true; btn.innerHTML = 'REPLAYING'; }
+  if(btn){ btn.classList.add('spinning'); btn.disabled = true; btn.innerHTML = 'MEMUTAR ULANG'; }
   const res = $('wheel-result');
   res.classList.remove('announce'); res.textContent = '';
   // Focus the wheel on mobile
@@ -2577,7 +2886,7 @@ function wheelLoop(ts){
       btn.classList.remove('spinning');
       // Only admins get the spin button visible; hidden for viewers but we still normalize
       btn.disabled = false;
-      btn.innerHTML = '⚡ Spin Again';
+      btn.innerHTML = '⚡ Putar Lagi';
       sfx.fanfare();
       if(!isReplayingSpin) saveWheelSpin(winner, [...wheelNames], pendingSpinPhysics);
       isReplayingSpin = false;
@@ -2600,7 +2909,7 @@ function resetWheelState(){
   if(btn){
     btn.classList.remove('spinning');
     btn.disabled = false;
-    btn.innerHTML = '⚡ Spin';
+    btn.innerHTML = '⚡ Putar';
   }
 }
 
@@ -2625,7 +2934,7 @@ async function saveWheelSpin(winner, names, physics){
 function renderWheelHistory(){
   const el = $('wheel-history');
   if(!el) return;
-  if(!wheelHistory.length){ el.innerHTML = '<div class="empty-msg">No spins yet</div>'; return; }
+  if(!wheelHistory.length){ el.innerHTML = '<div class="empty-msg">Belum ada putaran</div>'; return; }
   el.innerHTML = wheelHistory.map((h, idx) => {
     const d = new Date(h.created_at);
     const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
@@ -2635,16 +2944,16 @@ function renderWheelHistory(){
       return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${escapeHtml(n)}</span>`;
     }).join('');
     const canReplay = h.initial_velocity != null && h.deceleration != null;
-    const replayBtn = canReplay ? `<button class="wheel-hist-replay" data-idx="${idx}" title="Replay this spin">▶</button>` : '';
+    const replayBtn = canReplay ? `<button class="wheel-hist-replay" data-idx="${idx}" title="Putar ulang">▶</button>` : '';
     return `<div class="wheel-hist-row" data-idx="${idx}">
       <div class="wheel-hist-summary">
         <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
-        <span class="wheel-hist-meta">${names.length} names · ${ds}</span>
+        <span class="wheel-hist-meta">${names.length} nama · ${ds}</span>
         ${replayBtn}
         <span class="wheel-hist-toggle" aria-hidden="true">▾</span>
       </div>
       <div class="wheel-hist-details">
-        <div class="wheel-hist-label">Wheel entries</div>
+        <div class="wheel-hist-label">Peserta roda</div>
         <div class="wheel-hist-chips">${chips}</div>
       </div>
     </div>`;
@@ -2663,17 +2972,163 @@ function renderWheelHistory(){
   }));
 }
 async function clearWheelHistory(){
-  if(role !== 'admin'){ toast('Admin only'); return; }
+  if(role !== 'admin'){ toast('Khusus admin'); return; }
   try {
     await fetch('/api/wheel-spins', { method:'DELETE', headers:{'x-admin-token': adminToken} });
-    wheelHistory = []; renderWheelHistory(); toast('Cleared');
-  } catch { toast('Failed to clear'); }
+    wheelHistory = []; renderWheelHistory(); toast('Dihapus');
+  } catch { toast('Gagal menghapus'); }
 }
 $('wheel-add-btn').addEventListener('click', () => { if(role!=='admin')return; const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; resetWheelState(); renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
-$('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Player '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
+$('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Pemain '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
+
+// Wheel mode toggle (Names vs Lucky Number)
+let wheelMode = 'names';
+function setWheelMode(mode){
+  wheelMode = mode;
+  document.querySelectorAll('.wheel-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.querySelectorAll('.wheel-mode-names').forEach(el => el.style.display = mode === 'names' ? '' : 'none');
+  document.querySelectorAll('.wheel-mode-numbers').forEach(el => el.style.display = mode === 'numbers' ? '' : 'none');
+  $('wheel-title-mode').textContent = mode === 'names' ? 'Nama' : 'Nomor';
+}
+document.querySelectorAll('.wheel-mode-btn').forEach(b => b.addEventListener('click', () => {
+  if(role !== 'admin') return;
+  setWheelMode(b.dataset.mode);
+}));
+$('wheel-num-apply').addEventListener('click', () => {
+  if(role !== 'admin') return;
+  let min = parseInt($('wheel-num-min').value);
+  let max = parseInt($('wheel-num-max').value);
+  if(!Number.isFinite(min)) min = 1;
+  if(!Number.isFinite(max)) max = 10;
+  if(max < min) [min, max] = [max, min];
+  if(max - min > 99){ toast('Maksimal 100 angka'); return; }
+  wheelNames = [];
+  for(let i = min; i <= max; i++) wheelNames.push(String(i));
+  resetWheelState(); renderWheelChips(); drawWheel();
+});
 $('wheel-spin-btn').addEventListener('click', () => { if(role!=='admin')return; spinWheel(); });
 $('wheel-clear-hist-btn').addEventListener('click', clearWheelHistory);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TRACK — shipment lookup (public) + admin management
+// ═══════════════════════════════════════════════════════════════════════════
+function normPhone(p){ return String(p || '').replace(/[^\d+]/g, ''); }
+function fmtPhoneMask(p){
+  // Mask middle digits for privacy in admin list (e.g. 0812****5678)
+  if(!p || p.length < 6) return p || '';
+  return p.slice(0, 4) + '****' + p.slice(-4);
+}
+function fmtTrackDate(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+async function lookupShipment(){
+  const phone = normPhone($('track-phone-input').value);
+  const out = $('track-lookup-result');
+  if(!phone || phone.length < 4){
+    out.innerHTML = '<div class="track-result-empty">Masukkan minimal 4 digit nomor</div>';
+    return;
+  }
+  out.innerHTML = '<div class="track-result-empty">Mencari…</div>';
+  try {
+    const r = await fetch('/api/shipments/lookup?phone=' + encodeURIComponent(phone));
+    if(!r.ok){ out.innerHTML = '<div class="track-result-empty">Gagal memuat</div>'; return; }
+    const rows = await r.json();
+    if(!rows.length){
+      out.innerHTML = '<div class="track-result-empty">Tidak ada resi untuk nomor ini</div>';
+      return;
+    }
+    out.innerHTML = rows.map(s => `
+      <div class="track-card">
+        <div class="track-card-code">${escapeHtml(s.tracking_code)}</div>
+        <button class="track-card-copy" data-copy="${escapeHtml(s.tracking_code)}">Salin</button>
+        <div class="track-card-meta">
+          ${s.courier ? `<span>📦 ${escapeHtml(s.courier)}</span><span class="sep">·</span>` : ''}
+          <span>🕒 ${fmtTrackDate(s.created_at)}</span>
+        </div>
+        ${s.note ? `<div class="track-card-note">${escapeHtml(s.note)}</div>` : ''}
+      </div>`).join('');
+    out.querySelectorAll('.track-card-copy').forEach(b => b.addEventListener('click', () => {
+      const code = b.dataset.copy;
+      (navigator.clipboard?.writeText(code) || Promise.reject())
+        .then(() => toast('Kode resi disalin'))
+        .catch(() => toast(code));
+    }));
+  } catch(e){
+    out.innerHTML = '<div class="track-result-empty">Gagal memuat</div>';
+  }
+}
+
+async function saveShipment(){
+  if(role !== 'admin'){ toast('Khusus admin'); return; }
+  const phone = normPhone($('track-add-phone').value);
+  const tracking_code = $('track-add-code').value.trim();
+  const courier = $('track-add-courier').value.trim();
+  const note = $('track-add-note').value.trim();
+  if(!phone || phone.length < 4){ toast('Nomor HP tidak valid'); return; }
+  if(!tracking_code){ toast('Kode resi wajib diisi'); return; }
+  try {
+    const r = await fetch('/api/shipments', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ phone, tracking_code, courier, note }),
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
+    toast('Resi tersimpan');
+    $('track-add-phone').value = '';
+    $('track-add-code').value = '';
+    $('track-add-courier').value = '';
+    $('track-add-note').value = '';
+    loadTrackAdminList();
+  } catch(e){ toast('Gagal menyimpan'); }
+}
+
+async function loadTrackAdminList(){
+  if(role !== 'admin') return;
+  const el = $('track-admin-list');
+  el.innerHTML = '<div class="track-result-empty">Memuat…</div>';
+  try {
+    const r = await fetch('/api/shipments?limit=200', { headers: { 'x-admin-token': adminToken }});
+    if(!r.ok){ el.innerHTML = '<div class="track-result-empty">Gagal memuat</div>'; return; }
+    const rows = await r.json();
+    if(!rows.length){ el.innerHTML = '<div class="track-result-empty">Belum ada resi</div>'; return; }
+    el.innerHTML = rows.map(s => `
+      <div class="track-row" data-id="${s.id}">
+        <div class="track-row-main">
+          <span class="track-row-phone">${escapeHtml(s.phone)}</span>
+          <span class="track-row-code">${escapeHtml(s.tracking_code)}</span>
+        </div>
+        <button class="track-row-del" data-del="${s.id}">×</button>
+        <div class="track-row-meta">
+          ${s.courier ? `${escapeHtml(s.courier)} · ` : ''}${fmtTrackDate(s.created_at)}${s.note ? ' · ' + escapeHtml(s.note) : ''}
+        </div>
+      </div>`).join('');
+    el.querySelectorAll('.track-row-del').forEach(b => b.addEventListener('click', () => deleteShipment(+b.dataset.del)));
+  } catch(e){
+    el.innerHTML = '<div class="track-result-empty">Gagal memuat</div>';
+  }
+}
+
+async function deleteShipment(id){
+  if(role !== 'admin') return;
+  if(!confirm('Hapus resi ini?')) return;
+  try {
+    const r = await fetch('/api/shipments/' + id, { method:'DELETE', headers: { 'x-admin-token': adminToken }});
+    if(!r.ok){ toast('Gagal menghapus'); return; }
+    toast('Dihapus');
+    loadTrackAdminList();
+  } catch(e){ toast('Gagal menghapus'); }
+}
+
+$('track-lookup-btn').addEventListener('click', lookupShipment);
+$('track-phone-input').addEventListener('keydown', e => { if(e.key === 'Enter') lookupShipment(); });
+$('track-save-btn').addEventListener('click', saveShipment);
+$('track-refresh-btn').addEventListener('click', loadTrackAdminList);
+['track-add-phone','track-add-code','track-add-courier','track-add-note'].forEach(id => {
+  $(id).addEventListener('keydown', e => { if(e.key === 'Enter') saveShipment(); });
+});
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFETTI (DOM-based, matches design)

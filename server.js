@@ -67,6 +67,18 @@ async function initDB() {
         ADD COLUMN IF NOT EXISTS deceleration DOUBLE PRECISION
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_wheel_spins_created ON wheel_spins (created_at DESC)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS shipments (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        phone VARCHAR(32) NOT NULL,
+        tracking_code VARCHAR(120) NOT NULL,
+        courier VARCHAR(60),
+        note VARCHAR(255)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_shipments_phone ON shipments (phone)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_shipments_created ON shipments (created_at DESC)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -204,6 +216,77 @@ app.delete('/api/wheel-spins', requireAdmin, async (req, res) => {
   }
 });
 
+// ===== SHIPMENT TRACKING API =====
+function normalizePhone(p) {
+  return String(p || '').replace(/[^\d+]/g, '');
+}
+
+// Public lookup — viewers query by phone number
+app.get('/api/shipments/lookup', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  const phone = normalizePhone(req.query.phone);
+  if (!phone || phone.length < 4) return res.status(400).json({ error: 'Phone required' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, created_at, phone, tracking_code, courier, note
+       FROM shipments WHERE phone = $1 ORDER BY created_at DESC LIMIT 50`,
+      [phone]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/shipments/lookup:', err.message);
+    res.status(500).json({ error: 'Failed to lookup' });
+  }
+});
+
+// Admin list — full inventory
+app.get('/api/shipments', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 100, 500);
+    const { rows } = await pool.query(
+      `SELECT id, created_at, phone, tracking_code, courier, note
+       FROM shipments ORDER BY created_at DESC LIMIT $1`,
+      [limit]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/shipments:', err.message);
+    res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
+app.post('/api/shipments', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const phone = normalizePhone(req.body?.phone);
+    const tracking_code = String(req.body?.tracking_code || '').trim();
+    const courier = String(req.body?.courier || '').trim() || null;
+    const note = String(req.body?.note || '').trim() || null;
+    if (!phone || phone.length < 4) return res.status(400).json({ error: 'Invalid phone' });
+    if (!tracking_code) return res.status(400).json({ error: 'Tracking code required' });
+    const { rows } = await pool.query(
+      `INSERT INTO shipments (phone, tracking_code, courier, note)
+       VALUES ($1, $2, $3, $4) RETURNING id, created_at`,
+      [phone, tracking_code, courier, note]
+    );
+    res.json({ id: rows[0].id, created_at: rows[0].created_at });
+  } catch (err) {
+    console.error('POST /api/shipments:', err.message);
+    res.status(500).json({ error: 'Failed to save' });
+  }
+});
+
+app.delete('/api/shipments/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    await pool.query('DELETE FROM shipments WHERE id = $1', [req.params.id]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
 // ===== LIVE RACE (single global state) =====
 const liveRace = {
   state: 'idle',        // 'idle' | 'setup' | 'countdown' | 'racing' | 'results'
@@ -333,7 +416,7 @@ io.on('connection', socket => {
   });
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 initDB().then(() => {
   server.listen(PORT, () => console.log(`Football Race on port ${PORT}`));
 });
