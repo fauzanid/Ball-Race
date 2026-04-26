@@ -1121,7 +1121,7 @@ let liveState = 'idle';
 let socket = null;
 let players = [];
 let racers = [], finishOrder = [], raceActive = false;
-let raceStartRealTime = 0, lastCommentaryTime = 0, nextCommentaryDelay = 800, commentaryText = '', lastLeader = -1;
+let raceStartRealTime = 0, lastCommentaryTime = 0, nextCommentaryDelay = 800, commentaryText = '', commentaryType = '', lastLeader = -1;
 
 // Fire commentary and schedule the next slot with randomised delay.
 // urgent=true → commentator is excited, next line comes sooner.
@@ -1513,7 +1513,16 @@ function setupSocketListeners(){
     if(s.settings) Object.assign(settings, s.settings);
     if(role==='viewer' && !replayMode){
       renderViewerLineup();
-      if(s.state==='racing' && s.racers){
+      if(s.state==='lobby' && s.racers){
+        racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+        viewerTargetPos = racers.map(()=>0);
+        viewerCurPos = racers.map(()=>0);
+        showScreen($race); $tabBar.classList.add('hidden');
+        $('race-lobby-bar').style.display = 'none';
+        resizeCanvas(); drawRace(); updateScoreboard();
+        $('race-clock').textContent = '00:00';
+        setCommentary('PEMAIN SIAP DI GARIS START');
+      } else if(s.state==='racing' && s.racers){
         racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
         viewerTargetPos = s.positions || racers.map(()=>0);
         viewerCurPos = [...viewerTargetPos];
@@ -1535,6 +1544,22 @@ function setupSocketListeners(){
     liveState = 'setup'; updateStatusUI();
   });
   socket.on('settings-updated', s => { Object.assign(settings, s); applySettings(); });
+  socket.on('race-lobby', data => {
+    if(role!=='viewer' || replayMode) return;
+    liveState = 'lobby';
+    racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+    viewerTargetPos = racers.map(()=>0);
+    viewerCurPos    = racers.map(()=>0);
+    showScreen($race); $tabBar.classList.add('hidden');
+    $('kick-off-row').style.display = 'none';
+    $('replay-bar').classList.remove('active');
+    $('race-lobby-bar').style.display = 'none';
+    $('race-exit-btn').style.display = '';
+    resizeCanvas();
+    drawRace(); updateScoreboard();
+    $('race-clock').textContent = '00:00';
+    setCommentary('PEMAIN SIAP DI GARIS START');
+  });
   socket.on('race-countdown', () => {
     if(role!=='viewer' || replayMode) return;
     liveState = 'countdown';
@@ -1556,9 +1581,14 @@ function setupSocketListeners(){
   socket.on('race-frame', data => {
     if(role!=='viewer' || replayMode) return;
     viewerTargetPos = data.positions;
-    setCommentary(data.commentary);
+    // Only re-render commentary when it actually changes — otherwise the
+    // DOM-replace animation resets on every broadcast (~20Hz) and the text
+    // never finishes animating in.
+    const newText = data.commentary || '';
+    const newType = data.commentaryType || '';
+    if(newText !== commentaryText || newType !== commentaryType) setCommentary(newText, newType);
     sfx.setCrowdLevel(Math.min(Math.max(...data.positions), 1));
-    recording.push({positions:[...data.positions], commentary:data.commentary, time:performance.now()-raceStartRealTime});
+    recording.push({positions:[...data.positions], commentary:newText, commentaryType:newType, time:performance.now()-raceStartRealTime});
   });
   socket.on('race-ended', data => {
     if(role!=='viewer' || replayMode) return;
@@ -1882,8 +1912,11 @@ function enterRaceLobby(){
   drawRace(); updateScoreboard();
   $('race-clock').textContent = '00:00';
   $('race-lobby-bar').style.display = role === 'admin' ? '' : 'none';
-  $('race-exit-btn').style.display = 'none';
+  $('race-exit-btn').style.display = role === 'admin' ? 'none' : '';
   setCommentary('PEMAIN SIAP DI GARIS START');
+  if(role === 'admin' && socket){
+    socket.emit('race-lobby', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
+  }
 }
 
 function shuffleLineup(){
@@ -1896,6 +1929,7 @@ function shuffleLineup(){
   broadcastPlayers();
   initRacers();
   drawRace(); updateScoreboard();
+  if(socket) socket.emit('race-lobby', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
   toast('Posisi diacak');
 }
 
@@ -1933,7 +1967,7 @@ function startBroadcasting(){
   clearInterval(broadcastTimer);
   broadcastTimer = setInterval(() => {
     if(!raceActive){ clearInterval(broadcastTimer); return; }
-    if(socket) socket.emit('race-update', {positions:racers.map(r=>r.position), commentary:commentaryText});
+    if(socket) socket.emit('race-update', {positions:racers.map(r=>r.position), commentary:commentaryText, commentaryType});
   }, 50);
 }
 
@@ -2002,7 +2036,7 @@ function raceLoop(ts){
   const dt = Math.min(ts-lastTime, 50); lastTime = ts;
   updateRacers(dt, ts); updateCommentary(ts); drawRace(); updateScoreboard();
   const elapsed = performance.now() - raceStartRealTime;
-  recording.push({positions:racers.map(r=>r.position), commentary:commentaryText, time:elapsed});
+  recording.push({positions:racers.map(r=>r.position), commentary:commentaryText, commentaryType, time:elapsed});
   sfx.setCrowdLevel(Math.min(Math.max(...racers.map(r=>r.position)), 1));
   updateRaceClock(elapsed);
   if(finishOrder.length >= racers.length){
@@ -2151,6 +2185,7 @@ function updateCommentary(now){
 
 function setCommentary(text, type=''){
   commentaryText = text;
+  commentaryType = type;
   const $b = $('commentary-body'); const $t = $('commentary-text');
   $b.className = 'commentary-body ' + type;
   // Re-trigger animation
@@ -2598,7 +2633,7 @@ function applyFrame(idx){
     r.stamina = 0.7;   // stable stamina for replay indicators
   });
   drawRace(); updateScoreboard();
-  if((f.commentary || '') !== commentaryText) setCommentary(f.commentary || '');
+  if((f.commentary || '') !== commentaryText || (f.commentaryType || '') !== commentaryType) setCommentary(f.commentary || '', f.commentaryType || '');
   $('r-time-cur').textContent = replayFmt(f.time);
   $('replay-slider').value = Math.round((idx/(recording.length-1))*1000);
   updateRaceClock(f.time);

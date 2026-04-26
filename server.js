@@ -348,6 +348,15 @@ io.on('connection', socket => {
     io.emit('settings-updated', liveRace.settings);
   });
 
+  socket.on('race-lobby', data => {
+    if (!isAdmin) return;
+    liveRace.state = 'lobby';
+    liveRace.lastResults = null;
+    liveRace.racers = data.racers;
+    liveRace.positions = data.racers.map(() => 0);
+    socket.broadcast.emit('race-lobby', data);
+  });
+
   socket.on('race-countdown', () => {
     if (!isAdmin) return;
     liveRace.state = 'countdown';
@@ -402,9 +411,9 @@ io.on('connection', socket => {
     adminSockets.delete(socket.id);
     io.emit('viewer-count', io.engine.clientsCount);
     // If no admin remains during a race, abort
-    if (adminSockets.size === 0 && (liveRace.state === 'countdown' || liveRace.state === 'racing')) {
+    if (adminSockets.size === 0 && (liveRace.state === 'lobby' || liveRace.state === 'countdown' || liveRace.state === 'racing')) {
       setTimeout(() => {
-        if (adminSockets.size === 0 && (liveRace.state === 'countdown' || liveRace.state === 'racing')) {
+        if (adminSockets.size === 0 && (liveRace.state === 'lobby' || liveRace.state === 'countdown' || liveRace.state === 'racing')) {
           liveRace.state = liveRace.players.length > 0 ? 'setup' : 'idle';
           liveRace.racers = null;
           liveRace.positions = null;
