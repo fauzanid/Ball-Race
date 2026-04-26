@@ -232,6 +232,10 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 /* ═══ RACE SCREEN ═══ */
 #race-screen{flex-direction:column;min-height:0}
 .race-topbar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 28px;background:linear-gradient(180deg,rgba(0,0,0,.8),rgba(0,0,0,.4));border-bottom:2px solid var(--accent);gap:12px}
+.race-lobby-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 28px;background:linear-gradient(90deg,rgba(255,69,0,.18),rgba(255,215,64,.06));border-bottom:1px solid rgba(255,215,64,.25)}
+.race-lobby-msg{font-family:var(--font-cond);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-2)}
+.race-lobby-actions{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:640px){.race-lobby-bar{padding:10px 14px}.race-lobby-msg{font-size:11px}}
 @media(max-width:640px){.race-topbar{padding:10px 14px;grid-template-columns:auto 1fr auto}.race-topbar-title{font-size:15px}.race-topbar-title .small{display:none}.race-clock{font-size:28px !important}}
 .race-topbar-l{display:flex;align-items:center;gap:14px}
 .race-topbar-title{font-family:var(--font-display);font-style:italic;font-size:22px;letter-spacing:.03em;text-transform:uppercase}
@@ -678,12 +682,6 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
       </div>
 
-      <div class="panel">
-        <div class="setting-row">
-          <div><div class="setting-label">Mode Adil</div><div class="setting-hint">Menyeimbangkan kemenangan</div></div>
-          <button class="toggle" id="fair-toggle"></button>
-        </div>
-      </div>
     </div>
 
     <!-- Viewer lobby -->
@@ -729,6 +727,14 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       </div>
       <div class="race-topbar-r">
         <button class="btn btn-ghost btn-sm" id="race-exit-btn">↰ Keluar</button>
+      </div>
+    </div>
+    <div class="race-lobby-bar" id="race-lobby-bar" style="display:none">
+      <span class="race-lobby-msg">Pemain siap di garis start. Acak posisi atau langsung mulai.</span>
+      <div class="race-lobby-actions">
+        <button class="btn btn-ghost btn-sm" id="lobby-shuffle-btn">🔀 Acak Posisi</button>
+        <button class="btn btn-ghost btn-sm" id="lobby-cancel-btn">↰ Batal</button>
+        <button class="btn btn-primary btn-sm" id="lobby-start-btn">▶ Mulai!</button>
       </div>
     </div>
     <div class="track-wrap">
@@ -1776,8 +1782,6 @@ document.querySelectorAll('.duration-preset').forEach(b => b.addEventListener('c
   document.querySelectorAll('.duration-preset').forEach(x => x.classList.toggle('active', x===b));
   saveSettings(); broadcastSettings(); updateKickOffUI();
 }));
-$('fair-toggle').addEventListener('click', () => { settings.fairMode = !settings.fairMode; $('fair-toggle').classList.toggle('on', settings.fairMode); saveSettings(); broadcastSettings(); });
-
 function applySettings(){
   sfx.enabled = settings.sound;
   $('header-sound-btn').textContent = sfx.enabled ? '🔊' : '🔇';
@@ -1786,7 +1790,6 @@ function applySettings(){
   $('dur-num').textContent = settings.duration;
   $('stat-duration').textContent = settings.duration+'s';
   document.querySelectorAll('.duration-preset').forEach(b => b.classList.toggle('active', +b.dataset.val===settings.duration));
-  $('fair-toggle').classList.toggle('on', settings.fairMode);
   renderSkinPicker();
 }
 
@@ -1829,7 +1832,7 @@ $('start-btn').addEventListener('click', () => {
   if(role!=='admin'){ toast('Khusus admin'); return; }
   if(players.length<2) return;
   players.forEach((p,i) => { if(!p.name.trim()) p.name = 'Pemain '+(i+1); });
-  broadcastPlayers(); broadcastSettings(); startRace();
+  broadcastPlayers(); broadcastSettings(); enterRaceLobby();
 });
 $('race-exit-btn').addEventListener('click', () => {
   if(role==='admin' && socket) socket.emit('back-to-setup');
@@ -1866,25 +1869,64 @@ function updateFairStats(){
 // ═══════════════════════════════════════════════════════════════════════════
 function durationToSpeed(sec){ sec = Math.max(3, Math.min(90, sec)); const avg = 1/sec; return {min:avg*.35, max:avg*1.65}; }
 
-function startRace(){
+// Pre-race lobby — racers stand at the start line. Admin can shuffle
+// positions before locking in and starting the countdown.
+function enterRaceLobby(){
   exitReplay();
   showScreen($race); $tabBar.classList.add('hidden');
   $('kick-off-row').style.display = 'none';
   $('replay-bar').classList.remove('active');
   resizeCanvas();
-  if(role==='admin' && socket) socket.emit('race-countdown');
+  initRacers();
+  recording = []; raceActive = false;
+  drawRace(); updateScoreboard();
+  $('race-clock').textContent = '00:00';
+  $('race-lobby-bar').style.display = role === 'admin' ? '' : 'none';
+  $('race-exit-btn').style.display = 'none';
+  setCommentary('PEMAIN SIAP DI GARIS START');
+}
+
+function shuffleLineup(){
+  if(role !== 'admin') return;
+  for(let i = players.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [players[i], players[j]] = [players[j], players[i]];
+  }
+  players.forEach((p, i) => p.colorIdx = i);
+  broadcastPlayers();
+  initRacers();
+  drawRace(); updateScoreboard();
+  toast('Posisi diacak');
+}
+
+function startRaceFromLobby(){
+  if(role !== 'admin') return;
+  $('race-lobby-bar').style.display = 'none';
+  $('race-exit-btn').style.display = '';
+  if(socket) socket.emit('race-countdown');
   runCountdown().then(() => {
-    initRacers(); recording=[]; raceActive=true; lastTime=0;
-    lastLeader=-1; lastCommentaryTime=0; nextCommentaryDelay=400;
+    raceActive = true; lastTime = 0;
+    lastLeader = -1; lastCommentaryTime = 0; nextCommentaryDelay = 400;
     raceStartRealTime = performance.now();
     setCommentary(pick(COMMS.start));
     sfx.whistle(); sfx.startCrowd();
-    if(role==='admin' && socket){
+    if(socket){
       socket.emit('race-start', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
       startBroadcasting();
     }
     startTickDriver(() => raceLoop(performance.now()));
   });
+}
+
+function cancelLobby(){
+  if(role === 'admin' && socket) socket.emit('back-to-setup');
+  raceActive = false;
+  stopTickDriver();
+  $('race-lobby-bar').style.display = 'none';
+  $('race-exit-btn').style.display = '';
+  $tabBar.classList.remove('hidden');
+  $('kick-off-row').style.display = role === 'admin' ? '' : 'none';
+  showScreen($setup);
 }
 
 function startBroadcasting(){
@@ -2223,13 +2265,10 @@ function drawRace(){
     const visualFinishX = fX + (1 - slideProg) * (slideStart - fX);
     ctx.save(); ctx.globalAlpha = finishAlpha;
     const checkSz = 10*devicePixelRatio;
-    // Vertical ripple sync'd to field scroll — checkered flag flutter
-    const period = checkSz * 2;
-    const flagScroll = ((scroll * 0.55) % period + period) % period;
-    const startRow = -2, endRow = Math.ceil(h/checkSz) + 2;
-    for(let r = startRow; r < endRow; r++) for(let col = 0; col < 2; col++){
+    const rows = Math.ceil(h/checkSz);
+    for(let r = 0; r < rows; r++) for(let col = 0; col < 2; col++){
       ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
-      ctx.fillRect(visualFinishX + col*checkSz, r*checkSz + flagScroll, checkSz, checkSz);
+      ctx.fillRect(visualFinishX + col*checkSz, r*checkSz, checkSz, checkSz);
     }
     ctx.restore();
   }
@@ -2367,7 +2406,10 @@ function podiumBlock(r, place){
   </div>`;
 }
 
-$('rematch-btn').addEventListener('click', () => { stopConfetti(); startRace(); });
+$('rematch-btn').addEventListener('click', () => { stopConfetti(); enterRaceLobby(); });
+$('lobby-shuffle-btn').addEventListener('click', shuffleLineup);
+$('lobby-start-btn').addEventListener('click', startRaceFromLobby);
+$('lobby-cancel-btn').addEventListener('click', cancelLobby);
 $('new-race-btn').addEventListener('click', () => {
   stopConfetti(); $tabBar.classList.remove('hidden');
   if(role==='admin'){ $('kick-off-row').style.display=''; if(socket) socket.emit('back-to-setup'); }
