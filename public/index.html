@@ -3079,7 +3079,7 @@ $('wheel-num-apply').addEventListener('click', () => {
   if(!Number.isFinite(min)) min = 1;
   if(!Number.isFinite(max)) max = 10;
   if(max < min) [min, max] = [max, min];
-  if(max - min > 99){ toast('Maksimal 100 angka'); return; }
+  if(max - min > 199){ toast('Maksimal 200 angka'); return; }
   wheelNames = [];
   for(let i = min; i <= max; i++) wheelNames.push(String(i));
   resetWheelState(); renderWheelChips(); drawWheel();
