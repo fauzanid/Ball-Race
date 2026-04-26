@@ -1098,6 +1098,29 @@ const sfx = {
   setCrowdLevel(v){ if(this.crowdGain)this.crowdGain.gain.value=.03+v*.1; },
 };
 
+// Background music — single fixed track at /bgmusic.mp3. Honors the
+// global sound toggle (sfx.enabled). Loops while a race is in progress.
+const music = {
+  audio: null,
+  load(){
+    if(this.audio) return;
+    this.audio = new Audio('bgmusic.mp3');
+    this.audio.loop = true;
+    this.audio.volume = 0.35;
+    this.audio.preload = 'auto';
+  },
+  play(){
+    if(!sfx.enabled) return;
+    this.load();
+    try { this.audio.currentTime = 0; } catch(e){}
+    this.audio.play().catch(() => {/* user gesture required, will retry on next interaction */});
+  },
+  stop(){
+    if(!this.audio) return;
+    try { this.audio.pause(); this.audio.currentTime = 0; } catch(e){}
+  },
+};
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PERSISTENCE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1528,7 +1551,7 @@ function setupSocketListeners(){
         viewerCurPos = [...viewerTargetPos];
         viewerRacing = true; commentaryText = s.commentary || '';
         showScreen($race); $tabBar.classList.add('hidden');
-        resizeCanvas(); sfx.startCrowd();
+        resizeCanvas(); sfx.startCrowd(); music.play();
         requestAnimationFrame(viewerLoop);
       } else if(s.state==='results' && s.lastResults){
         finishOrder = s.lastResults.results || [];
@@ -1575,7 +1598,7 @@ function setupSocketListeners(){
     viewerRacing = true; recording = [];
     raceStartRealTime = performance.now();
     setCommentary("KICK OFF! AND WE ARE UNDERWAY!");
-    sfx.whistle(); sfx.startCrowd();
+    sfx.whistle(); sfx.startCrowd(); music.play();
     requestAnimationFrame(viewerLoop);
   });
   socket.on('race-frame', data => {
@@ -1593,7 +1616,7 @@ function setupSocketListeners(){
   socket.on('race-ended', data => {
     if(role!=='viewer' || replayMode) return;
     liveState = 'results'; viewerRacing = false;
-    sfx.stopCrowd(); sfx.fanfare();
+    sfx.stopCrowd(); music.stop(); sfx.fanfare();
     finishOrder = data.results;
     if(data.racers) racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,position:1,finished:true,finishTime:r.finishTime||0}));
     setTimeout(()=>showPodium(data, true), 800);
@@ -1610,7 +1633,7 @@ function setupSocketListeners(){
   });
   socket.on('race-aborted', () => {
     toast('Race aborted'); liveState = 'idle'; viewerRacing = false;
-    sfx.stopCrowd();
+    sfx.stopCrowd(); music.stop();
     if(role==='viewer'){ showScreen($setup); $tabBar.classList.remove('hidden'); }
     updateStatusUI();
   });
@@ -1868,7 +1891,7 @@ $('race-exit-btn').addEventListener('click', () => {
   if(role==='admin' && socket) socket.emit('back-to-setup');
   raceActive = false; viewerRacing = false;
   stopTickDriver();
-  sfx.stopCrowd(); clearInterval(broadcastTimer);
+  sfx.stopCrowd(); music.stop(); clearInterval(broadcastTimer);
   $tabBar.classList.remove('hidden');
   $('kick-off-row').style.display = role==='admin' ? '' : 'none';
   showScreen($setup);
@@ -1943,7 +1966,7 @@ function startRaceFromLobby(){
     lastLeader = -1; lastCommentaryTime = 0; nextCommentaryDelay = 400;
     raceStartRealTime = performance.now();
     setCommentary(pick(COMMS.start));
-    sfx.whistle(); sfx.startCrowd();
+    sfx.whistle(); sfx.startCrowd(); music.play();
     if(socket){
       socket.emit('race-start', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
       startBroadcasting();
@@ -2043,7 +2066,7 @@ function raceLoop(ts){
     stopTickDriver();
     raceActive = false; lastTime = 0;
     clearInterval(broadcastTimer);
-    sfx.stopCrowd(); sfx.fanfare();
+    sfx.stopCrowd(); music.stop(); sfx.fanfare();
     updateFairStats();
     if(role==='admin'){
       saveRaceHistory();
@@ -3242,7 +3265,7 @@ window.addEventListener('resize', () => {
 function toggleSound(){
   settings.sound = !settings.sound; sfx.enabled = settings.sound;
   applySettings(); saveSettings();
-  if(!sfx.enabled) sfx.stopCrowd();
+  if(!sfx.enabled){ sfx.stopCrowd(); music.stop(); }
 }
 $('header-sound-btn').addEventListener('click', toggleSound);
 $('sound-btn').addEventListener('click', toggleSound);
