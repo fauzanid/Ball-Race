@@ -2313,22 +2313,12 @@ function drawRace(){
   ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2*devicePixelRatio;
   ctx.beginPath(); ctx.moveTo(sX, 0); ctx.lineTo(sX, h); ctx.stroke();
 
-  // Finish checker — slides into view from off-screen right as leader closes
-  // in, meeting the leader at fX exactly when they finish (duck-race style).
-  const leadPos = racers.length ? Math.max(...racers.map(r => r.position)) : 0;
-  const slideProg   = Math.min(1, Math.max(0, (leadPos - 0.65) / 0.35));   // 0 → 1 over leadPos 0.65 → 1.0
-  const finishAlpha = Math.min(1, Math.max(0, (leadPos - 0.65) / 0.08));   // fades in faster
-  if(finishAlpha > 0){
-    const slideStart = w + 80 * devicePixelRatio;        // off-screen right
-    const visualFinishX = fX + (1 - slideProg) * (slideStart - fX);
-    ctx.save(); ctx.globalAlpha = finishAlpha;
-    const checkSz = 10*devicePixelRatio;
-    const rows = Math.ceil(h/checkSz);
-    for(let r = 0; r < rows; r++) for(let col = 0; col < 2; col++){
-      ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
-      ctx.fillRect(visualFinishX + col*checkSz, r*checkSz, checkSz, checkSz);
-    }
-    ctx.restore();
+  // Finish checker — painted on the field at fX, fully static.
+  const checkSz = 10*devicePixelRatio;
+  const rows = Math.ceil(h/checkSz);
+  for(let r = 0; r < rows; r++) for(let col = 0; col < 2; col++){
+    ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
+    ctx.fillRect(fX + col*checkSz, r*checkSz, checkSz, checkSz);
   }
 
   // Ranking for place bubbles
