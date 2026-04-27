@@ -2142,6 +2142,11 @@ window.addEventListener('popstate', e => {
 // If the URL already targets a tool tab via hash, navigate there.
 (function initHistory(){
   const hashTab = location.hash.slice(1);
+  // Race always requires an explicit tile tap — never resume it from a URL hash
+  if(hashTab === 'race'){
+    history.replaceState({tab: 'home'}, '', location.pathname + location.search);
+    return;
+  }
   if(VALID_TABS.includes(hashTab) && hashTab !== 'home'){
     history.replaceState({tab: 'home'}, '', location.pathname + location.search);
     const btn = document.querySelector(`#tab-bar .tab[data-tab="${hashTab}"]`);
