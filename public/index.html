@@ -928,7 +928,6 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <button class="cam-btn" data-cam="side" title="Side">📺</button>
           <button class="cam-btn" data-cam="ball" title="Ball cam">⚽</button>
           <button class="cam-btn" data-cam="orbit" title="Free orbit (drag)">🖐️</button>
-          <button class="cam-btn" id="runner-flip-btn" title="Flip player orientation 180°">🔄</button>
         </div>
         <div class="podium3d-overlay" id="podium3d-overlay" style="display:none">
           <div class="podium3d-title">JUARA!</div>
@@ -6626,15 +6625,6 @@ connectSocket();
 bindCameraControls();
 // Pre-fetch the realistic player model so it's ready before the first race
 if(typeof loadRunnerGLTF === 'function') loadRunnerGLTF();
-
-// One-click flip button: toggles the runner orientation 180°.
-document.getElementById('runner-flip-btn')?.addEventListener('click', () => {
-  _runnerGLTF.rotationY = (_runnerGLTF.rotationY === 0) ? Math.PI : 0;
-  if(race3D && race3D.ready){
-    rebuildRacerLanes3D();
-    rebuildRacerBalls3D();
-  }
-});
 
 // Console tuning helper — call after the model loads to test scale / offset / rotation.
 //   tuneRunner(0.01)            // just scale
