@@ -250,13 +250,44 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .track-wrap{flex:1;padding:20px 24px 10px;display:flex;gap:16px;min-height:0}
 .track-wrap>*{min-width:0}
 .pitch-wrap{flex:1;min-width:0;position:relative;background:linear-gradient(180deg,#0a1f0f,#15411f);border:1px solid rgba(124,255,0,.2);border-radius:var(--r-lg);overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.4);min-height:340px}
+.name-tags{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.name-tag{position:absolute;left:0;top:0;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.18);border-bottom:2px solid var(--tag-c, #ff4500);border-radius:5px;padding:2px 8px;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.55);transform:translate(-50%, -100%);will-change:transform,opacity}
+.name-tag::before{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--tag-c, #ff4500)}
+.name-tag-num{display:inline-block;background:var(--tag-c, #ff4500);color:#0a0a0a;font-weight:900;padding:0 5px;margin-right:6px;border-radius:3px;font-size:10px}
+body[data-theme="light"] .name-tag{background:rgba(255,255,255,.92);color:#1a1a16;border-color:rgba(0,0,0,.12)}
+.cam-controls{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:5;background:rgba(0,0,0,.4);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:5px}
+.cam-btn{background:transparent;border:none;color:#ddd;font-size:16px;width:34px;height:34px;border-radius:7px;cursor:pointer;transition:background .15s,transform .1s;display:flex;align-items:center;justify-content:center}
+.cam-btn:hover{background:rgba(255,255,255,.12)}
+.cam-btn:active{transform:scale(.94)}
+.cam-btn.active{background:linear-gradient(135deg,rgba(255,69,0,.6),rgba(255,138,31,.5));box-shadow:0 0 0 1px rgba(255,138,31,.6) inset}
+.podium3d-overlay{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:10px;background:linear-gradient(135deg,rgba(0,0,0,.75),rgba(20,16,30,.78));backdrop-filter:blur(10px);border:1px solid rgba(255,215,64,.35);border-radius:14px;padding:14px 22px;color:#fff;min-width:280px;max-width:90%;box-shadow:0 12px 40px rgba(0,0,0,.5),0 0 60px rgba(255,180,80,.18);opacity:0;transition:opacity .55s ease}
+.podium3d-overlay.show{opacity:1}
+.podium3d-title{font-family:var(--font-display);font-style:italic;font-size:clamp(28px,4vw,42px);letter-spacing:.04em;text-transform:uppercase;line-height:1;background:linear-gradient(135deg,#fff8c0,#ffb84a);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 30px rgba(255,180,80,.35)}
+.podium3d-list{display:flex;flex-direction:column;gap:4px;width:100%}
+.podium3d-item{display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(255,255,255,.05);border-left:3px solid var(--c, #ffd700);border-radius:6px;font-family:var(--font-cond);text-transform:uppercase}
+.podium3d-medal{font-size:18px}
+.podium3d-name{font-weight:700;font-size:13px;letter-spacing:.06em;flex:1;color:#fff}
+.podium3d-time{font-family:var(--font-mono);font-size:12px;color:var(--accent-2)}
+#podium3d-skip-btn{margin-top:2px}
+.lobby-overlay{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:4;background:linear-gradient(135deg,rgba(0,0,0,.78),rgba(20,16,30,.78));backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px 22px;color:#fff;text-align:center;min-width:260px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.lobby-overlay-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:6px}
+.lobby-overlay-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);animation:lobby-pulse 1.6s ease-in-out infinite}
+@keyframes lobby-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+.lobby-overlay-tag{font-family:var(--font-cond);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.lobby-overlay-title{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,3.5vw,32px);letter-spacing:.04em;text-transform:uppercase;line-height:1;background:linear-gradient(135deg,#fff,#ffd0a0);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-shadow:0 0 30px rgba(255,180,80,.18)}
+.lobby-overlay-sub{font-family:var(--font-cond);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-200);margin-top:4px}
+.lobby-overlay-stats{display:flex;gap:18px;margin-top:10px;justify-content:center;border-top:1px solid rgba(255,255,255,.08);padding-top:8px}
+.lobby-overlay-stat{display:flex;flex-direction:column;align-items:center}
+.lobby-overlay-stat-num{font-family:var(--font-display);font-style:italic;font-size:22px;font-weight:900;color:var(--accent-2);line-height:1}
+.lobby-overlay-stat-lbl{font-family:var(--font-cond);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-300);margin-top:2px}
+@media(max-width:520px){.lobby-overlay{min-width:auto;padding:10px 16px}.lobby-overlay-title{font-size:18px}.lobby-overlay-stat-num{font-size:18px}.cam-btn{width:30px;height:30px;font-size:14px}}
 .scoreboard-col{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
 @media(max-width:900px){
   .track-wrap{flex-direction:column;padding:14px 14px 8px;gap:12px}
   .scoreboard-col{width:100%;max-height:180px}
   .pitch-wrap{min-height:260px}
 }
-#race-canvas{display:block;width:100%;height:100%;position:absolute;inset:0}
+#race-canvas{display:block;width:100%;height:100%;position:absolute;inset:0;touch-action:none}
 
 .countdown-overlay{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.75);z-index:10;backdrop-filter:blur(6px)}
 .countdown-num{font-family:var(--font-display);font-style:italic;font-size:clamp(140px,32vw,320px);color:var(--accent);line-height:1;text-shadow:0 0 80px rgba(255,69,0,.6);animation:count-pop .9s ease-out}
@@ -368,6 +399,12 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .viewer-result-msg.active{display:block}
 
 .confetti{position:absolute;top:-20px;width:8px;height:14px;animation:confetti-fall linear infinite;pointer-events:none;z-index:1}
+.wheel-confetti{position:absolute;top:-20px;width:8px;height:14px;animation:wheel-confetti-fall ease-out forwards;pointer-events:none;z-index:4}
+@keyframes wheel-confetti-fall{0%{transform:translateY(-30px) rotate(0deg);opacity:1}100%{transform:translateY(420px) rotate(540deg);opacity:0}}
+.wheel-flash{position:absolute;inset:0;background:radial-gradient(circle,rgba(255,215,64,.6),transparent 65%);pointer-events:none;animation:wheel-flash .85s ease-out forwards;z-index:3}
+@keyframes wheel-flash{0%{opacity:0;transform:scale(.6)}25%{opacity:.95}100%{opacity:0;transform:scale(1.4)}}
+.wheel-shake{animation:wheel-shake .55s cubic-bezier(.36,.07,.19,.97)}
+@keyframes wheel-shake{10%,90%{transform:translate3d(-1px,0,0)}20%,80%{transform:translate3d(2px,0,0)}30%,50%,70%{transform:translate3d(-3px,0,0)}40%,60%{transform:translate3d(3px,0,0)}}
 @keyframes confetti-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(120vh) rotate(720deg);opacity:0}}
 
 /* ═══ HOME ═══ */
@@ -883,7 +920,33 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <div class="track-wrap">
       <div class="pitch-wrap" id="pitch-wrap">
         <canvas id="race-canvas"></canvas>
+        <div class="name-tags" id="name-tags"></div>
         <div class="countdown-overlay" id="countdown-overlay" style="display:none"></div>
+        <div class="cam-controls" id="cam-controls">
+          <button class="cam-btn active" data-cam="drone" title="Drone">🛸</button>
+          <button class="cam-btn" data-cam="chase" title="Chase">🎯</button>
+          <button class="cam-btn" data-cam="side" title="Side">📺</button>
+          <button class="cam-btn" data-cam="ball" title="Ball cam">⚽</button>
+          <button class="cam-btn" data-cam="orbit" title="Free orbit (drag)">🖐️</button>
+          <button class="cam-btn" id="runner-flip-btn" title="Flip player orientation 180°">🔄</button>
+        </div>
+        <div class="podium3d-overlay" id="podium3d-overlay" style="display:none">
+          <div class="podium3d-title">JUARA!</div>
+          <div class="podium3d-list" id="podium3d-list"></div>
+          <button class="btn btn-ghost btn-sm" id="podium3d-skip-btn">Lihat Hasil →</button>
+        </div>
+        <div class="lobby-overlay" id="lobby-overlay" style="display:none">
+          <div class="lobby-overlay-bar">
+            <span class="lobby-overlay-dot"></span>
+            <span class="lobby-overlay-tag">Pre-Match</span>
+          </div>
+          <div class="lobby-overlay-title">LINE-UP READY</div>
+          <div class="lobby-overlay-sub">Pemain berbaris di garis start</div>
+          <div class="lobby-overlay-stats">
+            <div class="lobby-overlay-stat"><span class="lobby-overlay-stat-num" id="lobby-overlay-n">0</span><span class="lobby-overlay-stat-lbl">Pemain</span></div>
+            <div class="lobby-overlay-stat"><span class="lobby-overlay-stat-num" id="lobby-overlay-s">—</span><span class="lobby-overlay-stat-lbl">Detik</span></div>
+          </div>
+        </div>
       </div>
       <div class="scoreboard-col">
         <div class="scoreboard">
@@ -970,9 +1033,20 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       </div>
       <div class="name-chips wheel-mode-names" id="wheel-chips"></div>
       <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-add-row">
-        <input id="wheel-name-input" placeholder="Tambah nama…" maxlength="20">
+        <input id="wheel-name-input" placeholder="Tambah nama…" maxlength="40">
+        <label class="lucky-upload-label" title="Tambah gambar">
+          📷
+          <input type="file" id="wheel-img-input" accept="image/*" style="display:none">
+        </label>
         <button class="btn btn-ghost btn-sm" id="wheel-add-btn">+ Add</button>
         <button class="btn btn-ghost btn-sm" id="wheel-use-players">Pakai Pemain</button>
+      </div>
+      <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-img-preview-row" style="display:none">
+        <div class="lucky-form-preview" style="flex:1">
+          <img id="wheel-img-preview" src="" alt="">
+          <span class="lucky-form-preview-name" id="wheel-img-preview-name"></span>
+          <button class="btn btn-ghost btn-xs" id="wheel-img-clear" style="margin-left:auto">×</button>
+        </div>
       </div>
       <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-actions-row">
         <button class="btn btn-ghost btn-sm" id="wheel-shuffle-btn">🔀 Acak Urutan</button>
@@ -1001,6 +1075,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <canvas id="wheel-canvas"></canvas>
       </div>
       <div class="wheel-result" id="wheel-result"></div>
+      <button class="btn btn-ghost btn-sm wheel-admin-only" id="wheel-remove-winner-btn" style="display:none;width:100%">🗑 Hapus Pemenang</button>
       <button class="btn btn-primary wheel-admin-only" id="wheel-spin-btn" style="width:100%">⚡ Spin</button>
       <div class="wheel-viewer-note" id="wheel-viewer-note" style="display:none;text-align:center;padding:12px;color:var(--ink-400);font-family:var(--font-cond);letter-spacing:.08em;text-transform:uppercase;font-size:12px">Hanya admin yang bisa tambah nama atau putar</div>
 
@@ -1205,6 +1280,9 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTS
@@ -1439,7 +1517,7 @@ const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), 
 const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
-const ctx = $canvas.getContext('2d');
+// Race canvas now uses WebGL (Three.js); the 2D wheel canvas keeps its 2D ctx.
 const wCtx = $wCanvas.getContext('2d');
 const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr];
 let idCounter = 1;
@@ -1856,6 +1934,8 @@ function setupSocketListeners(){
     resizeCanvas();
     drawRace(); updateScoreboard();
     $('race-clock').textContent = '00:00';
+    showLobbyOverlay(true);
+    resetLobbyVisuals();
     setCommentary('PEMAIN SIAP DI GARIS START');
   });
   socket.on('race-countdown', () => {
@@ -1866,6 +1946,7 @@ function setupSocketListeners(){
   });
   socket.on('race-started', data => {
     if(role!=='viewer' || replayMode) return;
+    showLobbyOverlay(false);
     liveState = 'racing';
     racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
     viewerTargetPos = racers.map(()=>0);
@@ -2336,6 +2417,85 @@ function durationToSpeed(sec){ sec = Math.max(3, Math.min(90, sec)); const avg =
 
 // Pre-race lobby — racers stand at the start line. Admin can shuffle
 // positions before locking in and starting the countdown.
+function showLobbyOverlay(on){
+  const el = $('lobby-overlay');
+  if(!el) return;
+  el.style.display = on ? '' : 'none';
+  if(on){
+    const n = $('lobby-overlay-n');
+    const s = $('lobby-overlay-s');
+    if(n) n.textContent = players.length;
+    if(s) s.textContent = settings.duration;
+  }
+}
+
+// Reset the 3D scene's transient state (trail, fireworks, runner positions,
+// camera) so re-entering the lobby looks identical to a fresh first lobby.
+function resetLobbyVisuals(){
+  if(!race3D || !race3D.ready) return;
+  hidePodium3D();
+  // Clear trail dust
+  if(race3D.trailAlphas){
+    for(let i = 0; i < race3D.trailAlphas.length; i++) race3D.trailAlphas[i] = 0;
+    if(race3D.trailGeometry?.attributes?.aAlpha) race3D.trailGeometry.attributes.aAlpha.needsUpdate = true;
+  }
+  // Clear fireworks
+  if(race3D.fireworkParticles){
+    const fp = race3D.fireworkParticles;
+    for(let i = 0; i < fp.max; i++){
+      fp.lifetimes[i] = 0;
+      fp.positions[i*3+1] = -100;
+    }
+    fp.geo.attributes.position.needsUpdate = true;
+    fp.geo.attributes.aLife.needsUpdate = true;
+  }
+  race3D.finishedFireworks.clear();
+  race3D.shake = 0;
+  // Snap each runner + ball to start-line position
+  for(let i = 0; i < race3D.runnerMeshes.length; i++){
+    const runner = race3D.runnerMeshes[i];
+    const ball = race3D.ballMeshes[i];
+    const ring = race3D.ballRings[i];
+    if(runner){
+      runner.position.z = 0;
+      runner.rotation.x = 0;
+      // Restore the runner's natural racing orientation (uses the configured
+      // rotationY for realistic GLB; procedural runner faces native +Z).
+      const u = runner.userData;
+      runner.rotation.y = u?.isRealistic ? (_runnerGLTF.rotationY || 0) : 0;
+      runner.rotation.z = 0;
+      if(u && u.isRealistic){
+        u.lastZ = 0;
+        u.lastRunWeight = 0;
+        if(u.idleAction) u.idleAction.setEffectiveWeight(1);
+        if(u.runAction)  u.runAction.setEffectiveWeight(0);
+      }
+    }
+    if(ball){ ball.position.z = (runner ? runner.position.z + 0.7 : 0); }
+    if(ring){ ring.position.z = 0; }
+  }
+  // Force drone camera and snap to lobby orbit so there's no leftover lerp
+  // from wherever the camera ended the previous race.
+  setCameraMode('drone');
+  race3D.camera.position.set(0, 4.0, 13.5);
+  race3D.camera.lookAt(0, 1.8, 0);
+}
+
+// Admin-side continuous lobby render so the cinematic camera animates
+// smoothly (viewer already gets this via viewerLoop).
+let _lobbyRAF = 0;
+function startLobbyAnim(){
+  if(_lobbyRAF) return;
+  const loop = () => {
+    drawRace();
+    _lobbyRAF = requestAnimationFrame(loop);
+  };
+  _lobbyRAF = requestAnimationFrame(loop);
+}
+function stopLobbyAnim(){
+  if(_lobbyRAF){ cancelAnimationFrame(_lobbyRAF); _lobbyRAF = 0; }
+}
+
 function enterRaceLobby(){
   exitReplay();
   showScreen($race); $tabBar.classList.add('hidden');
@@ -2348,6 +2508,9 @@ function enterRaceLobby(){
   $('race-clock').textContent = '00:00';
   $('race-lobby-bar').style.display = role === 'admin' ? '' : 'none';
   $('race-exit-btn').style.display = role === 'admin' ? 'none' : '';
+  showLobbyOverlay(true);
+  resetLobbyVisuals();
+  if(role === 'admin') startLobbyAnim();
   setCommentary('PEMAIN SIAP DI GARIS START');
   if(role === 'admin' && socket){
     socket.emit('race-lobby', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
@@ -2363,6 +2526,12 @@ function shuffleLineup(){
   players.forEach((p, i) => p.colorIdx = i);
   broadcastPlayers();
   initRacers();
+  // Force the 3D runner/ball meshes to rebuild so the shuffled order +
+  // new team colors actually appear. Otherwise the count check skips it.
+  if(race3D && race3D.ready){
+    rebuildRacerLanes3D();
+    rebuildRacerBalls3D();
+  }
   drawRace(); updateScoreboard();
   if(socket) socket.emit('race-lobby', {racers:racers.map(r=>({name:r.name,colorIdx:r.colorIdx,strategy:r.strategy}))});
   toast('Posisi diacak');
@@ -2372,6 +2541,8 @@ function startRaceFromLobby(){
   if(role !== 'admin') return;
   $('race-lobby-bar').style.display = 'none';
   $('race-exit-btn').style.display = '';
+  showLobbyOverlay(false);
+  stopLobbyAnim();
   if(socket) socket.emit('race-countdown');
   runCountdown().then(() => {
     raceActive = true; lastTime = 0;
@@ -2391,6 +2562,7 @@ function cancelLobby(){
   if(role === 'admin' && socket) socket.emit('back-to-setup');
   raceActive = false;
   stopTickDriver();
+  stopLobbyAnim();
   $('race-lobby-bar').style.display = 'none';
   $('race-exit-btn').style.display = '';
   $tabBar.classList.remove('hidden');
@@ -2407,9 +2579,9 @@ function startBroadcasting(){
 }
 
 function resizeCanvas(){
-  const wrap = $('pitch-wrap');
-  $canvas.width = wrap.clientWidth * devicePixelRatio;
-  $canvas.height = wrap.clientHeight * devicePixelRatio;
+  // 3D renderer manages canvas drawing-buffer + CSS sizing internally
+  if(!race3D || !race3D.ready) initRace3D();
+  resizeRace3D();
 }
 
 function runCountdown(){
@@ -2659,9 +2831,2082 @@ logoImg.onload = () => { logoLoaded = true; };
 logoImg.onerror = () => { logoImg.onerror = () => { logoLoaded=false; }; logoImg.src='logo.svg'; };
 logoImg.src = 'logo.png';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RACE 3D — Three.js: stadium, crowd, floodlights, soccer balls, dust trails
+// ═══════════════════════════════════════════════════════════════════════════
+const TRACK_LEN = 100;
+const TRACK_HALF_WIDTH = 12;
+const race3D = {
+  ready: false,
+  failed: false,
+  renderer: null,
+  scene: null,
+  camera: null,
+  pitchMat: null,
+  pitchTex: null,
+  soccerTex: null,
+  goalGroup: null,
+  bannerMesh: null,
+  banner0Z: null,
+  ballMeshes: [],
+  ballRings: [],
+  runnerMeshes: [],
+  nameTags: [],
+  capeTimeUniform: { value: 0 },
+  ballGroup: null,
+  laneGroup: null,
+  laneCount: 0,
+  trailPoints: null,
+  trailGeometry: null,
+  trailPositions: null,
+  trailColors: null,
+  trailAlphas: null,
+  trailHeads: null,
+  crowdMesh: null,
+  crowdSeed: null,
+  crowdBaseY: null,
+  cameraTargetPos: null,
+  cameraTargetLook: null,
+  startTime: 0,
+  shake: 0,
+  finishedFireworks: new Set(),
+  fireworkParticles: null,
+  // Camera modes: drone (default), chase, side, ball, orbit
+  cameraMode: 'drone',
+  ballCamIndex: 0,
+  // 3D podium
+  podiumGroup: null,
+  podiumActive: false,
+  podiumTop3Indices: [],
+  podiumTop3Order: [],
+  // Free orbit state
+  orbitAzimuth: -Math.PI / 2,
+  orbitElevation: 0.55,
+  orbitDistance: 38,
+  orbitTarget: null,
+  orbitDragging: false,
+  orbitLastX: 0,
+  orbitLastY: 0,
+};
+
+// Realistic player model. Drop your rigged GLB(s) in /models/:
+//   - public/models/player.glb               (combined — skin + all animations)
+// OR
+//   - public/models/player_idle.glb          (skin + idle animation)
+//   - public/models/player_run.glb           (run animation; skin not required)
+// The loader prefers the combined file; if it has fewer than 2 animations
+// it tries to merge animations from the separate idle/run files.
+const _runnerGLTF = { scene: null, animations: null, loading: false, failed: false, scale: 1.5, yOffset: 0, rotationY: 0 };
+function loadRunnerGLTF(){
+  if(_runnerGLTF.scene || _runnerGLTF.loading || _runnerGLTF.failed) return;
+  if(typeof THREE === 'undefined' || !THREE.GLTFLoader){ _runnerGLTF.failed = true; return; }
+  _runnerGLTF.loading = true;
+  const loader = new THREE.GLTFLoader();
+  const loadOne = (url) => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
+
+  const finalize = (scene, animations) => {
+    // Strip root motion (Hips position tracks) so the animation runs in
+    // place — we control forward movement via runner.position.z.
+    if(Array.isArray(animations)){
+      animations.forEach(clip => {
+        clip.tracks = clip.tracks.filter(track => {
+          const n = (track.name || '').toLowerCase();
+          return !(n.includes('hips') && n.endsWith('.position'));
+        });
+      });
+    }
+    _runnerGLTF.scene = scene;
+    _runnerGLTF.animations = animations;
+    try {
+      scene.updateMatrixWorld(true);
+      // Measure model height from BONE world positions (works even with
+      // KHR_mesh_quantization where geometry.boundingBox is in normalized space).
+      let minY = Infinity, maxY = -Infinity, boneCount = 0;
+      const v = new THREE.Vector3();
+      scene.traverse(o => {
+        if(o.isBone){
+          o.getWorldPosition(v);
+          if(v.y < minY) minY = v.y;
+          if(v.y > maxY) maxY = v.y;
+          boneCount++;
+        }
+      });
+      let nativeHeight = (boneCount > 0 && maxY > minY) ? (maxY - minY) : 0;
+      let nativeFloor = boneCount > 0 ? minY : 0;
+      if(!nativeHeight){
+        // Fallback to mesh bbox if no bones
+        const box = new THREE.Box3().setFromObject(scene);
+        const size = box.getSize(new THREE.Vector3());
+        nativeHeight = size.y; nativeFloor = box.min.y;
+      }
+      const TARGET_H = 2.4;
+      if(nativeHeight > 0.001) _runnerGLTF.scale = TARGET_H / nativeHeight;
+      _runnerGLTF.yOffset = -nativeFloor * _runnerGLTF.scale;
+      _runnerGLTF._lastBox = { nativeHeight, nativeFloor, bones: boneCount };
+    } catch(e){ /* keep defaults */ }
+    _runnerGLTF.loading = false;
+    console.log('player model loaded',
+      '\n  clips:', (animations || []).map(c => `${c.name} (${c.duration.toFixed(2)}s)`),
+      '\n  scale:', _runnerGLTF.scale.toFixed(4),
+      '\n  yOffset:', _runnerGLTF.yOffset.toFixed(3),
+      '\n  measured:', _runnerGLTF._lastBox);
+    console.log('Tip: tune live with:  tuneRunner(scale, yOffset)');
+  };
+
+  // Always try all three filenames in parallel; use whichever loaded.
+  Promise.all([
+    loadOne('/models/player.glb').catch(() => null),
+    loadOne('/models/player_idle.glb').catch(() => null),
+    loadOne('/models/player_run.glb').catch(() => null),
+  ]).then(([combined, idle, run]) => {
+    const sceneSrc = combined || idle || run;
+    if(!sceneSrc){
+      _runnerGLTF.failed = true;
+      _runnerGLTF.loading = false;
+      console.warn('No player model found at /models/player(.glb|_idle.glb|_run.glb)');
+      return;
+    }
+    let allAnims;
+    if(combined && (combined.animations || []).length >= 2){
+      allAnims = combined.animations;
+    } else {
+      allAnims = [
+        ...((combined && combined.animations) || []),
+        ...((idle     && idle.animations)     || []),
+        ...((run      && run.animations)      || []),
+      ];
+    }
+    finalize(sceneSrc.scene, allAnims);
+  }).catch((err) => {
+    _runnerGLTF.loading = false;
+    _runnerGLTF.failed = true;
+    console.warn('Player model load failed', err);
+  });
+}
+
+// Shared assets — PBR materials reused across all runners for perf.
+const _runnerAssets = {
+  skinMats: null, hairMats: null, shortsMat: null, sockMat: null, bootMat: null,
+  faceTex: null,
+  init(){
+    if(this.skinMats) return;
+    // Skin tones (5 variants)
+    const skinColors = [0xf3d2b3, 0xe5b48a, 0xc4936a, 0x9d6b4a, 0x6a4226];
+    this.skinMats = skinColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.62, metalness: 0 }));
+    // Hair tones (6 variants)
+    const hairColors = [0x231408, 0xffd277, 0xa84d20, 0x141318, 0x6e574d, 0xc9b59a];
+    this.hairMats = hairColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, metalness: 0.02 }));
+    this.shortsMat = new THREE.MeshStandardMaterial({ color: 0x14161e, roughness: 0.7, metalness: 0 });
+    this.sockMat   = new THREE.MeshStandardMaterial({ color: 0xfafafa, roughness: 0.6, metalness: 0 });
+    this.bootMat   = new THREE.MeshStandardMaterial({ color: 0x18181c, roughness: 0.35, metalness: 0.15 });
+
+    // Face texture — subtle, realistic-ish low-res face on small head
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const g = c.getContext('2d');
+    g.clearRect(0, 0, 256, 256);
+    // Eyes (whites)
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.ellipse(98, 116, 14, 10, 0, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.ellipse(158, 116, 14, 10, 0, 0, Math.PI*2); g.fill();
+    // Iris
+    g.fillStyle = '#3a2a18';
+    g.beginPath(); g.arc(98, 117, 6, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(158, 117, 6, 0, Math.PI*2); g.fill();
+    // Pupils
+    g.fillStyle = '#0a0a0a';
+    g.beginPath(); g.arc(98, 117, 3, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(158, 117, 3, 0, Math.PI*2); g.fill();
+    // Eye highlights
+    g.fillStyle = '#ffffff';
+    g.beginPath(); g.arc(100, 115, 1.5, 0, Math.PI*2); g.fill();
+    g.beginPath(); g.arc(160, 115, 1.5, 0, Math.PI*2); g.fill();
+    // Brows
+    g.strokeStyle = '#2a1810';
+    g.lineWidth = 4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(82, 96); g.lineTo(114, 100); g.stroke();
+    g.beginPath(); g.moveTo(142, 100); g.lineTo(174, 96); g.stroke();
+    // Nose (subtle shadow line)
+    g.strokeStyle = 'rgba(80,50,40,0.35)';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(128, 130);
+    g.lineTo(128, 152);
+    g.stroke();
+    // Mouth — neutral
+    g.strokeStyle = '#3a1a14';
+    g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(112, 175);
+    g.quadraticCurveTo(128, 184, 144, 175);
+    g.stroke();
+    this.faceTex = new THREE.CanvasTexture(c);
+    if(THREE.SRGBColorSpace) this.faceTex.colorSpace = THREE.SRGBColorSpace;
+  },
+};
+
+const _numberTextures = new Map();
+function getNumberPlateTex(num, teamColorHex){
+  const key = num + ':' + teamColorHex;
+  if(_numberTextures.has(key)) return _numberTextures.get(key);
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = teamColorHex;
+  g.fillRect(0, 0, 256, 256);
+  g.font = 'italic 900 180px "Archivo Black", Impact, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillStyle = '#ffffff';
+  g.lineWidth = 8; g.strokeStyle = '#000000';
+  const txt = String(num).padStart(2, '0');
+  g.strokeText(txt, 128, 138);
+  g.fillText(txt, 128, 138);
+  const tex = new THREE.CanvasTexture(c);
+  if(THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+  _numberTextures.set(key, tex);
+  return tex;
+}
+
+function makeRealisticRunner(teamColorHex, jerseyNumber){
+  const scene = THREE.SkeletonUtils.clone(_runnerGLTF.scene);
+  scene.scale.setScalar(_runnerGLTF.scale || 1.5);
+  scene.rotation.y = _runnerGLTF.rotationY || 0;
+  const teamCol = new THREE.Color(teamColorHex);
+  const yOff = _runnerGLTF.yOffset || 0;
+
+  // Use the model's native materials BUT clone them per racer and tint the
+  // shirt + shorts to the team color so each player wears a different kit.
+  const teamColForKit = new THREE.Color(teamColorHex);
+  scene.traverse((child) => {
+    if(child.isMesh || child.isSkinnedMesh){
+      child.castShadow = true;
+      child.receiveShadow = false;
+      child.frustumCulled = false;
+      child.visible = true;
+      const baseMat = Array.isArray(child.material) ? child.material[0] : child.material;
+      const mat = baseMat.clone();
+      const lname = (child.name || '').toLowerCase();
+      if(mat.color){
+        if(lname.includes('shirt') || lname.includes('jersey') || lname.includes('top')){
+          mat.color.copy(teamColForKit);
+          if('emissive' in mat) mat.emissive = teamColForKit.clone().multiplyScalar(0.05);
+        } else if(lname.includes('shorts') || lname.includes('pants')){
+          mat.color.copy(teamColForKit).multiplyScalar(0.55); // darker shade
+        }
+      }
+      child.material = mat;
+    }
+  });
+
+  // If the GLB has zero animations, signal failure so the caller can
+  // fall back to the procedural runner (which animates by limb math).
+  const allClips = _runnerGLTF.animations || [];
+  if(!allClips.length){
+    console.warn('player.glb has no animations — using procedural model instead.');
+    return null;
+  }
+  const mixer = new THREE.AnimationMixer(scene);
+  const findClipByName = (terms) => {
+    for(const term of terms){
+      for(const c of allClips){ if(c.name && c.name.toLowerCase().includes(term)) return c; }
+    }
+    return null;
+  };
+  let idleClip = findClipByName(['idle', 'stand', 'wait']);
+  let runClip  = findClipByName(['run', 'sprint', 'jog']) || findClipByName(['walk']);
+
+  // If specific names didn't match: pick by clip count.
+  // 1 clip total → use it for BOTH idle and run (always play, faster timescale on run).
+  // 2+ clips → use clips[0] for idle, clips[1] for run.
+  if(!idleClip && !runClip){
+    if(allClips.length === 1){ idleClip = allClips[0]; runClip = allClips[0]; }
+    else if(allClips.length >= 2){ idleClip = allClips[0]; runClip = allClips[1]; }
+  } else if(!idleClip){ idleClip = runClip; }
+    else if(!runClip){ runClip = idleClip; }
+
+  const idleAction = idleClip ? mixer.clipAction(idleClip) : null;
+  // If idle and run are the SAME clip, we can't cross-fade — just play the
+  // single action and rely on timeScale to speed up when running.
+  const sameAction = idleClip && runClip && idleClip === runClip;
+  const runAction  = !sameAction && runClip ? mixer.clipAction(runClip) : null;
+  if(idleAction){ idleAction.play(); idleAction.setEffectiveWeight(1); }
+  if(runAction){ runAction.play(); runAction.setEffectiveWeight(0); }
+
+  scene.userData = {
+    mixer, idleAction, runAction,
+    sameAction,
+    isRealistic: true, lastZ: 0, lastRunWeight: 0,
+    yOffset: yOff,
+  };
+  return scene;
+}
+
+// Old shader-painted soldier path retained as reference; not called.
+function makeRealisticRunner_oldShader(teamColorHex, jerseyNumber){
+  const scene = THREE.SkeletonUtils.clone(_runnerGLTF.scene);
+  scene.scale.setScalar(_runnerGLTF.scale || 1.5);
+  scene.rotation.y = Math.PI;
+  const teamCol = new THREE.Color(teamColorHex);
+  // Paint the soldier's mesh as a 2-tone football kit using shader injection.
+  // Vertex local Y discriminates leg / torso / head: shorts on legs,
+  // team-color jersey on the torso/arms, skin tone on the head.
+  const skinTone = new THREE.Color(0xd9b18a);
+  const shortsCol = new THREE.Color(0x14161e);
+  scene.traverse((child) => {
+    if(child.isMesh || child.isSkinnedMesh){
+      child.castShadow = true;
+      child.receiveShadow = false;
+      child.frustumCulled = false;
+      child.visible = true;
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0xffffff, roughness: 0.55, metalness: 0.04,
+      });
+      // 6-zone football kit shader: boot → sock → bare calf → shorts →
+      // jersey → face → hair, mapped against the soldier's local Y axis.
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.kitJersey = { value: teamCol.clone() };
+        shader.uniforms.kitShorts = { value: shortsCol };
+        shader.uniforms.kitSkin   = { value: skinTone };
+        shader.uniforms.kitSock   = { value: new THREE.Color(0xf4f4f5) };
+        shader.uniforms.kitBoot   = { value: new THREE.Color(0x0d0d10) };
+        shader.uniforms.kitHair   = { value: new THREE.Color(0x231408) };
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying float vKitY;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvKitY = position.y;');
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>',
+            '#include <common>\nvarying float vKitY;\n' +
+            'uniform vec3 kitJersey; uniform vec3 kitShorts; uniform vec3 kitSkin;\n' +
+            'uniform vec3 kitSock;   uniform vec3 kitBoot;   uniform vec3 kitHair;')
+          .replace('vec4 diffuseColor = vec4( diffuse, opacity );',
+            // Soldier local Y ranges roughly: feet 0, knee 0.45, hip 0.95,
+            // chest 1.40, neck 1.55, head/helmet top 2.05+. Smoothstep edges
+            // overlap so transitions blend, not banded.
+            'vec3 c = kitBoot;\n' +
+            'c = mix(c, kitSock,   smoothstep(0.040, 0.080, vKitY));\n' +
+            'c = mix(c, kitSkin,   smoothstep(0.170, 0.220, vKitY));\n' +
+            'c = mix(c, kitShorts, smoothstep(0.700, 0.780, vKitY));\n' +
+            'c = mix(c, kitJersey, smoothstep(1.030, 1.110, vKitY));\n' +
+            'c = mix(c, kitSkin,   smoothstep(1.560, 1.630, vKitY));\n' +
+            'c = mix(c, kitHair,   smoothstep(1.880, 1.970, vKitY));\n' +
+            'vec4 diffuseColor = vec4(c, opacity);');
+      };
+      child.material = mat;
+    }
+  });
+
+  const mixer = new THREE.AnimationMixer(scene);
+  const findClip = (name) => THREE.AnimationClip.findByName(_runnerGLTF.animations, name);
+  const idleClip = findClip('Idle');
+  const runClip  = findClip('Run');
+  const idleAction = idleClip ? mixer.clipAction(idleClip) : null;
+  const runAction  = runClip  ? mixer.clipAction(runClip)  : null;
+  if(idleAction){ idleAction.play(); idleAction.setEffectiveWeight(1); }
+  if(runAction){ runAction.play(); runAction.setEffectiveWeight(0); }
+
+  scene.userData = {
+    mixer, idleAction, runAction,
+    isRealistic: true, lastZ: 0, lastRunWeight: 0,
+  };
+  return scene;
+}
+
+function makeRunner3D(teamColorHex, jerseyNumber, hairVariant, skinVariant){
+  _runnerAssets.init();
+  const group = new THREE.Group();
+  const teamCol = new THREE.Color(teamColorHex);
+  const skinMat = _runnerAssets.skinMats[skinVariant % _runnerAssets.skinMats.length];
+  const hairMat = _runnerAssets.hairMats[hairVariant % _runnerAssets.hairMats.length];
+  const jerseyMat = new THREE.MeshStandardMaterial({
+    color: teamCol, roughness: 0.55, metalness: 0.05,
+  });
+  const sleeveMat = new THREE.MeshStandardMaterial({
+    color: teamCol.clone().multiplyScalar(0.7), roughness: 0.6, metalness: 0.05,
+  });
+
+  // ── Head — slightly egg-shaped, realistic small proportion ──
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.20, 24, 20), skinMat);
+  head.position.y = 2.55;
+  head.scale.set(0.95, 1.10, 1.00);
+  head.castShadow = true;
+  group.add(head);
+
+  // Hair: rounded cap (different style per variant could go here)
+  const hairCap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.215, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    hairMat
+  );
+  hairCap.position.y = 2.55;
+  hairCap.scale.copy(head.scale);
+  hairCap.castShadow = true;
+  group.add(hairCap);
+
+  // Face decal — small, on the front of the head
+  const faceMat = new THREE.MeshStandardMaterial({
+    map: _runnerAssets.faceTex, transparent: true, alphaTest: 0.05,
+    roughness: 0.65, polygonOffset: true, polygonOffsetFactor: -1,
+  });
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(0.30, 0.30), faceMat);
+  face.position.set(0, 2.55, 0.20);
+  group.add(face);
+
+  // Neck
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.095, 0.16, 14), skinMat);
+  neck.position.y = 2.32;
+  group.add(neck);
+
+  // ── Torso: realistic — V-tapered, longer ──
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.26, 1.05, 18), jerseyMat);
+  torso.position.y = 1.72;          // top at 2.245, bottom at 1.195
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Jersey hem at the bottom (subtle darker band)
+  const hemMat = new THREE.MeshStandardMaterial({ color: teamCol.clone().multiplyScalar(0.55), roughness: 0.6 });
+  const hem = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.05, 18), hemMat);
+  hem.position.y = 1.225;
+  group.add(hem);
+
+  // V-neck collar (small darker ring on the chest where the neckline sits)
+  const collar = new THREE.Mesh(
+    new THREE.TorusGeometry(0.16, 0.025, 8, 24),
+    hemMat
+  );
+  collar.rotation.x = Math.PI / 2;
+  collar.position.set(0, 2.18, 0.02);
+  collar.scale.set(1, 0.55, 1);
+  group.add(collar);
+
+  // Shoulder rounding — sphere caps that smooth the top of torso (jersey colored)
+  const shoulderGeo = new THREE.SphereGeometry(0.22, 16, 12);
+  const shoulderL = new THREE.Mesh(shoulderGeo, jerseyMat);
+  shoulderL.position.set(-0.30, 2.18, 0); shoulderL.scale.set(0.9, 0.7, 0.9); group.add(shoulderL);
+  const shoulderR = new THREE.Mesh(shoulderGeo, jerseyMat);
+  shoulderR.position.set( 0.30, 2.18, 0); shoulderR.scale.set(0.9, 0.7, 0.9); group.add(shoulderR);
+
+  // Jersey number on the back (chase camera always sees this)
+  const backNumMat = new THREE.MeshStandardMaterial({
+    map: getNumberPlateTex(jerseyNumber, teamColorHex),
+    roughness: 0.55, polygonOffset: true, polygonOffsetFactor: -1,
+  });
+  const backNum = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), backNumMat);
+  backNum.position.set(0, 1.78, -0.32);
+  backNum.rotation.y = Math.PI;
+  group.add(backNum);
+  // Front chest number (smaller)
+  const frontNum = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20), backNumMat);
+  frontNum.position.set(0.13, 2.00, 0.31);
+  group.add(frontNum);
+
+  // ── Shorts (taller) ──
+  const shorts = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.26, 0.40, 14), _runnerAssets.shortsMat);
+  shorts.position.y = 1.0;
+  shorts.castShadow = true;
+  group.add(shorts);
+
+  // ── Arms: short jersey sleeves on upper arm + bare skin forearms/hands ──
+  const sleeveLen = 0.18;     // short sleeve, ends just above bicep
+  const bicepLen  = 0.46 - sleeveLen;
+  const sleeveArmGeo = new THREE.CylinderGeometry(0.082, 0.075, sleeveLen, 12);
+  const bicepGeo  = new THREE.CylinderGeometry(0.072, 0.063, bicepLen, 12);
+  const foreArmGeo   = new THREE.CylinderGeometry(0.063, 0.055, 0.43, 12);
+  const handGeo      = new THREE.SphereGeometry(0.07, 12, 10);
+  const buildArm = (sx) => {
+    const shoulder = new THREE.Object3D();
+    shoulder.position.set(sx * 0.32, 2.12, 0);
+    // Short jersey sleeve covering the upper bicep
+    const sleeve = new THREE.Mesh(sleeveArmGeo, sleeveMat);
+    sleeve.position.y = -sleeveLen / 2;
+    sleeve.castShadow = true;
+    shoulder.add(sleeve);
+    // Bare bicep below the sleeve
+    const bicep = new THREE.Mesh(bicepGeo, skinMat);
+    bicep.position.y = -sleeveLen - bicepLen / 2;
+    bicep.castShadow = true;
+    shoulder.add(bicep);
+    const elbow = new THREE.Object3D();
+    elbow.position.y = -0.46;
+    shoulder.add(elbow);
+    const fore = new THREE.Mesh(foreArmGeo, skinMat);
+    fore.position.y = -0.215;
+    elbow.add(fore);
+    const hand = new THREE.Mesh(handGeo, skinMat);
+    hand.position.y = -0.45;
+    hand.scale.set(1, 0.8, 1.2);
+    elbow.add(hand);
+    return { shoulder, elbow };
+  };
+  const armL = buildArm(-1); group.add(armL.shoulder);
+  const armR = buildArm( 1); group.add(armR.shoulder);
+
+  // ── Legs with hip + knee pivots — longer, realistic ──
+  const thighGeo = new THREE.CylinderGeometry(0.12, 0.095, 0.58, 12);
+  const shinGeo  = new THREE.CylinderGeometry(0.092, 0.075, 0.50, 12);
+  const buildLeg = (sx) => {
+    const hip = new THREE.Object3D();
+    hip.position.set(sx * 0.13, 0.85, 0);
+    // Thigh is BARE SKIN — football shorts end at the hip and the upper leg
+    // shows above the sock line. Shorts cylinder covers the very top.
+    const thigh = new THREE.Mesh(thighGeo, skinMat);
+    thigh.position.y = -0.29;
+    thigh.castShadow = true;
+    hip.add(thigh);
+    // Knee detail (small skin sphere where shorts meet sock)
+    const knee = new THREE.Object3D();
+    knee.position.y = -0.58;
+    hip.add(knee);
+    const shin = new THREE.Mesh(shinGeo, _runnerAssets.sockMat);
+    shin.position.y = -0.25;
+    shin.castShadow = true;
+    knee.add(shin);
+    // Sock cuff at the knee (slightly thicker band, team color)
+    const sockBand = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.10, 0.10, 0.06, 14),
+      new THREE.MeshStandardMaterial({ color: teamCol.clone().multiplyScalar(0.7), roughness: 0.55 })
+    );
+    sockBand.position.y = -0.02;
+    knee.add(sockBand);
+    // Boot (cleat) — rounded shape from a scaled sphere, cut at the top
+    const boot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.10, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.55),
+      _runnerAssets.bootMat
+    );
+    boot.scale.set(1.3, 1.7, 2.2);
+    boot.rotation.x = -Math.PI / 2;     // cup faces up like a real boot
+    boot.position.set(0, -0.51, 0.10);
+    boot.castShadow = true;
+    knee.add(boot);
+    // Boot sole — flat dark band underneath
+    const sole = new THREE.Mesh(
+      new THREE.BoxGeometry(0.16, 0.025, 0.32),
+      new THREE.MeshStandardMaterial({ color: 0x080808, roughness: 0.4 })
+    );
+    sole.position.set(0, -0.555, 0.10);
+    knee.add(sole);
+    // Side stripe on the boot (jersey color)
+    const bootStripe = new THREE.Mesh(
+      new THREE.BoxGeometry(0.165, 0.018, 0.12),
+      new THREE.MeshStandardMaterial({ color: teamCol, roughness: 0.5 })
+    );
+    bootStripe.position.set(0, -0.50, 0.10);
+    knee.add(bootStripe);
+    return { hip, knee };
+  };
+  const legL = buildLeg(-1); group.add(legL.hip);
+  const legR = buildLeg( 1); group.add(legR.hip);
+
+  group.userData = {
+    armL: armL.shoulder, armR: armR.shoulder,
+    armElbowL: armL.elbow, armElbowR: armR.elbow,
+    legL: legL.hip,       legR: legR.hip,
+    legKneeL: legL.knee,  legKneeR: legR.knee,
+  };
+  return group;
+}
+
+function makeSoccerTexture(){
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 512;
+  const g = c.getContext('2d');
+  // Slight gradient for shading depth
+  const grad = g.createLinearGradient(0, 0, 0, c.height);
+  grad.addColorStop(0, '#f6f6f6');
+  grad.addColorStop(0.5, '#ffffff');
+  grad.addColorStop(1, '#e8e8e8');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, c.width, c.height);
+  // Pentagon-like dark patches arranged in a classic ball pattern.
+  const drawPent = (cx, cy, r, rot) => {
+    g.beginPath();
+    for(let i = 0; i < 5; i++){
+      const a = (rot || -Math.PI / 2) + i * (Math.PI * 2 / 5);
+      const px = cx + Math.cos(a) * r;
+      const py = cy + Math.sin(a) * r * 0.92;
+      if(i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+    g.fill();
+  };
+  g.fillStyle = '#1a1a1a';
+  const R = 70;
+  // Three rows of pentagons offset like a cube-faced unwrap of a soccer ball
+  const positions = [
+    [0.11, 0.5], [0.31, 0.5], [0.51, 0.5], [0.71, 0.5], [0.91, 0.5],
+    [0.21, 0.18], [0.41, 0.18], [0.61, 0.18], [0.81, 0.18], [0.01, 0.18],
+    [0.21, 0.82], [0.41, 0.82], [0.61, 0.82], [0.81, 0.82], [0.01, 0.82],
+  ];
+  for(const [u, v] of positions){
+    drawPent(u * c.width, v * c.height, R, ((u + v) * 7) % 1 * Math.PI);
+  }
+  // Stitching lines between patches — subtle dotted grid
+  g.strokeStyle = 'rgba(40,40,40,0.35)';
+  g.lineWidth = 2;
+  g.setLineDash([6, 8]);
+  for(const [u, v] of positions){
+    const cx = u * c.width, cy = v * c.height;
+    for(let i = 0; i < 5; i++){
+      const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+      g.beginPath();
+      g.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R * 0.92);
+      g.lineTo(cx + Math.cos(a) * (R + 28), cy + Math.sin(a) * (R + 28) * 0.92);
+      g.stroke();
+    }
+  }
+  g.setLineDash([]);
+  return c;
+}
+
+function makeGrassTexture(){
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  // Two-tone mow stripes
+  for(let i = 0; i < 8; i++){
+    g.fillStyle = i % 2 === 0 ? '#1c5727' : '#244e25';
+    g.fillRect(0, i * 32, 256, 32);
+  }
+  // Grass blade noise
+  for(let n = 0; n < 1500; n++){
+    const x = Math.random() * 256, y = Math.random() * 256;
+    g.fillStyle = `rgba(${20 + Math.random() * 30}, ${60 + Math.random() * 70}, ${30 + Math.random() * 40}, ${0.15 + Math.random() * 0.35})`;
+    g.fillRect(x, y, 1, 1 + Math.random() * 2);
+  }
+  // Subtle highlights
+  for(let n = 0; n < 200; n++){
+    g.fillStyle = `rgba(255,255,255,${Math.random() * 0.05})`;
+    g.fillRect(Math.random() * 256, Math.random() * 256, 1, 1);
+  }
+  return c;
+}
+
+function makeSkyTexture(){
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 512;
+  const g = c.getContext('2d');
+  // Sunset gradient
+  const grad = g.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0, '#0a1b40');
+  grad.addColorStop(0.35, '#1f2a55');
+  grad.addColorStop(0.55, '#bd4a3a');
+  grad.addColorStop(0.7, '#ff8a3c');
+  grad.addColorStop(0.85, '#ffb86b');
+  grad.addColorStop(1, '#3a2818');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 1024, 512);
+  // Sun disc
+  const sunX = 720, sunY = 290, sunR = 60;
+  const sg = g.createRadialGradient(sunX, sunY, 4, sunX, sunY, sunR);
+  sg.addColorStop(0, 'rgba(255,250,220,1)');
+  sg.addColorStop(0.4, 'rgba(255,200,120,0.7)');
+  sg.addColorStop(1, 'rgba(255,160,80,0)');
+  g.fillStyle = sg;
+  g.beginPath(); g.arc(sunX, sunY, sunR, 0, Math.PI * 2); g.fill();
+  // Cloud strips
+  g.globalAlpha = 0.5;
+  for(let i = 0; i < 18; i++){
+    const cx = Math.random() * 1024;
+    const cy = 80 + Math.random() * 200;
+    const w = 60 + Math.random() * 200;
+    const h = 8 + Math.random() * 12;
+    const cgrad = g.createLinearGradient(cx - w/2, cy, cx + w/2, cy);
+    cgrad.addColorStop(0, 'rgba(255,200,150,0)');
+    cgrad.addColorStop(0.5, `rgba(255,${180 + Math.random()*60},${140 + Math.random()*60},${0.4 + Math.random() * 0.5})`);
+    cgrad.addColorStop(1, 'rgba(255,200,150,0)');
+    g.fillStyle = cgrad;
+    g.beginPath(); g.ellipse(cx, cy, w/2, h/2, 0, 0, Math.PI*2); g.fill();
+  }
+  g.globalAlpha = 1;
+  // Stars sprinkled high up
+  g.fillStyle = '#ffffff';
+  for(let i = 0; i < 50; i++){
+    g.globalAlpha = 0.4 + Math.random() * 0.6;
+    g.fillRect(Math.random() * 1024, Math.random() * 90, 1, 1);
+  }
+  g.globalAlpha = 1;
+  return c;
+}
+
+function makeAdTexture(label, bg){
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, 256, 64);
+  g.font = 'bold italic 28px Impact, "Archivo Black", sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = '#ffffff';
+  g.shadowColor = 'rgba(0,0,0,0.55)';
+  g.shadowBlur = 6;
+  g.fillText(label, 128, 34);
+  g.shadowBlur = 0;
+  // Subtle border
+  g.strokeStyle = 'rgba(255,255,255,0.35)';
+  g.lineWidth = 2;
+  g.strokeRect(2, 2, 252, 60);
+  return c;
+}
+
+function makeCrowdTexture(){
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const g = c.getContext('2d');
+  // Radial gradient sphere-ish for the crowd "head dot"
+  const grad = g.createRadialGradient(32, 28, 4, 32, 32, 28);
+  grad.addColorStop(0, 'rgba(255,255,255,0.95)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grad;
+  g.beginPath(); g.arc(32, 32, 28, 0, Math.PI*2); g.fill();
+  return c;
+}
+
+function initRace3D(){
+  if(race3D.ready || race3D.failed) return race3D.ready;
+  if(typeof THREE === 'undefined'){ race3D.failed = true; return false; }
+  // Kick off the realistic GLTF load (fire-and-forget; runners use the procedural
+  // model until the file lands, then are rebuilt with the realistic clone).
+  loadRunnerGLTF();
+
+  try {
+    const renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.setClearColor(0x0a1a18, 1);
+    if(THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    else if(THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x1a1f33, 0.0072);
+
+    const camera = new THREE.PerspectiveCamera(55, 16/9, 0.1, 600);
+    camera.position.set(0, 6, -14);
+
+    // ── Sky: large back-side sphere with sunset texture ──
+    const skyTex = new THREE.CanvasTexture(makeSkyTexture());
+    if(THREE.SRGBColorSpace) skyTex.colorSpace = THREE.SRGBColorSpace;
+    const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false });
+    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(380, 48, 32), skyMat);
+    scene.add(skyDome);
+
+    // ── Lighting: warm sunset key + cool fill + rim ──
+    const hemi = new THREE.HemisphereLight(0xffd9b3, 0x1d2640, 0.55);
+    scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffd0a0, 1.6);
+    sun.position.set(60, 90, 40);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -36; sun.shadow.camera.right = 36;
+    sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -20;
+    sun.shadow.camera.near = 1; sun.shadow.camera.far = 200;
+    sun.shadow.bias = -0.0008;
+    sun.shadow.normalBias = 0.04;
+    scene.add(sun);
+    // Cool rim/back light to give silhouettes pop
+    const rim = new THREE.DirectionalLight(0x6090ff, 0.5);
+    rim.position.set(-30, 30, -40);
+    scene.add(rim);
+
+    // ── Pitch: high-detail grass with shadow + mow stripes ──
+    const grassTex = new THREE.CanvasTexture(makeGrassTexture());
+    grassTex.wrapS = grassTex.wrapT = THREE.RepeatWrapping;
+    grassTex.repeat.set(8, 32);
+    grassTex.anisotropy = renderer.capabilities.getMaxAnisotropy ? renderer.capabilities.getMaxAnisotropy() : 4;
+    if(THREE.SRGBColorSpace) grassTex.colorSpace = THREE.SRGBColorSpace;
+
+    const pitchMat = new THREE.MeshStandardMaterial({
+      map: grassTex,
+      roughness: 0.92,
+      metalness: 0,
+      color: 0x88aa88,
+    });
+    // Wide green pitch — extends well beyond the running track to fill the
+    // space between players and the distant stands (big-stadium feel).
+    const pitch = new THREE.Mesh(new THREE.PlaneGeometry(110, 320, 1, 1), pitchMat);
+    pitch.rotation.x = -Math.PI / 2;
+    pitch.position.set(0, 0, TRACK_LEN * 0.5);
+    pitch.receiveShadow = true;
+    scene.add(pitch);
+
+    // Start line + center mark
+    const whiteLineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
+    const startLine = new THREE.Mesh(new THREE.PlaneGeometry(TRACK_HALF_WIDTH * 2, 0.7), whiteLineMat);
+    startLine.rotation.x = -Math.PI / 2;
+    startLine.position.set(0, 0.01, 0);
+    scene.add(startLine);
+    const halfwayLine = new THREE.Mesh(new THREE.PlaneGeometry(TRACK_HALF_WIDTH * 2, 0.25), whiteLineMat);
+    halfwayLine.rotation.x = -Math.PI / 2;
+    halfwayLine.position.set(0, 0.012, TRACK_LEN * 0.5);
+    scene.add(halfwayLine);
+
+    const laneGroup = new THREE.Group();
+    scene.add(laneGroup);
+
+    // ── Goal: full posts + crossbar + checkered banner ──
+    const goalGroup = new THREE.Group();
+    const postMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.28, metalness: 0.18 });
+    const goalHalfW = TRACK_HALF_WIDTH + 1.6;
+    const goalH = 7.2;
+    const postGeo = new THREE.CylinderGeometry(0.22, 0.22, goalH, 20);
+    const post1 = new THREE.Mesh(postGeo, postMat); post1.position.set(-goalHalfW, goalH/2, 0); post1.castShadow = true; goalGroup.add(post1);
+    const post2 = new THREE.Mesh(postGeo, postMat); post2.position.set( goalHalfW, goalH/2, 0); post2.castShadow = true; goalGroup.add(post2);
+    const crossbarGeo = new THREE.CylinderGeometry(0.22, 0.22, goalHalfW * 2 + 0.44, 20);
+    const crossbar = new THREE.Mesh(crossbarGeo, postMat);
+    crossbar.rotation.z = Math.PI / 2;
+    crossbar.position.set(0, goalH, 0);
+    crossbar.castShadow = true;
+    goalGroup.add(crossbar);
+
+    // Net behind the posts (semi-transparent grid)
+    const netCanvas = document.createElement('canvas');
+    netCanvas.width = 128; netCanvas.height = 128;
+    const nctx = netCanvas.getContext('2d');
+    nctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    nctx.lineWidth = 1;
+    for(let i = 0; i <= 16; i++){
+      const v = (i / 16) * 128;
+      nctx.beginPath(); nctx.moveTo(v, 0); nctx.lineTo(v, 128); nctx.stroke();
+      nctx.beginPath(); nctx.moveTo(0, v); nctx.lineTo(128, v); nctx.stroke();
+    }
+    const netTex = new THREE.CanvasTexture(netCanvas);
+    netTex.wrapS = netTex.wrapT = THREE.RepeatWrapping;
+    netTex.repeat.set(8, 4);
+    const netMat = new THREE.MeshStandardMaterial({
+      map: netTex, transparent: true, opacity: 0.55,
+      side: THREE.DoubleSide, alphaTest: 0.05, roughness: 0.9,
+    });
+    // Back net plane (slightly behind goal)
+    const backNet = new THREE.Mesh(new THREE.PlaneGeometry(goalHalfW * 2, goalH), netMat);
+    backNet.position.set(0, goalH/2, 4.5);
+    goalGroup.add(backNet);
+    // Top net (slanting)
+    const topNet = new THREE.Mesh(new THREE.PlaneGeometry(goalHalfW * 2, 4.6), netMat);
+    topNet.position.set(0, goalH - 0.05, 2.3);
+    topNet.rotation.x = -Math.PI / 2.2;
+    goalGroup.add(topNet);
+
+    // Checkered banner above the crossbar — wave on update
+    const bannerCanvas = document.createElement('canvas');
+    bannerCanvas.width = 384; bannerCanvas.height = 48;
+    const bctx = bannerCanvas.getContext('2d');
+    const sq = 16;
+    for(let row = 0; row < 3; row++) for(let col = 0; col < 24; col++){
+      bctx.fillStyle = (row + col) % 2 === 0 ? '#ffffff' : '#1a1a1a';
+      bctx.fillRect(col * sq, row * sq, sq, sq);
+    }
+    const bannerTex = new THREE.CanvasTexture(bannerCanvas);
+    const bannerMat = new THREE.MeshStandardMaterial({ map: bannerTex, side: THREE.DoubleSide, roughness: 0.6, emissive: 0x404040 });
+    const bannerGeo = new THREE.PlaneGeometry(goalHalfW * 2 + 0.4, 1.6, 32, 1);
+    const banner = new THREE.Mesh(bannerGeo, bannerMat);
+    banner.position.set(0, goalH + 1.6, 0);
+    goalGroup.add(banner);
+
+    // Painted ground checker line at goal
+    const groundCheckerCanvas = document.createElement('canvas');
+    groundCheckerCanvas.width = 256; groundCheckerCanvas.height = 32;
+    const ggc = groundCheckerCanvas.getContext('2d');
+    for(let row = 0; row < 2; row++) for(let col = 0; col < 16; col++){
+      ggc.fillStyle = (row + col) % 2 === 0 ? '#ffffff' : '#1a1a1a';
+      ggc.fillRect(col * 16, row * 16, 16, 16);
+    }
+    const groundCheckerTex = new THREE.CanvasTexture(groundCheckerCanvas);
+    groundCheckerTex.wrapS = THREE.RepeatWrapping;
+    groundCheckerTex.repeat.set(4, 1);
+    const groundChecker = new THREE.Mesh(
+      new THREE.PlaneGeometry(TRACK_HALF_WIDTH * 2, 1.7),
+      new THREE.MeshStandardMaterial({ map: groundCheckerTex, roughness: 0.7 })
+    );
+    groundChecker.rotation.x = -Math.PI / 2;
+    groundChecker.position.set(0, 0.02, 0);
+    goalGroup.add(groundChecker);
+
+    goalGroup.position.set(0, 0, TRACK_LEN);
+    scene.add(goalGroup);
+
+    // ── Big stadium: stepped tiers pushed FAR OUT so the camera always
+    // has wide-open space around the action and stands never block the view.
+    const tierMat = new THREE.MeshStandardMaterial({ color: 0x1c1a28, roughness: 0.95 });
+    const tierFrontMat = new THREE.MeshStandardMaterial({ color: 0x262232, roughness: 0.92 });
+    const tierLen = 320;
+    const tierZ = TRACK_LEN * 0.5;
+    // Side tiers — 4 stepped rings on each side, starting ~38 units off the track edge
+    const sideSteps = [
+      { dx: 38, h: 4,  y: 2  },
+      { dx: 48, h: 7,  y: 5.5 },
+      { dx: 60, h: 10, y: 11 },
+      { dx: 74, h: 13, y: 19 },
+    ];
+    for(let side = 0; side < 2; side++){
+      const sx = side === 0 ? -1 : 1;
+      sideSteps.forEach((s, idx) => {
+        const m = new THREE.Mesh(
+          new THREE.BoxGeometry(8, s.h, tierLen),
+          idx === 0 ? tierFrontMat : tierMat,
+        );
+        m.position.set(sx * (TRACK_HALF_WIDTH + s.dx), s.y, tierZ);
+        scene.add(m);
+      });
+    }
+    // Stands behind goal
+    const goalEndZ = TRACK_LEN + 50;
+    const backSteps = [
+      { dz: 30, h: 4,  y: 2  },
+      { dz: 42, h: 8,  y: 6  },
+      { dz: 56, h: 12, y: 13 },
+      { dz: 72, h: 14, y: 22 },
+    ];
+    backSteps.forEach((s, idx) => {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(220, s.h, 8),
+        idx === 0 ? tierFrontMat : tierMat,
+      );
+      m.position.set(0, s.y, TRACK_LEN + s.dz);
+      scene.add(m);
+    });
+    // Stands behind start (mirror)
+    backSteps.forEach((s, idx) => {
+      const m = new THREE.Mesh(
+        new THREE.BoxGeometry(220, s.h, 8),
+        idx === 0 ? tierFrontMat : tierMat,
+      );
+      m.position.set(0, s.y, -s.dz);
+      scene.add(m);
+    });
+
+    // Crowd — small spheres so they read from any camera angle
+    const crowdGeo = new THREE.IcosahedronGeometry(0.32, 0);
+    const crowdMat = new THREE.MeshStandardMaterial({
+      vertexColors: false,
+      roughness: 0.9,
+      metalness: 0,
+    });
+    const crowdCount = 1800;
+    const crowdMesh = new THREE.InstancedMesh(crowdGeo, crowdMat, crowdCount);
+    const crowdSeed = new Float32Array(crowdCount); // per-instance phase
+    const crowdBaseY = new Float32Array(crowdCount); // per-instance resting Y
+    const dummy = new THREE.Object3D();
+    let instIdx = 0;
+    // Place a row of crowd dots distributed along z (track-length direction).
+    const placeAlongTrack = (centerX, baseY, zStart, zEnd, count, jitterX) => {
+      for(let i = 0; i < count; i++){
+        if(instIdx >= crowdCount) return;
+        const x = centerX + (Math.random() - 0.5) * 2 * jitterX;
+        const y = baseY + 0.5 + (Math.random() - 0.5) * 0.05;
+        const z = zStart + Math.random() * (zEnd - zStart);
+        dummy.position.set(x, y, z);
+        dummy.scale.setScalar(0.85 + Math.random() * 0.45);
+        dummy.rotation.y = 0;
+        dummy.updateMatrix();
+        crowdMesh.setMatrixAt(instIdx, dummy.matrix);
+        const col = new THREE.Color().setHSL(Math.random(), 0.6, 0.5 + Math.random() * 0.3);
+        crowdMesh.setColorAt(instIdx, col);
+        crowdSeed[instIdx] = Math.random() * Math.PI * 2;
+        crowdBaseY[instIdx] = y;
+        instIdx++;
+      }
+    };
+    // Place a row across X (perpendicular to track) — for behind-goal and behind-start stands.
+    const placeAcrossX = (centerZ, baseY, xStart, xEnd, count, jitterZ) => {
+      for(let i = 0; i < count; i++){
+        if(instIdx >= crowdCount) return;
+        const x = xStart + Math.random() * (xEnd - xStart);
+        const y = baseY + 0.5 + (Math.random() - 0.5) * 0.05;
+        const z = centerZ + (Math.random() - 0.5) * 2 * jitterZ;
+        dummy.position.set(x, y, z);
+        dummy.scale.setScalar(0.85 + Math.random() * 0.45);
+        dummy.rotation.y = 0;
+        dummy.updateMatrix();
+        crowdMesh.setMatrixAt(instIdx, dummy.matrix);
+        const col = new THREE.Color().setHSL(Math.random(), 0.6, 0.5 + Math.random() * 0.3);
+        crowdMesh.setColorAt(instIdx, col);
+        crowdSeed[instIdx] = Math.random() * Math.PI * 2;
+        crowdBaseY[instIdx] = y;
+        instIdx++;
+      }
+    };
+    // Fill the big-stadium tiers — distribute crowd dots along z (sides)
+    // and across x (behind goal/start). Tier-step y positions match the
+    // box geometry above so dots sit on top of each step.
+    const trackZStart = -160, trackZEnd = TRACK_LEN + 160;
+    const sideStepsForCrowd = [
+      { dx: 38, top: 4   },
+      { dx: 48, top: 9   },
+      { dx: 60, top: 16  },
+      { dx: 74, top: 25.5 },
+    ];
+    for(let side = 0; side < 2; side++){
+      const sx = side === 0 ? -1 : 1;
+      sideStepsForCrowd.forEach((s, idx) => {
+        const x = sx * (TRACK_HALF_WIDTH + s.dx);
+        const rows = 3 + idx;
+        for(let r = 0; r < rows; r++){
+          const offsetX = sx * (r * 0.85);
+          placeAlongTrack(x + offsetX, s.top + r * 0.5, trackZStart, trackZEnd, 110, 1.4);
+        }
+      });
+    }
+    // Stands behind goal/start — same Y heights as the BoxGeometry tops
+    const backStepsForCrowd = [
+      { dz: 30, top: 4   },
+      { dz: 42, top: 10  },
+      { dz: 56, top: 19  },
+      { dz: 72, top: 29  },
+    ];
+    backStepsForCrowd.forEach((s, idx) => {
+      const rows = 3 + idx;
+      for(let r = 0; r < rows; r++){
+        // Behind goal
+        placeAcrossX(TRACK_LEN + s.dz + r * 0.85, s.top + r * 0.5, -100, 100, 110, 1.4);
+        // Behind start
+        placeAcrossX(-s.dz - r * 0.85, s.top + r * 0.5, -100, 100, 110, 1.4);
+      }
+    });
+    crowdMesh.instanceMatrix.needsUpdate = true;
+    if(crowdMesh.instanceColor) crowdMesh.instanceColor.needsUpdate = true;
+    crowdMesh.frustumCulled = false;
+    scene.add(crowdMesh);
+
+    // ── Ad boards: alternate Karboluxe-branded and "Ball Race" panels only ──
+    const karboTex = new THREE.CanvasTexture(makeAdTexture('KARBOLUXE', '#0d1018'));
+    const ballRaceTex = new THREE.CanvasTexture(makeAdTexture('BALL RACE', '#ff4500'));
+    if(THREE.SRGBColorSpace){ karboTex.colorSpace = THREE.SRGBColorSpace; ballRaceTex.colorSpace = THREE.SRGBColorSpace; }
+    const karboMat = new THREE.MeshStandardMaterial({
+      map: karboTex,
+      emissive: new THREE.Color('#a8e4f0'),
+      emissiveIntensity: 0.10,
+      roughness: 0.55, metalness: 0.05,
+    });
+    const ballRaceMat = new THREE.MeshStandardMaterial({
+      map: ballRaceTex,
+      emissive: new THREE.Color('#ff4500'),
+      emissiveIntensity: 0.20,
+      roughness: 0.55, metalness: 0.05,
+    });
+    const adGeo = new THREE.BoxGeometry(8, 1.4, 0.3);
+    for(let i = 0; i < 16; i++){
+      for(let side = 0; side < 2; side++){
+        const sx = side === 0 ? -1 : 1;
+        const useKarbo = ((i + side) % 2) === 0;
+        const board = new THREE.Mesh(adGeo, useKarbo ? karboMat : ballRaceMat);
+        board.position.set(sx * (TRACK_HALF_WIDTH + 0.6), 0.7, i * 9 - 6);
+        board.rotation.y = sx * Math.PI / 2;
+        board.castShadow = true;
+        board.receiveShadow = true;
+        scene.add(board);
+      }
+    }
+
+    // ── Floodlight pylons at four corners with visible cones ──
+    const pylonMat = new THREE.MeshStandardMaterial({ color: 0x202028, roughness: 0.8 });
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff5d0, emissive: 0xfff0c0, emissiveIntensity: 1.6 });
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0xffe9b0, transparent: true, opacity: 0.13,
+      depthWrite: false, side: THREE.DoubleSide, fog: false,
+    });
+    const cornerXs = [-(TRACK_HALF_WIDTH + 80), (TRACK_HALF_WIDTH + 80)];
+    const cornerZs = [-78, TRACK_LEN + 78];
+    for(const cx of cornerXs) for(const cz of cornerZs){
+      // Pylon
+      const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 22, 8), pylonMat);
+      pylon.position.set(cx, 11, cz);
+      pylon.castShadow = true;
+      scene.add(pylon);
+      // Lamp head box
+      const head = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 1.4), lampMat);
+      const inward = cx < 0 ? 1 : -1;
+      head.position.set(cx + inward * 0.8, 21, cz);
+      head.lookAt(0, 1, TRACK_LEN * 0.5);
+      scene.add(head);
+      // Beam cone (downward toward center of pitch)
+      const beamLen = 32;
+      const beam = new THREE.Mesh(new THREE.ConeGeometry(8, beamLen, 24, 1, true), beamMat);
+      const target = new THREE.Vector3(0, 1, TRACK_LEN * 0.5);
+      const lampPos = new THREE.Vector3(cx + inward * 0.8, 21, cz);
+      const dir = target.clone().sub(lampPos).normalize();
+      beam.position.copy(lampPos).addScaledVector(dir, beamLen / 2);
+      // Cone defaults to +Y; rotate so its axis matches dir
+      const up = new THREE.Vector3(0, 1, 0);
+      const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
+      beam.quaternion.copy(quat);
+      // Cone +Y points away from base — flip so the wide end faces target? Default cone has tip at top, so dir along +Y means tip up. We want tip at lamp, base at target. The default Cone has tip at +Y/2 and base at -Y/2. We aligned +Y to dir, so tip is in dir direction (away from lamp). That's wrong. Flip:
+      beam.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0), Math.PI));
+      scene.add(beam);
+    }
+
+    // ── Trail / dust particles for racers ──
+    const trailMaxPerBall = 30;
+    const ballGroup = new THREE.Group();
+    scene.add(ballGroup);
+
+    // We'll create the trail Points lazily once we know racer count.
+
+    Object.assign(race3D, {
+      ready: true,
+      renderer, scene, camera,
+      pitchMat, pitchTex: grassTex,
+      goalGroup, ballGroup, laneGroup,
+      bannerMesh: banner,
+      banner0Z: banner.position.z,
+      crowdMesh, crowdSeed, crowdBaseY,
+      cameraTargetPos: new THREE.Vector3(0, 6, -14),
+      cameraTargetLook: new THREE.Vector3(0, 1.5, 8),
+      startTime: performance.now(),
+    });
+    return true;
+  } catch(err){
+    console.error('Race3D init failed:', err);
+    race3D.failed = true;
+    return false;
+  }
+}
+
+function rebuildRacerLanes3D(){
+  if(!race3D.ready) return;
+  const n = racers.length;
+  if(n === race3D.laneCount) return;
+  race3D.laneCount = n;
+
+  // Clear lane lines
+  while(race3D.laneGroup.children.length) race3D.laneGroup.remove(race3D.laneGroup.children[0]);
+
+  if(!n) return;
+  const trackW = Math.min(TRACK_HALF_WIDTH * 2 - 1, Math.max(6, n * 1.6));
+  const laneW = trackW / n;
+  // Outer track edges
+  const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.85 });
+  const innerLineMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.35 });
+  // Side rails
+  for(let s = 0; s < 2; s++){
+    const x = (s === 0 ? -1 : 1) * trackW / 2;
+    const rail = new THREE.Mesh(new THREE.PlaneGeometry(0.2, TRACK_LEN + 4), lineMat);
+    rail.rotation.x = -Math.PI / 2;
+    rail.position.set(x, 0.015, TRACK_LEN * 0.5);
+    race3D.laneGroup.add(rail);
+  }
+  // Inner lane dividers (dashed via repeated texture would be fancier; use thin solid)
+  for(let i = 1; i < n; i++){
+    const x = -trackW / 2 + i * laneW;
+    const div = new THREE.Mesh(new THREE.PlaneGeometry(0.1, TRACK_LEN + 2), innerLineMat);
+    div.rotation.x = -Math.PI / 2;
+    div.position.set(x, 0.012, TRACK_LEN * 0.5);
+    race3D.laneGroup.add(div);
+  }
+}
+
+function rebuildRacerBalls3D(){
+  if(!race3D.ready) return;
+  // Remove old balls + rings + runners + tags + trails
+  race3D.ballMeshes.forEach(b => race3D.ballGroup.remove(b));
+  race3D.ballRings.forEach(r => race3D.ballGroup.remove(r));
+  race3D.runnerMeshes.forEach(r => race3D.ballGroup.remove(r));
+  race3D.nameTags.forEach(t => t.remove());
+  race3D.ballMeshes = [];
+  race3D.ballRings = [];
+  race3D.runnerMeshes = [];
+  race3D.nameTags = [];
+  race3D.finishedFireworks.clear();
+  const tagsContainer = $('name-tags');
+  if(tagsContainer) tagsContainer.innerHTML = '';
+  if(race3D.trailPoints){
+    race3D.scene.remove(race3D.trailPoints);
+    race3D.trailGeometry?.dispose();
+    race3D.trailPoints = null;
+  }
+
+  const n = racers.length;
+  if(!n) return;
+  const trackW = Math.min(TRACK_HALF_WIDTH * 2 - 1, Math.max(6, n * 1.6));
+  const laneW = trackW / n;
+
+  // Single shared soccer-ball texture
+  if(!race3D.soccerTex){
+    const tex = new THREE.CanvasTexture(makeSoccerTexture());
+    if(THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = race3D.renderer.capabilities.getMaxAnisotropy ? race3D.renderer.capabilities.getMaxAnisotropy() : 4;
+    race3D.soccerTex = tex;
+  }
+
+  // Real-soccer-ball radius (~22 cm) scaled to world units (~1.9 m player)
+  const ballR = 0.13;
+  racers.forEach((r, i) => {
+    const colorHex = TEAM_COLORS[r.colorIdx % TEAM_COLORS.length];
+    const teamColor = new THREE.Color(colorHex);
+    const x = -trackW / 2 + (i + 0.5) * laneW;
+
+    // Use the realistic GLB if loaded AND has animations; otherwise fall
+    // back to the procedural runner (which animates by limb math).
+    let runner = null;
+    if(_runnerGLTF.scene && THREE.SkeletonUtils){
+      runner = makeRealisticRunner(colorHex, i + 1);
+    }
+    if(!runner){
+      const hairVariant = (r.colorIdx * 7 + i) % 6;
+      const skinVariant = (r.colorIdx * 3 + i * 5) % 5;
+      runner = makeRunner3D(colorHex, i + 1, hairVariant, skinVariant);
+    }
+    runner.position.set(x, 0, 0);
+    runner.userData.laneX = x;
+    race3D.ballGroup.add(runner);
+    race3D.runnerMeshes.push(runner);
+
+    // Floating name tag (HTML overlay above the head)
+    if(tagsContainer){
+      const tag = document.createElement('div');
+      tag.className = 'name-tag';
+      tag.style.setProperty('--tag-c', colorHex);
+      const name = (r.name || '').trim() || `Pemain ${i+1}`;
+      tag.innerHTML = `<span class="name-tag-num">${String(i+1).padStart(2,'0')}</span>${escapeHtml(name)}`;
+      tagsContainer.appendChild(tag);
+      race3D.nameTags.push(tag);
+    } else {
+      race3D.nameTags.push(null);
+    }
+
+    // Soccer ball — at the player's foot, slightly forward
+    const ballMat = new THREE.MeshStandardMaterial({
+      map: race3D.soccerTex,
+      color: 0xffffff,
+      roughness: 0.42,
+      metalness: 0.1,
+      emissive: teamColor.clone().multiplyScalar(0.06),
+    });
+    const ball = new THREE.Mesh(new THREE.SphereGeometry(ballR, 32, 24), ballMat);
+    ball.castShadow = true;
+    ball.position.set(x, ballR, 0.7);
+    ball.userData.laneX = x;
+    ball.userData.colorIdx = r.colorIdx;
+    ball.userData.radius = ballR;
+    race3D.ballGroup.add(ball);
+    race3D.ballMeshes.push(ball);
+
+    // Selection ring on the ground beneath the player (FIFA-style)
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: teamColor,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    });
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.34, 0.42, 32), ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.04, 0);
+    race3D.ballGroup.add(ring);
+    race3D.ballRings.push(ring);
+  });
+
+  // Trail Points: per-ball ring buffer of recent positions
+  const trailMax = 28;
+  const total = n * trailMax;
+  const trailGeo = new THREE.BufferGeometry();
+  const positions = new Float32Array(total * 3);
+  const colors = new Float32Array(total * 3);
+  const alphas = new Float32Array(total);
+  const heads = new Int32Array(n);
+  // Init positions far below pitch so they're invisible
+  for(let i = 0; i < total; i++){
+    positions[i*3] = 0; positions[i*3+1] = -50; positions[i*3+2] = 0;
+    alphas[i] = 0;
+  }
+  for(let i = 0; i < n; i++){
+    const c = new THREE.Color(TEAM_COLORS[racers[i].colorIdx % TEAM_COLORS.length]);
+    for(let k = 0; k < trailMax; k++){
+      const idx = i * trailMax + k;
+      colors[idx*3]     = c.r;
+      colors[idx*3 + 1] = c.g;
+      colors[idx*3 + 2] = c.b;
+    }
+  }
+  trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  trailGeo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+  trailGeo.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
+
+  const trailMat = new THREE.ShaderMaterial({
+    uniforms: { size: { value: 22 } },
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute vec3 aColor;
+      attribute float aAlpha;
+      varying float vAlpha;
+      varying vec3 vColor;
+      uniform float size;
+      void main(){
+        vAlpha = aAlpha;
+        vColor = aColor;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size * (60.0 / max(-mv.z, 1.0));
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying float vAlpha;
+      varying vec3 vColor;
+      void main(){
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float d = length(uv);
+        float a = smoothstep(0.5, 0.05, d) * vAlpha;
+        gl_FragColor = vec4(vColor, a);
+      }
+    `,
+  });
+  const points = new THREE.Points(trailGeo, trailMat);
+  points.frustumCulled = false;
+  race3D.scene.add(points);
+  race3D.trailPoints = points;
+  race3D.trailGeometry = trailGeo;
+  race3D.trailPositions = positions;
+  race3D.trailColors = colors;
+  race3D.trailAlphas = alphas;
+  race3D.trailHeads = heads;
+  race3D.trailMax = trailMax;
+}
+
+function setCameraMode(mode){
+  if(!race3D) return;
+  race3D.cameraMode = mode;
+  document.querySelectorAll('.cam-btn').forEach(b => b.classList.toggle('active', b.dataset.cam === mode));
+  // For ball cam, default to leader index
+  if(mode === 'ball' && racers.length){
+    let mx = -1, idx = 0;
+    racers.forEach((r, i) => { if(r.position > mx){ mx = r.position; idx = i; } });
+    race3D.ballCamIndex = idx;
+  }
+}
+
+function bindCameraControls(){
+  if(bindCameraControls._done) return;
+  bindCameraControls._done = true;
+  document.querySelectorAll('.cam-btn').forEach(b => {
+    b.addEventListener('click', () => setCameraMode(b.dataset.cam));
+  });
+  // Orbit drag handlers — only act when in orbit mode
+  const c = $canvas;
+  c.addEventListener('pointerdown', e => {
+    if(race3D.cameraMode !== 'orbit') return;
+    race3D.orbitDragging = true;
+    race3D.orbitLastX = e.clientX;
+    race3D.orbitLastY = e.clientY;
+    c.setPointerCapture(e.pointerId);
+  });
+  c.addEventListener('pointermove', e => {
+    if(!race3D.orbitDragging || race3D.cameraMode !== 'orbit') return;
+    const dx = e.clientX - race3D.orbitLastX;
+    const dy = e.clientY - race3D.orbitLastY;
+    race3D.orbitAzimuth   -= dx * 0.008;
+    race3D.orbitElevation += dy * 0.006;
+    race3D.orbitElevation = Math.max(0.05, Math.min(1.45, race3D.orbitElevation));
+    race3D.orbitLastX = e.clientX;
+    race3D.orbitLastY = e.clientY;
+  });
+  c.addEventListener('pointerup', e => {
+    race3D.orbitDragging = false;
+    try { c.releasePointerCapture(e.pointerId); } catch(_){}
+  });
+  c.addEventListener('wheel', e => {
+    if(race3D.cameraMode !== 'orbit') return;
+    e.preventDefault();
+    race3D.orbitDistance += e.deltaY * 0.05;
+    race3D.orbitDistance = Math.max(6, Math.min(90, race3D.orbitDistance));
+  }, { passive: false });
+}
+
+function resizeRace3D(){
+  if(!race3D.ready) return;
+  const wrap = $('pitch-wrap');
+  if(!wrap) return;
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  if(w === 0 || h === 0) return;
+  race3D.renderer.setSize(w, h, false);
+  race3D.camera.aspect = w / h;
+  race3D.camera.updateProjectionMatrix();
+}
+
+function renderRace3D(){
+  if(!race3D.ready){
+    if(!initRace3D()) return;
+    resizeRace3D();
+  }
+  if(race3D.ballMeshes.length !== racers.length) {
+    rebuildRacerLanes3D();
+    rebuildRacerBalls3D();
+  }
+  const tNow = (performance.now() - race3D.startTime) / 1000;
+  race3D.lastFrameDt = race3D._lastTNow == null ? 0.016 : Math.max(0.001, Math.min(0.1, tNow - race3D._lastTNow));
+  race3D._lastTNow = tNow;
+  race3D.capeTimeUniform.value = tNow;
+
+  // Spinning trophy hovers above the champion
+  if(race3D.trophyMesh && race3D.trophyMesh.visible){
+    race3D.trophyMesh.rotation.y = tNow * 0.8;
+    const baseY = 2.6;
+    race3D.trophyMesh.position.y = baseY + Math.sin(tNow * 1.6) * 0.08;
+  }
+
+  // Animate banner waving + slight bobbing
+  if(race3D.bannerMesh){
+    const m = race3D.bannerMesh;
+    const posAttr = m.geometry.attributes.position;
+    for(let i = 0; i < posAttr.count; i++){
+      const x = posAttr.getX(i);
+      const z = Math.sin(tNow * 2.4 + x * 0.3) * 0.18 + Math.sin(tNow * 1.1 + x * 0.7) * 0.08;
+      posAttr.setZ(i, z);
+    }
+    posAttr.needsUpdate = true;
+    m.rotation.z = Math.sin(tNow * 0.9) * 0.02;
+  }
+
+  // Animate crowd: tiny vertical bob per instance using per-instance base Y
+  if(race3D.crowdMesh && race3D.crowdSeed && race3D.crowdBaseY){
+    const m = race3D.crowdMesh;
+    const dummy = new THREE.Object3D();
+    const tmp = new THREE.Matrix4();
+    const count = race3D.crowdSeed.length;
+    for(let i = 0; i < count; i++){
+      m.getMatrixAt(i, tmp);
+      tmp.decompose(dummy.position, dummy.quaternion, dummy.scale);
+      const phase = race3D.crowdSeed[i];
+      const bob = Math.sin(tNow * 3 + phase) * 0.08;
+      dummy.position.y = race3D.crowdBaseY[i] + bob;
+      dummy.updateMatrix();
+      m.setMatrixAt(i, dummy.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
+  }
+
+  if(!racers.length){
+    race3D.renderer.render(race3D.scene, race3D.camera);
+    return;
+  }
+
+  // Update runners + balls + rings, find leader
+  let maxPos = 0, leaderIdx = 0;
+  for(let i = 0; i < racers.length; i++){
+    const r = racers[i];
+    const ball = race3D.ballMeshes[i];
+    const ring = race3D.ballRings[i];
+    const runner = race3D.runnerMeshes[i];
+    if(!ball || !runner) continue;
+    const z = r.position * TRACK_LEN;
+    const ballR = ball.userData.radius || 0.32;
+    const stride = (r.strideFrame || z * 0.35);
+    const moving = r.position > 0 && !r.finished;
+    const sprint = r.phase === 'sprinting';
+    const tired  = r.phase === 'tired';
+
+    // Player position
+    runner.position.x = runner.userData?.laneX ?? runner.position.x;
+    runner.position.z = z;
+    const u = runner.userData;
+
+    if(u && u.isRealistic){
+      // Realistic GLTF runner — drive animation mixer + cross-fade Idle/Run
+      const dz = z - (u.lastZ || 0);
+      u.lastZ = z;
+      const wantRun = (moving && !r.finished) ? 1 : 0;
+      if(u.sameAction){
+        // Single-clip model: timeScale matches world ground-speed.
+        // Tune against actual race-track travel speed (~5 m/s base, 1.5× sprint).
+        const targetTS = wantRun
+          ? (sprint ? 1.8 : tired ? 0.9 : 1.3)
+          : 0.5;
+        const cur = u.idleAction.timeScale || 1;
+        u.idleAction.timeScale = cur + (targetTS - cur) * 0.3;
+      } else {
+        const newW = u.lastRunWeight + (wantRun - u.lastRunWeight) * 0.25;
+        u.lastRunWeight = newW;
+        if(u.runAction)  u.runAction.setEffectiveWeight(newW);
+        if(u.idleAction) u.idleAction.setEffectiveWeight(1 - newW);
+        if(u.runAction){
+          u.runAction.timeScale = sprint ? 1.5 : (tired ? 0.8 : 1.1);
+        }
+      }
+      // Lift the realistic model so its feet sit at ground level (compensates
+      // for whatever pivot the GLB ships with).
+      runner.position.y = u.yOffset || 0;
+      // Slight forward lean (sign flipped vs procedural because the GLTF
+      // is rotated 180° around Y to face the running direction)
+      const lean = sprint ? 0.20 : tired ? 0.05 : 0.12;
+      runner.rotation.x = lean;
+      // Drive the mixer
+      const mixerDt = Math.min(0.05, race3D.lastFrameDt || 0.016);
+      u.mixer.update(mixerDt);
+    } else if(u){
+      // Procedural fallback runner
+      const lean = sprint ? 0.18 : tired ? 0.04 : 0.10;
+      runner.rotation.x = -lean;
+      const bob = moving
+        ? Math.abs(Math.sin(stride * 2)) * 0.05
+        : Math.sin(tNow * 1.6 + i * 0.4) * 0.02;
+      runner.position.y = 0.36 + bob;
+      const swing = moving
+        ? Math.sin(stride * 2) * (sprint ? 1.10 : 0.85)
+        : Math.sin(tNow * 1.1 + i * 0.7) * 0.06;
+      u.legL.rotation.x = -swing;
+      u.legR.rotation.x =  swing;
+      u.legKneeL.rotation.x = Math.max(0, -Math.sin(stride * 2)) * 1.4;
+      u.legKneeR.rotation.x = Math.max(0,  Math.sin(stride * 2)) * 1.4;
+      u.armL.rotation.x =  swing * 0.85;
+      u.armR.rotation.x = -swing * 0.85;
+      const baseElbow = sprint ? 1.0 : 0.7;
+      u.armElbowL.rotation.x = baseElbow + Math.max(0,  Math.sin(stride * 2)) * 0.4;
+      u.armElbowR.rotation.x = baseElbow + Math.max(0, -Math.sin(stride * 2)) * 0.4;
+    }
+
+    // Ball — dribbled in front of feet, taps the ground every other step
+    const dribbleTap = Math.abs(Math.sin(stride * 2));
+    const ballOffsetZ = 0.40 + (sprint ? 0.10 : 0);
+    const ballHopY = moving ? dribbleTap * 0.08 : 0;
+    ball.position.x = runner.position.x;
+    ball.position.y = ballR + ballHopY;
+    ball.position.z = z + ballOffsetZ;
+    ball.rotation.x = -z * 1.7;
+    ball.rotation.z = Math.sin(tNow * 4 + i) * 0.08;
+
+    // Ground ring under runner
+    if(ring){
+      ring.position.set(runner.position.x, 0.04, z);
+      ring.rotation.z = tNow * 0.8;
+      const pulse = sprint ? (0.85 + 0.2 * Math.abs(Math.sin(tNow * 6))) : 0.7;
+      ring.material.opacity = pulse;
+    }
+    if(r.position > maxPos){ maxPos = r.position; leaderIdx = i; }
+
+    // Trail dust at feet
+    if(race3D.trailPositions && moving){
+      const head = race3D.trailHeads[i];
+      const idx = i * race3D.trailMax + head;
+      const px = runner.position.x + (Math.random() - 0.5) * 0.3;
+      const py = 0.18 + Math.random() * 0.08;
+      const pz = z - 0.45 + (Math.random() - 0.5) * 0.2;
+      race3D.trailPositions[idx*3]     = px;
+      race3D.trailPositions[idx*3 + 1] = py;
+      race3D.trailPositions[idx*3 + 2] = pz;
+      race3D.trailAlphas[idx] = sprint ? 1.0 : 0.65;
+      race3D.trailHeads[i] = (head + 1) % race3D.trailMax;
+    }
+
+    // Finish-line celebration: spawn a quick particle burst once when finished
+    if(r.finished && !race3D.finishedFireworks.has(i)){
+      race3D.finishedFireworks.add(i);
+      spawnFireworkBurst(runner.position.x, 1.0, z, TEAM_COLORS[r.colorIdx % TEAM_COLORS.length]);
+    }
+  }
+
+  // Project HTML name tags above each runner's head
+  updateNameTags();
+
+  // Decay all trail alphas
+  if(race3D.trailAlphas){
+    const arr = race3D.trailAlphas;
+    for(let i = 0; i < arr.length; i++) arr[i] *= 0.93;
+    race3D.trailGeometry.attributes.aAlpha.needsUpdate = true;
+    race3D.trailGeometry.attributes.position.needsUpdate = true;
+  }
+
+  // Update fireworks
+  updateFireworks(tNow);
+
+  // Pitch is static in 3D — players move through the world, the field stays.
+
+  // Camera dispatch by mode
+  applyCameraMode(tNow, leaderIdx, maxPos);
+  race3D.shake *= 0.9;
+
+  race3D.renderer.render(race3D.scene, race3D.camera);
+}
+
+// ── Project each runner's head world position to screen-space and place
+// the floating name tag DOM element. Hides tags that are behind the camera.
+const _tagProj = new THREE.Vector3();
+const _tagDist = new THREE.Vector3();
+function updateNameTags(){
+  if(!race3D.ready || !race3D.nameTags.length) return;
+  const canvas = $canvas;
+  const w = canvas.clientWidth || canvas.width;
+  const h = canvas.clientHeight || canvas.height;
+  if(!w || !h) return;
+  const cam = race3D.camera;
+  for(let i = 0; i < race3D.runnerMeshes.length; i++){
+    const runner = race3D.runnerMeshes[i];
+    const tag = race3D.nameTags[i];
+    if(!runner || !tag) continue;
+    // Position tag above the head — realistic model is taller, procedural slightly less.
+    const headY = runner.userData?.isRealistic ? 3.4 : 3.05;
+    _tagProj.set(runner.position.x, runner.position.y + headY, runner.position.z);
+    _tagDist.copy(_tagProj);
+    _tagProj.project(cam);
+    // Behind camera or outside the frustum padding? Hide.
+    if(_tagProj.z > 1 || _tagProj.z < -1 || _tagProj.x < -1.4 || _tagProj.x > 1.4){
+      tag.style.display = 'none';
+      continue;
+    }
+    tag.style.display = '';
+    const sx = (_tagProj.x * 0.5 + 0.5) * w;
+    const sy = (-_tagProj.y * 0.5 + 0.5) * h;
+    // Fade tag with distance for depth feel
+    const dist = cam.position.distanceTo(_tagDist);
+    const alpha = Math.max(0.35, Math.min(1, 1 - (dist - 12) / 70));
+    tag.style.opacity = alpha;
+    tag.style.transform = `translate(-50%, -100%) translate3d(${sx}px, ${sy}px, 0)`;
+  }
+}
+
+// ── Camera modes: drone / chase / side / ball / orbit ──
+function applyCameraMode(tNow, leaderIdx, maxPos){
+  const cam = race3D.camera;
+  const mode = race3D.cameraMode;
+  const leader = race3D.ballMeshes[leaderIdx];
+  const target = race3D.orbitTarget || (race3D.orbitTarget = new THREE.Vector3(0, 0, TRACK_LEN * 0.5));
+  // Track centroid: average of all racer Z positions for nicer orbit/drone targets
+  if(racers.length){
+    let sum = 0; for(const r of racers) sum += r.position;
+    target.z = (sum / racers.length) * TRACK_LEN;
+  }
+
+  if(mode === 'chase' && leader){
+    const t = Math.min(1, maxPos);
+    const reveal = Math.max(0, (t - 0.78) / 0.22);
+    const camHeight = 4.4 + t * 1.4 + reveal * 4.5;
+    const camDist = 9.5 + t * 2 + reveal * 3.5;
+    const camLookFwd = 8 + reveal * 10;
+    const wobbleX = Math.sin(tNow * 0.7) * 0.18 + race3D.shake * (Math.random() - 0.5);
+    const wobbleY = Math.sin(tNow * 1.1) * 0.12 + race3D.shake * (Math.random() - 0.5) * 0.4;
+    race3D.cameraTargetPos.set(
+      leader.position.x * 0.55 + wobbleX,
+      camHeight + wobbleY,
+      leader.position.z - camDist,
+    );
+    cam.position.lerp(race3D.cameraTargetPos, 0.085);
+    race3D.cameraTargetLook.set(
+      leader.position.x * 0.32,
+      1.5 + reveal * 0.8,
+      leader.position.z + camLookFwd,
+    );
+    cam.lookAt(race3D.cameraTargetLook);
+    return;
+  }
+
+  if(mode === 'side'){
+    // Broadcast TV-style side cam, follows leader's z slowly
+    const followZ = leader ? leader.position.z : (target.z || 0);
+    const tx = -28;
+    const ty = 6 + (race3D.shake * (Math.random() - 0.5) * 0.4);
+    const tz = followZ + (race3D.shake * (Math.random() - 0.5));
+    cam.position.lerp(new THREE.Vector3(tx, ty, tz), 0.07);
+    cam.lookAt(0, 1.5, followZ + 4);
+    return;
+  }
+
+  if(mode === 'ball' && race3D.runnerMeshes.length){
+    const idx = race3D.ballCamIndex % race3D.runnerMeshes.length;
+    const runner = race3D.runnerMeshes[idx];
+    if(runner){
+      // First-person from just behind & above the runner's head
+      const camPos = new THREE.Vector3(runner.position.x, 2.3 + runner.position.y, runner.position.z - 1.4);
+      cam.position.lerp(camPos, 0.18);
+      cam.lookAt(runner.position.x, 1.6 + runner.position.y, runner.position.z + 6);
+      return;
+    }
+  }
+
+  if(mode === 'orbit'){
+    // User-controlled orbit around the track centroid
+    const az = race3D.orbitAzimuth;
+    const el = race3D.orbitElevation;
+    const r  = race3D.orbitDistance;
+    const x = target.x + Math.cos(el) * Math.sin(az) * r;
+    const y = target.y + Math.sin(el) * r;
+    const z = target.z + Math.cos(el) * Math.cos(az) * r;
+    cam.position.lerp(new THREE.Vector3(x, y, z), 0.16);
+    cam.lookAt(target);
+    return;
+  }
+
+  // Podium camera — slow cinematic orbit in front of the podium tier
+  if(mode === 'podium' || race3D.podiumActive){
+    const t = tNow * 0.18;
+    const px = Math.sin(t) * 1.6;
+    const pz = TRACK_LEN + 5.5 + Math.cos(t) * 1.0;
+    const py = 2.5 + Math.sin(tNow * 0.4) * 0.3;
+    cam.position.lerp(new THREE.Vector3(px, py, pz), 0.05);
+    cam.lookAt(0, 1.6, TRACK_LEN + 12);
+    return;
+  }
+
+  // Detect lobby state — all racers still at the start line — and lock
+  // the camera in front of the lineup. Players face +Z, so camera sits at
+  // z > 0 looking back. Static so admin actions (shuffle etc.) never feel
+  // like they nudge the camera.
+  const isLobby = racers.length > 0 && racers.every(r => r.position < 0.005);
+  if(mode === 'drone' && isLobby){
+    cam.position.lerp(new THREE.Vector3(0, 4.0, 13.5), 0.12);
+    cam.lookAt(0, 1.8, 0);
+    return;
+  }
+  // Default: drone — sweeping aerial view of the big stadium. Camera flies
+  // in a wide horizontal arc in front of the action, looking forward.
+  const droneSpeed = 0.07;
+  const orbitR = 16;
+  const droneAng = tNow * droneSpeed;
+  const cx = Math.cos(droneAng) * orbitR;
+  const cz = target.z - 26 + Math.sin(droneAng) * orbitR * 0.25;
+  const cy = 40 + Math.sin(tNow * 0.3) * 2;
+  cam.position.lerp(new THREE.Vector3(cx, cy, cz), 0.04);
+  cam.lookAt(target.x, 1.5, target.z + 6);
+}
+
+// Champion trophy mesh — gold cup with handles and base
+function buildTrophy3D(){
+  const group = new THREE.Group();
+  const goldMat = new THREE.MeshStandardMaterial({
+    color: 0xffd700, roughness: 0.18, metalness: 0.95, emissive: 0x554400, emissiveIntensity: 0.6,
+  });
+  const baseMat = new THREE.MeshStandardMaterial({
+    color: 0x2a1810, roughness: 0.55, metalness: 0.2,
+  });
+  // Base (dark plinth)
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 0.55), baseMat);
+  base.position.y = 0.09;
+  base.castShadow = true;
+  group.add(base);
+  // Stem
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.10, 0.22, 16), goldMat);
+  stem.position.y = 0.30;
+  stem.castShadow = true;
+  group.add(stem);
+  // Cup base
+  const cupBase = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), goldMat);
+  cupBase.position.y = 0.45;
+  cupBase.rotation.x = Math.PI;
+  cupBase.castShadow = true;
+  group.add(cupBase);
+  // Cup body
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.13, 0.32, 24), goldMat);
+  cup.position.y = 0.62;
+  cup.castShadow = true;
+  group.add(cup);
+  // Cup rim
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.025, 12, 24), goldMat);
+  rim.rotation.x = Math.PI / 2;
+  rim.position.y = 0.78;
+  group.add(rim);
+  // Handles
+  const handleGeo = new THREE.TorusGeometry(0.10, 0.025, 8, 16, Math.PI);
+  const handleL = new THREE.Mesh(handleGeo, goldMat);
+  handleL.position.set(-0.21, 0.62, 0);
+  handleL.rotation.set(0, 0, -Math.PI / 2);
+  group.add(handleL);
+  const handleR = new THREE.Mesh(handleGeo, goldMat);
+  handleR.position.set(0.21, 0.62, 0);
+  handleR.rotation.set(0, 0, Math.PI / 2);
+  group.add(handleR);
+  return group;
+}
+
+// ── 3D podium: stepped tiers with top-3 winners after a race ──
+function buildPodium3D(){
+  const group = new THREE.Group();
+  const sideMat = new THREE.MeshStandardMaterial({ color: 0xf6f6f6, roughness: 0.7 });
+  const goldMat   = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.3, metalness: 0.7, emissive: 0x221800, emissiveIntensity: 0.6 });
+  const silverMat = new THREE.MeshStandardMaterial({ color: 0xc6c6c8, roughness: 0.4, metalness: 0.6, emissive: 0x1a1a1a, emissiveIntensity: 0.4 });
+  const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xcd7f32, roughness: 0.4, metalness: 0.5, emissive: 0x150c04, emissiveIntensity: 0.4 });
+
+  const buildTier = (height, topMat, x, place) => {
+    const tier = new THREE.Group();
+    const w = 2.4;
+    // Body (white sides)
+    const body = new THREE.Mesh(new THREE.BoxGeometry(w, height, w), sideMat);
+    body.position.y = height / 2;
+    body.castShadow = true; body.receiveShadow = true;
+    tier.add(body);
+    // Top platform (medal color)
+    const top = new THREE.Mesh(new THREE.BoxGeometry(w + 0.12, 0.10, w + 0.12), topMat);
+    top.position.y = height + 0.05;
+    top.receiveShadow = true; top.castShadow = true;
+    tier.add(top);
+    // Front number plate
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const g = c.getContext('2d');
+    g.fillStyle = '#ffffff'; g.fillRect(0,0,256,256);
+    g.font = 'italic 900 200px "Archivo Black", Impact, sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = '#0e0e10';
+    g.fillText(String(place), 128, 138);
+    const tex = new THREE.CanvasTexture(c);
+    if(THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(w * 0.55, w * 0.55),
+      new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55 })
+    );
+    plate.position.set(0, height / 2, w / 2 + 0.01);
+    tier.add(plate);
+    tier.position.x = x;
+    return tier;
+  };
+
+  // Order: 2nd (left), 1st (center, tallest), 3rd (right)
+  group.add(buildTier(1.85, goldMat,   0,    1));
+  group.add(buildTier(1.30, silverMat, -3.2, 2));
+  group.add(buildTier(0.85, bronzeMat,  3.2, 3));
+
+  // Spotlights for drama
+  const spotL = new THREE.SpotLight(0xfff5d0, 1.5, 30, Math.PI / 5, 0.4);
+  spotL.position.set(-3.2, 10, 4); spotL.target.position.set(-3.2, 0, 0);
+  group.add(spotL); group.add(spotL.target);
+  const spotC = new THREE.SpotLight(0xfff5d0, 2.5, 30, Math.PI / 5, 0.4);
+  spotC.position.set(0, 10, 4); spotC.target.position.set(0, 0, 0);
+  group.add(spotC); group.add(spotC.target);
+  const spotR = new THREE.SpotLight(0xfff5d0, 1.0, 30, Math.PI / 5, 0.4);
+  spotR.position.set(3.2, 10, 4); spotR.target.position.set(3.2, 0, 0);
+  group.add(spotR); group.add(spotR.target);
+
+  group.position.set(0, 0, TRACK_LEN + 12);
+  group.rotation.y = Math.PI; // face -Z so the camera at z=TRACK_LEN+0 reads the front numbers
+  group.visible = false;
+  return group;
+}
+
+function showPodium3D(top3){
+  if(!race3D || !race3D.ready) return;
+  if(!race3D.podiumGroup){
+    race3D.podiumGroup = buildPodium3D();
+    race3D.scene.add(race3D.podiumGroup);
+  }
+  race3D.podiumGroup.visible = true;
+  race3D.podiumActive = true;
+  race3D.podiumTop3Indices = [];
+  race3D.podiumTop3Order = [];
+  race3D.podiumStartTime = performance.now();
+
+  // Tier positions (world): match buildPodium3D tiers above
+  const tierBaseZ = TRACK_LEN + 12;
+  const tiers = [
+    { x: 0,    yTop: 1.85, place: 1 },
+    { x: -3.2, yTop: 1.30, place: 2 },
+    { x: 3.2,  yTop: 0.85, place: 3 },
+  ];
+
+  // Hide every runner + ball + ring first; we'll un-hide top-3 below
+  for(let i = 0; i < race3D.runnerMeshes.length; i++){
+    if(race3D.runnerMeshes[i]) race3D.runnerMeshes[i].visible = false;
+    if(race3D.ballMeshes[i])   race3D.ballMeshes[i].visible   = false;
+    if(race3D.ballRings[i])    race3D.ballRings[i].visible    = false;
+    if(race3D.nameTags[i])     race3D.nameTags[i].style.display = 'none';
+  }
+
+  // Place top 3 on tiers + record team colors for fireworks
+  const topColors = [];
+  top3.forEach((winner, place) => {
+    const racerIdx = racers.findIndex(r => r.name === winner.name);
+    if(racerIdx < 0) return;
+    const tier = tiers[place];
+    const runner = race3D.runnerMeshes[racerIdx];
+    if(!runner) return;
+    runner.visible = true;
+    runner.position.set(tier.x, tier.yTop, tierBaseZ);
+    // Rotate 180° from the runner's natural racing orientation so it faces
+    // the podium camera. Realistic GLTF starts at y=PI (running +Z); flip
+    // to y=0 (face -Z, toward camera). Procedural starts at y=0; flip to PI.
+    const u = runner.userData;
+    runner.rotation.set(0, u?.isRealistic ? 0 : Math.PI, 0);
+    if(u && u.isRealistic){
+      u.lastZ = tierBaseZ;
+      u.lastRunWeight = 0;
+      if(u.idleAction) u.idleAction.setEffectiveWeight(1);
+      if(u.runAction)  u.runAction.setEffectiveWeight(0);
+    }
+    if(race3D.nameTags[racerIdx]) race3D.nameTags[racerIdx].style.display = '';
+    race3D.podiumTop3Indices.push(racerIdx);
+    race3D.podiumTop3Order.push(place);
+    topColors.push(TEAM_COLORS[(racers[racerIdx]?.colorIdx ?? 0) % TEAM_COLORS.length]);
+  });
+
+  // Trophy hovers above 1st place
+  if(!race3D.trophyMesh){
+    race3D.trophyMesh = buildTrophy3D();
+    race3D.scene.add(race3D.trophyMesh);
+  }
+  race3D.trophyMesh.visible = true;
+  race3D.trophyMesh.position.set(0, 2.6, tierBaseZ);
+
+  // Camera intro: start close on champion, then transition to orbiting podium cam
+  race3D.camera.position.set(0, 2.5, TRACK_LEN + 5);
+  race3D.camera.lookAt(0, 1.6, tierBaseZ);
+  setCameraMode('podium');
+
+  // Periodic team-color fireworks for the duration of the podium
+  if(race3D.podiumFireworkTimer) clearInterval(race3D.podiumFireworkTimer);
+  let fwTick = 0;
+  race3D.podiumFireworkTimer = setInterval(() => {
+    if(!race3D.podiumActive){ clearInterval(race3D.podiumFireworkTimer); return; }
+    const c = topColors[fwTick % Math.max(1, topColors.length)] || '#ffd700';
+    fwTick++;
+    // Burst above each tier in rotation
+    const tierIdx = fwTick % 3;
+    const tierX = [0, -3.2, 3.2][tierIdx];
+    const tierY = [3.5, 3.0, 2.6][tierIdx];
+    spawnFireworkBurst(tierX, tierY, tierBaseZ, c);
+  }, 500);
+
+  // Show champion overlay (HTML on top of 3D)
+  showPodiumOverlay(top3);
+}
+
+function hidePodium3D(){
+  if(!race3D) return;
+  race3D.podiumActive = false;
+  if(race3D.podiumGroup) race3D.podiumGroup.visible = false;
+  if(race3D.trophyMesh)  race3D.trophyMesh.visible = false;
+  if(race3D.podiumFireworkTimer){
+    clearInterval(race3D.podiumFireworkTimer);
+    race3D.podiumFireworkTimer = null;
+  }
+  // Restore visibility of all runners/balls/rings
+  for(let i = 0; i < race3D.runnerMeshes.length; i++){
+    if(race3D.runnerMeshes[i]) race3D.runnerMeshes[i].visible = true;
+    if(race3D.ballMeshes[i])   race3D.ballMeshes[i].visible   = true;
+    if(race3D.ballRings[i])    race3D.ballRings[i].visible    = true;
+  }
+  race3D.podiumTop3Indices = [];
+  race3D.podiumTop3Order = [];
+  hidePodiumOverlay();
+}
+
+function showPodiumOverlay(top3){
+  const el = $('podium3d-overlay');
+  if(!el) return;
+  const list = $('podium3d-list');
+  if(list){
+    const medals = ['🏆', '🥈', '🥉'];
+    list.innerHTML = top3.map((w, i) => {
+      const c = TEAM_COLORS[(racers.find(r => r.name === w.name)?.colorIdx ?? 0) % TEAM_COLORS.length];
+      return `<div class="podium3d-item" style="--c:${c}">
+        <span class="podium3d-medal">${medals[i] || ''}</span>
+        <span class="podium3d-name">${escapeHtml(w.name)}</span>
+        <span class="podium3d-time">${w.finishTime ? formatTime(w.finishTime/1000) : ''}</span>
+      </div>`;
+    }).join('');
+  }
+  el.style.display = '';
+  el.classList.add('show');
+}
+
+function hidePodiumOverlay(){
+  const el = $('podium3d-overlay');
+  if(!el) return;
+  el.style.display = 'none';
+  el.classList.remove('show');
+}
+
+// ── Firework particles for finish-line celebrations ──
+function ensureFireworkSystem(){
+  if(race3D.fireworkParticles) return race3D.fireworkParticles;
+  const max = 600;
+  const positions = new Float32Array(max * 3);
+  const colors = new Float32Array(max * 3);
+  const velocities = new Float32Array(max * 3);
+  const lifetimes = new Float32Array(max);
+  for(let i = 0; i < max; i++){ positions[i*3+1] = -100; lifetimes[i] = 0; }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+  geo.setAttribute('aLife', new THREE.BufferAttribute(lifetimes, 1));
+  const mat = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    vertexShader: `
+      attribute vec3 aColor;
+      attribute float aLife;
+      varying vec3 vColor;
+      varying float vLife;
+      void main(){
+        vColor = aColor;
+        vLife = aLife;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = mix(2.0, 18.0, aLife) * (50.0 / max(-mv.z, 1.0));
+        gl_Position = projectionMatrix * mv;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vLife;
+      void main(){
+        vec2 uv = gl_PointCoord - vec2(0.5);
+        float d = length(uv);
+        float a = smoothstep(0.5, 0.05, d) * vLife;
+        gl_FragColor = vec4(vColor, a);
+      }
+    `,
+  });
+  const points = new THREE.Points(geo, mat);
+  points.frustumCulled = false;
+  race3D.scene.add(points);
+  race3D.fireworkParticles = { points, geo, positions, colors, velocities, lifetimes, head: 0, max };
+  return race3D.fireworkParticles;
+}
+
+function spawnFireworkBurst(x, y, z, hex){
+  const fp = ensureFireworkSystem();
+  const color = new THREE.Color(hex);
+  const burstCount = 60;
+  for(let i = 0; i < burstCount; i++){
+    const idx = fp.head;
+    fp.head = (fp.head + 1) % fp.max;
+    fp.positions[idx*3]     = x;
+    fp.positions[idx*3 + 1] = y;
+    fp.positions[idx*3 + 2] = z;
+    const phi = Math.random() * Math.PI * 2;
+    const theta = Math.acos(Math.random() * 2 - 1);
+    const speed = 4 + Math.random() * 6;
+    fp.velocities[idx*3]     = Math.sin(theta) * Math.cos(phi) * speed;
+    fp.velocities[idx*3 + 1] = Math.cos(theta) * speed * 0.8 + 1;
+    fp.velocities[idx*3 + 2] = Math.sin(theta) * Math.sin(phi) * speed;
+    const c = color.clone().lerp(new THREE.Color(0xffffff), Math.random() * 0.4);
+    fp.colors[idx*3]     = c.r;
+    fp.colors[idx*3 + 1] = c.g;
+    fp.colors[idx*3 + 2] = c.b;
+    fp.lifetimes[idx] = 1.0;
+  }
+  // Camera shake
+  race3D.shake = Math.max(race3D.shake, 0.6);
+}
+
+let _lastFireworkT = 0;
+function updateFireworks(tNow){
+  const fp = race3D.fireworkParticles;
+  if(!fp) return;
+  const dt = Math.min(0.05, tNow - _lastFireworkT);
+  _lastFireworkT = tNow;
+  if(dt <= 0) return;
+  for(let i = 0; i < fp.max; i++){
+    if(fp.lifetimes[i] <= 0) continue;
+    fp.positions[i*3]     += fp.velocities[i*3] * dt;
+    fp.positions[i*3 + 1] += fp.velocities[i*3 + 1] * dt;
+    fp.positions[i*3 + 2] += fp.velocities[i*3 + 2] * dt;
+    // Gravity
+    fp.velocities[i*3 + 1] -= 9.8 * dt;
+    // Drag
+    fp.velocities[i*3]     *= 0.985;
+    fp.velocities[i*3 + 2] *= 0.985;
+    fp.lifetimes[i] -= dt * 0.65;
+    if(fp.lifetimes[i] < 0) fp.lifetimes[i] = 0;
+  }
+  fp.geo.attributes.position.needsUpdate = true;
+  fp.geo.attributes.aLife.needsUpdate = true;
+  fp.geo.attributes.aColor.needsUpdate = true;
+}
+
 function drawRace(){
+  renderRace3D();
+}
+
+function drawRaceLegacy_unused(){
   const w = $canvas.width, h = $canvas.height, n = racers.length;
-  if(!n){ ctx.clearRect(0,0,w,h); return; }
+  if(!n){ return; }
   const sX = w*RACE_CFG.startX, fX = w*RACE_CFG.finishX, rW = fX - sX;
   const laneH = h/n;
   const runnerH = Math.min(laneH*.82, Math.min(w,h)*.1);
@@ -2833,8 +5078,14 @@ function updateScoreboard(){
 // PODIUM
 // ═══════════════════════════════════════════════════════════════════════════
 function showPodium(data, isViewer){
+  // 3D podium disabled — go straight to the HTML results screen.
+  if(typeof hidePodium3D === 'function') hidePodium3D();
+  _continueShowPodium(data, isViewer);
+}
+function _continueShowPodium(data, isViewer){
   showScreen($results); $tabBar.classList.remove('hidden');
   $('kick-off-row').style.display = 'none';
+  hidePodium3D();
   const results = data.results || finishOrder;
   const top3 = results.slice(0,3);
 
@@ -2879,6 +5130,14 @@ function podiumBlock(r, place){
 }
 
 $('rematch-btn').addEventListener('click', () => { stopConfetti(); enterRaceLobby(); });
+$('podium3d-skip-btn')?.addEventListener('click', () => {
+  if(race3D?.podiumActive){
+    race3D.podiumActive = false;
+    if(typeof _continueShowPodium === 'function' && race3D._lastPodiumData){
+      _continueShowPodium(race3D._lastPodiumData.data, race3D._lastPodiumData.isViewer);
+    }
+  }
+});
 $('lobby-shuffle-btn').addEventListener('click', shuffleLineup);
 $('lobby-start-btn').addEventListener('click', startRaceFromLobby);
 $('lobby-cancel-btn').addEventListener('click', cancelLobby);
@@ -3159,6 +5418,26 @@ document.addEventListener('keydown', (e) => {
 // ═══════════════════════════════════════════════════════════════════════════
 // WHEEL
 // ═══════════════════════════════════════════════════════════════════════════
+// Wheel entries can be plain strings (legacy) or objects { label, image },
+// where `image` is a data URL or remote URL. Helpers normalise access.
+function wheelEntryLabel(e){ return typeof e === 'string' ? e : (e?.label ?? ''); }
+function wheelEntryImage(e){ return typeof e === 'string' ? null : (e?.image ?? null); }
+function wheelEntrySet(i, entry){ wheelNames[i] = entry; }
+
+// Cache HTMLImageElement per data-URL so drawWheel can blit them per frame.
+const _wheelImgCache = new Map();
+function getWheelImageEl(url){
+  if(!url) return null;
+  let img = _wheelImgCache.get(url);
+  if(img) return img.complete ? img : null;
+  img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = url;
+  _wheelImgCache.set(url, img);
+  img.onload = () => { drawWheel(); };
+  return null;
+}
+
 function renderWheelChips(){
   const el = $('wheel-chips');
   if(!wheelNames.length){
@@ -3168,7 +5447,12 @@ function renderWheelChips(){
     return;
   }
   const isAdmin = role === 'admin';
-  el.innerHTML = wheelNames.map((n,i)=>`<span class="chip" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${escapeHtml(n)}${isAdmin?`<button class="rm-btn" data-widx="${i}">×</button>`:''}</span>`).join('');
+  el.innerHTML = wheelNames.map((n,i)=>{
+    const label = wheelEntryLabel(n);
+    const img = wheelEntryImage(n);
+    const thumb = img ? `<img src="${escapeHtml(img)}" alt="" style="width:18px;height:18px;border-radius:3px;object-fit:cover;margin-right:4px;vertical-align:middle">` : '';
+    return `<span class="chip" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${thumb}${escapeHtml(label)}${isAdmin?`<button class="rm-btn" data-widx="${i}">×</button>`:''}</span>`;
+  }).join('');
   if(isAdmin) el.querySelectorAll('.rm-btn').forEach(b => b.addEventListener('click', () => { wheelNames.splice(+b.dataset.widx, 1); resetWheelState(); renderWheelChips(); drawWheel(); }));
 }
 function resizeWheelCanvas(){const wrap=$wCanvas.parentElement; $wCanvas.width=wrap.clientWidth*devicePixelRatio; $wCanvas.height=wrap.clientWidth*devicePixelRatio;}
@@ -3258,7 +5542,33 @@ function drawWheel(){
     wCtx.lineWidth = 2*devicePixelRatio;
     wCtx.stroke();
 
-    // Name label
+    // Image (if entry has one) — drawn near outer half of the segment
+    const entryImage = wheelEntryImage(wheelNames[i]);
+    if(entryImage){
+      const imgEl = getWheelImageEl(entryImage);
+      if(imgEl){
+        const imgR = r * 0.55;            // distance from wheel center
+        const imgSize = Math.min(r * 0.18, slice * imgR * 0.9);
+        const ax = sa + slice / 2;
+        const ix = Math.cos(ax) * imgR;
+        const iy = Math.sin(ax) * imgR;
+        wCtx.save();
+        wCtx.beginPath();
+        wCtx.arc(ix, iy, imgSize, 0, Math.PI * 2);
+        wCtx.closePath();
+        wCtx.clip();
+        wCtx.drawImage(imgEl, ix - imgSize, iy - imgSize, imgSize * 2, imgSize * 2);
+        wCtx.restore();
+        // Image border ring
+        wCtx.beginPath();
+        wCtx.arc(ix, iy, imgSize, 0, Math.PI * 2);
+        wCtx.strokeStyle = 'rgba(255,255,255,.85)';
+        wCtx.lineWidth = 2 * devicePixelRatio;
+        wCtx.stroke();
+      }
+    }
+
+    // Name label (closer to center if image is shown to avoid overlap)
     wCtx.save(); wCtx.rotate(sa+slice/2);
     const fs = Math.min(15*devicePixelRatio, r*.11);
     wCtx.fillStyle = '#fff';
@@ -3266,13 +5576,14 @@ function drawWheel(){
     wCtx.textAlign = 'right'; wCtx.textBaseline = 'middle';
     wCtx.shadowColor = 'rgba(0,0,0,.75)';
     wCtx.shadowBlur = 4*devicePixelRatio;
-    let name = wheelNames[i].toUpperCase();
-    const maxW = r * 0.72;
-    if(wCtx.measureText(name).width > maxW){
-      while(name.length > 3 && wCtx.measureText(name+'…').width > maxW) name = name.slice(0,-1);
+    let name = wheelEntryLabel(wheelNames[i]).toUpperCase();
+    const maxLabelEnd = entryImage ? r * 0.42 : r * 0.72;
+    const labelEnd = entryImage ? r * 0.36 : r - 16*devicePixelRatio;
+    if(wCtx.measureText(name).width > maxLabelEnd){
+      while(name.length > 3 && wCtx.measureText(name+'…').width > maxLabelEnd) name = name.slice(0,-1);
       name += '…';
     }
-    wCtx.fillText(name, r - 16*devicePixelRatio, 0);
+    wCtx.fillText(name, labelEnd, 0);
     wCtx.restore();
   }
   wCtx.restore();
@@ -3344,8 +5655,14 @@ function spinWheel(){
 function replaySpinFromHistory(h){
   if(wheelSpinning) return;
   if(h.initial_velocity == null || h.deceleration == null){ toast('Tidak ada data replay'); return; }
-  // Set names list exactly as it was
-  wheelNames = Array.isArray(h.names) ? [...h.names] : [];
+  // Set names list exactly as it was — pair with images if available so the
+  // replay shows the same picture entries, not just labels.
+  const histNames = Array.isArray(h.names) ? h.names : [];
+  const histImgs  = Array.isArray(h.images) ? h.images : [];
+  wheelNames = histNames.map((n, i) => {
+    const img = histImgs[i];
+    return img ? { label: n, image: img } : n;
+  });
   resetWheelState();
   renderWheelChips();
   // Physics
@@ -3392,7 +5709,7 @@ function wheelLoop(ts){
       wheelVelocity = 0;
       wheelSpinning = false;
       wheelWinnerIdx = currentWheelSegment();
-      const winner = wheelNames[wheelWinnerIdx];
+      const winner = wheelEntryLabel(wheelNames[wheelWinnerIdx]);
       const res = $('wheel-result');
       res.textContent = (isReplayingSpin ? '↻ ' : '🎉 ') + winner + '!';
       res.classList.remove('announce'); void res.offsetWidth; res.classList.add('announce');
@@ -3402,7 +5719,19 @@ function wheelLoop(ts){
       btn.disabled = false;
       btn.innerHTML = '⚡ Putar Lagi';
       sfx.fanfare();
-      if(!isReplayingSpin) saveWheelSpin(winner, [...wheelNames], pendingSpinPhysics);
+      celebrateWheelWin();
+      // Reveal the "Remove Winner" button (admin only)
+      const rmBtn = $('wheel-remove-winner-btn');
+      if(rmBtn && role === 'admin' && !isReplayingSpin){
+        rmBtn.style.display = '';
+        rmBtn.innerHTML = `🗑 Hapus "${winner}"`;
+      }
+      if(!isReplayingSpin) saveWheelSpin(
+        winner,
+        wheelNames.map(wheelEntryLabel),
+        pendingSpinPhysics,
+        wheelNames.map(e => wheelEntryImage(e) || '')
+      );
       isReplayingSpin = false;
       pendingSpinPhysics = null;
     }
@@ -3425,7 +5754,20 @@ function resetWheelState(){
     btn.disabled = false;
     btn.innerHTML = '⚡ Putar';
   }
+  const rmBtn = $('wheel-remove-winner-btn');
+  if(rmBtn) rmBtn.style.display = 'none';
 }
+
+$('wheel-remove-winner-btn')?.addEventListener('click', () => {
+  if(role !== 'admin') return;
+  if(wheelWinnerIdx < 0 || wheelWinnerIdx >= wheelNames.length) return;
+  const winnerLabel = wheelEntryLabel(wheelNames[wheelWinnerIdx]);
+  wheelNames.splice(wheelWinnerIdx, 1);
+  resetWheelState();
+  renderWheelChips();
+  drawWheel();
+  toast(`"${winnerLabel}" dihapus`);
+});
 
 // ── Wheel history (database) ──
 let wheelHistory = [];
@@ -3434,13 +5776,13 @@ async function loadWheelHistory(){
   catch { wheelHistory = []; }
   renderWheelHistory();
 }
-async function saveWheelSpin(winner, names, physics){
+async function saveWheelSpin(winner, names, physics, images){
   if(role !== 'admin') return;    // only admin writes
   try {
     await fetch('/api/wheel-spins', {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ names, winner, ...(physics || {}) })
+      body: JSON.stringify({ names, images: images || null, winner, ...(physics || {}) })
     });
     loadWheelHistory();
   } catch(e) { console.error('save wheel spin', e); }
@@ -3453,9 +5795,12 @@ function renderWheelHistory(){
     const d = new Date(h.created_at);
     const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
     const names = Array.isArray(h.names) ? h.names : [];
+    const imgs  = Array.isArray(h.images) ? h.images : [];
     const chips = names.map((n, i) => {
       const isWinner = n === h.winner;
-      return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${escapeHtml(n)}</span>`;
+      const img = imgs[i];
+      const thumb = img ? `<img src="${escapeHtml(img)}" alt="" style="width:14px;height:14px;border-radius:3px;object-fit:cover;margin-right:4px;vertical-align:middle">` : '';
+      return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${thumb}${escapeHtml(n)}</span>`;
     }).join('');
     const canReplay = h.initial_velocity != null && h.deceleration != null;
     const replayBtn = canReplay ? `<button class="wheel-hist-replay" data-idx="${idx}" title="Putar ulang">▶</button>` : '';
@@ -3492,8 +5837,41 @@ async function clearWheelHistory(){
     wheelHistory = []; renderWheelHistory(); toast('Dihapus');
   } catch { toast('Gagal menghapus'); }
 }
-$('wheel-add-btn').addEventListener('click', () => { if(role!=='admin')return; const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; resetWheelState(); renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
+let _pendingWheelImage = '';
+$('wheel-add-btn').addEventListener('click', () => {
+  if(role!=='admin') return;
+  const v = $('wheel-name-input').value.trim();
+  if(!v && !_pendingWheelImage) return;
+  const entry = _pendingWheelImage ? { label: v || 'Item', image: _pendingWheelImage } : v;
+  wheelNames.push(entry);
+  $('wheel-name-input').value = '';
+  _pendingWheelImage = '';
+  $('wheel-img-input').value = '';
+  $('wheel-img-preview-row').style.display = 'none';
+  resetWheelState();
+  renderWheelChips();
+  drawWheel();
+  $('wheel-name-input').focus();
+});
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
+$('wheel-img-input')?.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    _pendingWheelImage = reader.result;
+    $('wheel-img-preview').src = _pendingWheelImage;
+    $('wheel-img-preview-name').textContent = file.name;
+    $('wheel-img-preview-row').style.display = '';
+  };
+  reader.readAsDataURL(file);
+});
+$('wheel-img-clear')?.addEventListener('click', () => {
+  _pendingWheelImage = '';
+  $('wheel-img-input').value = '';
+  $('wheel-img-preview-row').style.display = 'none';
+});
 $('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Pemain '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
 $('wheel-shuffle-btn').addEventListener('click', () => {
   if(role!=='admin' || wheelSpinning) return;
@@ -4163,6 +6541,34 @@ function startConfetti(){
 }
 function stopConfetti(){ confettiEls.forEach(e=>e.remove()); confettiEls=[]; }
 
+// ─── Wheel-spin finish effects: confetti + flash + shake ───
+function celebrateWheelWin(){
+  const wrap = document.querySelector('.wheel-canvas-wrap');
+  if(!wrap) return;
+  // Clean any lingering effect els
+  wrap.querySelectorAll('.wheel-confetti, .wheel-flash').forEach(e => e.remove());
+  // Golden flash overlay
+  const flash = document.createElement('div');
+  flash.className = 'wheel-flash';
+  wrap.appendChild(flash);
+  setTimeout(() => flash.remove(), 1000);
+  // Confetti burst
+  for(let i = 0; i < 50; i++){
+    const c = document.createElement('div');
+    c.className = 'wheel-confetti';
+    c.style.left = (10 + Math.random() * 80) + '%';
+    c.style.background = TEAM_COLORS[Math.floor(Math.random() * TEAM_COLORS.length)];
+    c.style.animationDelay = (Math.random() * 0.4) + 's';
+    c.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    c.style.transform = `rotate(${Math.random() * 360}deg)`;
+    wrap.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+  // Shake the canvas briefly
+  wrap.classList.remove('wheel-shake'); void wrap.offsetWidth; wrap.classList.add('wheel-shake');
+  setTimeout(() => wrap.classList.remove('wheel-shake'), 700);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // RESIZE
 // ═══════════════════════════════════════════════════════════════════════════
@@ -4217,6 +6623,35 @@ setRole('viewer');
 renderWheelChips();
 loadWheelHistory();
 connectSocket();
+bindCameraControls();
+// Pre-fetch the realistic player model so it's ready before the first race
+if(typeof loadRunnerGLTF === 'function') loadRunnerGLTF();
+
+// One-click flip button: toggles the runner orientation 180°.
+document.getElementById('runner-flip-btn')?.addEventListener('click', () => {
+  _runnerGLTF.rotationY = (_runnerGLTF.rotationY === 0) ? Math.PI : 0;
+  if(race3D && race3D.ready){
+    rebuildRacerLanes3D();
+    rebuildRacerBalls3D();
+  }
+});
+
+// Console tuning helper — call after the model loads to test scale / offset / rotation.
+//   tuneRunner(0.01)            // just scale
+//   tuneRunner(0.01, 0)         // scale + yOffset
+//   tuneRunner(null, null, Math.PI)  // flip orientation only (face the other way)
+window.tuneRunner = function(scale, yOffset, rotationY){
+  if(typeof scale === 'number') _runnerGLTF.scale = scale;
+  if(typeof yOffset === 'number') _runnerGLTF.yOffset = yOffset;
+  if(typeof rotationY === 'number') _runnerGLTF.rotationY = rotationY;
+  if(race3D && race3D.ready){
+    rebuildRacerLanes3D();
+    rebuildRacerBalls3D();
+    console.log('runner tuned — scale:', _runnerGLTF.scale,
+      'yOffset:', _runnerGLTF.yOffset,
+      'rotationY:', _runnerGLTF.rotationY);
+  }
+};
 
 // Deep-link: /#replay=<id> or /#replay=<id>&t=<seconds> auto-loads that race into the replay view
 (function handleReplayLink(){

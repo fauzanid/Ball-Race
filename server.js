@@ -66,6 +66,11 @@ async function initDB() {
         ADD COLUMN IF NOT EXISTS initial_velocity DOUBLE PRECISION,
         ADD COLUMN IF NOT EXISTS deceleration DOUBLE PRECISION
     `);
+    // Optional per-entry images (parallel to `names`) — additive migration
+    await pool.query(`
+      ALTER TABLE wheel_spins
+        ADD COLUMN IF NOT EXISTS images TEXT[]
+    `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_wheel_spins_created ON wheel_spins (created_at DESC)`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS shipments (
@@ -212,7 +217,7 @@ app.get('/api/wheel-spins', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit) || 30, 100);
     const { rows } = await pool.query(
-      `SELECT id, created_at, names, winner, start_rotation, initial_velocity, deceleration
+      `SELECT id, created_at, names, images, winner, start_rotation, initial_velocity, deceleration
        FROM wheel_spins ORDER BY created_at DESC LIMIT $1`,
       [limit]
     );
@@ -226,12 +231,13 @@ app.get('/api/wheel-spins', async (req, res) => {
 app.post('/api/wheel-spins', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
-    const { names, winner, start_rotation, initial_velocity, deceleration } = req.body || {};
+    const { names, images, winner, start_rotation, initial_velocity, deceleration } = req.body || {};
     if (!Array.isArray(names) || !names.length || !winner) return res.status(400).json({ error: 'Missing fields' });
+    const imageArr = Array.isArray(images) ? images.map(s => (typeof s === 'string' ? s : '')) : null;
     const { rows } = await pool.query(
-      `INSERT INTO wheel_spins (names, winner, start_rotation, initial_velocity, deceleration)
-       VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`,
-      [names, winner,
+      `INSERT INTO wheel_spins (names, images, winner, start_rotation, initial_velocity, deceleration)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`,
+      [names, imageArr, winner,
         typeof start_rotation === 'number' ? start_rotation : null,
         typeof initial_velocity === 'number' ? initial_velocity : null,
         typeof deceleration === 'number' ? deceleration : null]
