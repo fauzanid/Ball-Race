@@ -72,7 +72,9 @@ input,textarea,select{font-family:inherit;color:inherit}
 
 /* Header */
 header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(5,5,4,.9);backdrop-filter:blur(10px);z-index:10;flex-shrink:0}
-.logo{display:inline-flex;align-items:center;line-height:0;text-decoration:none}
+.logo{display:inline-flex;align-items:center;line-height:0;text-decoration:none;cursor:pointer;transition:opacity .15s,transform .15s}
+.logo:hover{opacity:.78}
+.logo:active{transform:scale(.97)}
 .logo img{height:52px;width:auto;display:block}
 @media(max-width:520px){.logo img{height:38px}}
 .header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
@@ -369,9 +371,30 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .confetti{position:absolute;top:-20px;width:8px;height:14px;animation:confetti-fall linear infinite;pointer-events:none;z-index:1}
 @keyframes confetti-fall{0%{transform:translateY(-40px) rotate(0deg);opacity:1}100%{transform:translateY(120vh) rotate(720deg);opacity:0}}
 
+/* ═══ HOME ═══ */
+#tab-bar{display:none}
+#home-screen{padding:28px 40px;overflow-y:auto}
+@media(max-width:640px){#home-screen{padding:18px 16px}}
+.home-wrap{max-width:920px;margin:0 auto}
+.home-title{font-family:var(--font-display);font-style:italic;font-size:clamp(36px,6vw,64px);text-transform:uppercase;margin:0 0 22px;line-height:.9}
+.home-title .accent{color:var(--accent)}
+.home-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:760px){.home-grid{grid-template-columns:repeat(2,1fr);gap:12px}}
+@media(max-width:400px){.home-grid{grid-template-columns:1fr}}
+.home-tile{background:rgba(20,20,18,.6);border:1px solid rgba(255,255,255,.06);border-radius:22px;padding:22px 14px 18px;display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s;font-family:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+.home-tile:hover{transform:translateY(-4px);border-color:rgba(255,255,255,.14);box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.home-tile:active{transform:translateY(-1px) scale(.98)}
+.home-tile-icon{width:84px;height:84px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:42px;background:var(--tile-bg);box-shadow:0 0 30px var(--tile-glow),inset 0 -6px 0 rgba(0,0,0,.18),inset 0 4px 0 rgba(255,255,255,.18)}
+.home-tile-title{font-family:var(--font-cond);font-weight:700;font-size:16px;letter-spacing:.04em;color:var(--ink-50);text-transform:uppercase}
+.home-tile-sub{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;color:#b39bff;text-transform:uppercase;text-align:center}
+body[data-theme="light"] .home-tile{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .home-tile:hover{border-color:rgba(0,0,0,.18)}
+body[data-theme="light"] .home-tile-title{color:#1a1a16}
+body[data-theme="light"] .home-tile-sub{color:#7c5dd1}
+
 /* ═══ WHEEL / TEAMS / HISTORY — styled to match ═══ */
-#wheel-screen,#history-screen,#track-screen{padding:28px 40px;overflow-y:auto}
-@media(max-width:640px){#wheel-screen,#history-screen,#track-screen{padding:18px 16px}}
+#wheel-screen,#history-screen,#track-screen,#lucky-screen,#auction-screen{padding:28px 40px;overflow-y:auto}
+@media(max-width:640px){#wheel-screen,#history-screen,#track-screen,#lucky-screen,#auction-screen{padding:18px 16px}}
 .track-lookup{background:rgba(10,10,8,.5);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:16px;margin-bottom:24px}
 .track-result{margin-top:12px;display:flex;flex-direction:column;gap:8px}
 .track-result-empty{font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400);text-align:center;padding:14px}
@@ -402,6 +425,94 @@ body[data-theme="light"] .track-card-meta,body[data-theme="light"] .track-row-me
 body[data-theme="light"] .track-form input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
 body[data-theme="light"] .track-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .track-row-code{color:#1a1a16}
+/* ═══ LUCKY BOX ═══ */
+.lucky-stage{background:rgba(10,10,8,.5);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:24px 16px;display:flex;flex-direction:column;gap:14px;align-items:center}
+.lucky-box-wrap{position:relative;width:220px;height:220px;display:flex;align-items:center;justify-content:center}
+.lucky-box{width:160px;height:160px;border-radius:18px;background:linear-gradient(135deg,#ff8a1f 0%,#c53500 100%);box-shadow:0 14px 40px rgba(255,69,0,.45),inset 0 -10px 0 rgba(0,0,0,.25),inset 0 6px 0 rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:84px;transition:transform .18s;animation:box-bob 2.6s ease-in-out infinite;cursor:pointer;position:relative;overflow:hidden}
+.lucky-box::before{content:'';position:absolute;left:50%;top:0;bottom:0;width:18px;transform:translateX(-50%);background:linear-gradient(180deg,#ffd740,#ff8a1f);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.lucky-box::after{content:'';position:absolute;left:0;right:0;top:50%;height:18px;transform:translateY(-50%);background:linear-gradient(90deg,#ffd740,#ff8a1f);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.lucky-box>span{position:relative;z-index:1;filter:drop-shadow(0 4px 8px rgba(0,0,0,.4))}
+.lucky-box:hover{transform:translateY(-4px) scale(1.02)}
+.lucky-box.shake{animation:box-shake .35s ease-in-out 3}
+.lucky-box.opening{animation:box-burst .55s ease-out forwards}
+@keyframes box-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes box-shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-6px) rotate(-3deg)}40%{transform:translateX(6px) rotate(3deg)}60%{transform:translateX(-4px) rotate(-2deg)}80%{transform:translateX(4px) rotate(2deg)}}
+@keyframes box-burst{0%{transform:scale(1);opacity:1}40%{transform:scale(1.18);opacity:1}100%{transform:scale(.45);opacity:0}}
+.lucky-card-reveal{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;pointer-events:none;animation:card-pop .6s cubic-bezier(.3,1.4,.4,1)}
+@keyframes card-pop{0%{transform:scale(0) rotate(-180deg);opacity:0}60%{transform:scale(1.18) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+.lucky-card-img-wrap{width:140px;height:140px;border-radius:14px;background:linear-gradient(135deg,#ffd740,#ff8a1f);padding:6px;box-shadow:0 0 40px rgba(255,215,0,.6),inset 0 0 0 2px rgba(255,255,255,.4)}
+.lucky-card-img-wrap img{width:100%;height:100%;object-fit:cover;border-radius:8px;background:#1a1a16;display:block}
+.lucky-card-img-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:62px;background:#1a1a16;border-radius:8px}
+.lucky-card-label{font-family:var(--font-display);font-style:italic;font-size:clamp(20px,4vw,30px);color:var(--accent-2);text-transform:uppercase;text-align:center;text-shadow:0 0 24px rgba(255,215,0,.5);max-width:280px;line-height:1.05}
+.lucky-status{min-height:18px;font-family:var(--font-cond);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-300);text-align:center}
+.lucky-form-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#lucky-card-url-input{text-transform:none}
+.lucky-upload-label{padding:10px 14px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.18);border-radius:var(--r-md);color:var(--ink-200);font-family:var(--font-cond);font-weight:600;font-size:12px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.lucky-upload-label:hover{border-color:var(--accent);color:var(--ink-50)}
+.lucky-form-preview{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:6px 10px}
+.lucky-form-preview img{width:44px;height:44px;object-fit:cover;border-radius:6px}
+.lucky-form-preview-name{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lucky-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);padding:8px 12px;margin-bottom:6px;align-items:center}
+.lucky-row-img{width:42px;height:42px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,.05)}
+.lucky-row-img-empty{width:42px;height:42px;border-radius:6px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-400)}
+.lucky-row-label{font-family:var(--font-cond);font-weight:700;font-size:13px;letter-spacing:.04em;color:var(--ink-50);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lucky-row-del{background:rgba(255,80,80,.1);border:1px solid rgba(255,80,80,.3);color:#ff8888;padding:4px 9px;border-radius:6px;cursor:pointer;font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.lucky-row-del:hover{background:rgba(255,80,80,.2)}
+.lucky-draw-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);padding:8px 12px;margin-bottom:6px;align-items:center}
+.lucky-draw-row-img{width:36px;height:36px;border-radius:6px;object-fit:cover;background:rgba(255,255,255,.05)}
+.lucky-draw-row-label{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.03em;color:var(--accent-2);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lucky-draw-row-meta{font-family:var(--font-cond);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-400);white-space:nowrap}
+.lucky-section-hd{display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px}
+body[data-theme="light"] .lucky-stage{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .lucky-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .lucky-row-label{color:#1a1a16}
+body[data-theme="light"] .lucky-draw-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.18);color:#6b6a62}
+body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
+/* ═══ AUCTION ═══ */
+.auction-section-hd{display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px}
+.auction-create-form{background:rgba(10,10,8,.5);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.auction-create-form input,.auction-create-form textarea{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;color:var(--ink-50);font-family:var(--font-cond);font-weight:600;letter-spacing:.04em;outline:none}
+.auction-create-form input:focus,.auction-create-form textarea:focus{border-color:var(--accent)}
+.auction-create-form textarea{resize:vertical;min-height:54px;font-family:var(--font-cond)}
+#auction-image-url-input,#auction-edit-image-url-input{text-transform:none}
+.auction-form-preview{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:6px 10px}
+.auction-form-preview img{width:44px;height:44px;object-fit:cover;border-radius:6px}
+.auction-price-row,.auction-duration-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.auction-price-label{display:flex;flex-direction:column;gap:4px;flex:1 1 160px;min-width:140px}
+.auction-price-label>span{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-300)}
+.auction-duration-row input[type="number"]{width:80px;text-align:center}
+.auction-duration-label,.auction-duration-unit{font-family:var(--font-cond);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-300)}
+.auction-card{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--accent-2);border-radius:var(--r-md);padding:14px;margin-bottom:10px;display:grid;grid-template-columns:120px 1fr;gap:14px}
+.auction-card.closed{border-left-color:rgba(255,255,255,.15);opacity:.85}
+.auction-card.ending{border-left-color:#ff5500;animation:auction-pulse 1.4s ease-in-out infinite}
+@keyframes auction-pulse{0%,100%{box-shadow:0 0 0 rgba(255,69,0,0)}50%{box-shadow:0 0 18px rgba(255,69,0,.55)}}
+.auction-card-img{width:120px;height:120px;border-radius:var(--r-md);object-fit:cover;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);align-self:start}
+.auction-card-img-empty{width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:50px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);align-self:start;color:var(--ink-400)}
+.auction-card-body{display:flex;flex-direction:column;gap:6px;min-width:0}
+.auction-card-title{font-family:var(--font-display);font-style:italic;font-size:18px;letter-spacing:.02em;color:var(--ink-50);text-transform:uppercase;line-height:1.05;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.auction-card-desc{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.auction-card-prices{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--font-cond)}
+.auction-card-price-block{display:flex;flex-direction:column}
+.auction-card-price-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400)}
+.auction-card-price{font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--ink-50)}
+.auction-card-price.bid{color:var(--accent-2);text-shadow:0 0 12px rgba(255,215,64,.3)}
+.auction-card-bidder{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);font-style:italic}
+.auction-card-bidder strong{color:var(--accent-2);font-style:normal;font-weight:700;text-transform:uppercase}
+.auction-card-timer{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:18px;color:var(--accent-2);background:rgba(255,69,0,.08);border:1px solid rgba(255,215,64,.25);padding:6px 12px;border-radius:6px;align-self:flex-start}
+.auction-card.closed .auction-card-timer{color:var(--ink-300);background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1)}
+.auction-card.ending .auction-card-timer{color:#ff5500;border-color:rgba(255,69,0,.5)}
+.auction-card-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.auction-card-actions .btn{font-size:11px;padding:6px 10px}
+.auction-card-winner{font-family:var(--font-display);font-style:italic;color:var(--accent-2);font-size:14px;letter-spacing:.04em;text-transform:uppercase;margin-top:4px;text-shadow:0 0 16px rgba(255,215,64,.3)}
+@media(max-width:560px){.auction-card{grid-template-columns:84px 1fr}.auction-card-img,.auction-card-img-empty{width:84px;height:84px;font-size:36px}}
+body[data-theme="light"] .auction-create-form{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .auction-create-form input,body[data-theme="light"] .auction-create-form textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .auction-card{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .auction-card-title{color:#1a1a16}
+body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .auction-card-price{color:#1a1a16}
+body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
 .tool-wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
 .tool-title .accent{color:var(--accent)}
@@ -569,7 +680,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 /* Modal stays dark for focus */
 </style>
 </head>
-<body>
+<body data-tab="home">
 <div class="bg-stadium"></div>
 <div class="scanlines"></div>
 
@@ -583,7 +694,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   </div>
 
   <header>
-    <a class="logo" href="#" aria-label="Karboluxe"><img src="logo.png" alt="Karboluxe" onerror="this.onerror=null;this.src='logo.svg'" /></a>
+    <a class="logo" href="#" aria-label="Karboluxe · Kembali ke Beranda" title="Kembali ke Beranda" id="home-logo"><img src="logo.png" alt="Karboluxe" onerror="this.onerror=null;this.src='logo.svg'" /></a>
     <div class="header-right">
       <span class="admin-badge-head" id="admin-badge" style="display:none">ADMIN</span>
       <button class="icon-btn" id="theme-btn" title="Ganti tema">🌙</button>
@@ -593,14 +704,51 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   </header>
 
   <nav id="tab-bar">
-    <button class="tab active" data-tab="race">⚽ Balapan</button>
+    <button class="tab active" data-tab="home">🏠 Beranda</button>
+    <button class="tab" data-tab="race">⚽ Balapan</button>
     <button class="tab" data-tab="wheel">🎡 Roda</button>
+    <button class="tab" data-tab="lucky">🎁 Kotak</button>
+    <button class="tab" data-tab="auction">🔨 Lelang</button>
     <button class="tab" data-tab="track">📦 Track</button>
     <button class="tab" data-tab="history">📋 Riwayat</button>
   </nav>
 
+  <!-- HOME -->
+  <div id="home-screen" class="screen active">
+    <div class="home-wrap">
+      <h2 class="home-title">Karboluxe <span class="accent">Hub</span></h2>
+      <div class="home-grid">
+        <button class="home-tile" data-target="race">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ff8a1f,#c53500);--tile-glow:rgba(255,69,0,.45)">⚽</div>
+          <div class="home-tile-title">Balapan</div>
+          <div class="home-tile-sub">Adu kecepatan</div>
+        </button>
+        <button class="home-tile" data-target="wheel">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ffd740,#ff8a1f);--tile-glow:rgba(255,215,64,.5)">🎡</div>
+          <div class="home-tile-title">Roda</div>
+          <div class="home-tile-sub">Putar acak</div>
+        </button>
+        <button class="home-tile" data-target="lucky">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ff5577,#c5184f);--tile-glow:rgba(255,85,119,.45)">🎁</div>
+          <div class="home-tile-title">Kotak</div>
+          <div class="home-tile-sub">Kotak misteri</div>
+        </button>
+        <button class="home-tile" data-target="auction">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#a96fff,#6a30c5);--tile-glow:rgba(169,111,255,.45)">🔨</div>
+          <div class="home-tile-title">Lelang</div>
+          <div class="home-tile-sub">Live auction</div>
+        </button>
+        <button class="home-tile" data-target="track">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#3aa8ff,#1a5fc8);--tile-glow:rgba(58,168,255,.45)">📦</div>
+          <div class="home-tile-title">Track</div>
+          <div class="home-tile-sub">Cek resi</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- SETUP -->
-  <div id="setup-screen" class="screen active">
+  <div id="setup-screen" class="screen">
     <!-- Admin view -->
     <div class="setup-wrap" id="admin-setup" style="display:none">
       <!-- Compact hero strip -->
@@ -608,6 +756,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <div class="hero-kicker">
           <span class="live-badge">LIVE</span>
           <span>Hari Pertandingan · Lapangan 01</span>
+          <button class="btn btn-ghost btn-xs" data-go-tab="history" style="margin-left:auto">📋 Riwayat</button>
         </div>
         <h1 class="hero-title">
           <span>Ball</span><span class="accent">Race</span><span class="accent-small">'26</span>
@@ -691,7 +840,10 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <span class="live-badge">LIVE</span>
           <div style="font-family:var(--font-display);font-style:italic;font-size:20px;text-transform:uppercase">Ball Race <span style="color:var(--ink-200);font-size:12px;letter-spacing:.14em">'26</span></div>
         </div>
-        <span class="v-role-badge">👁 Spectator</span>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-ghost btn-xs" data-go-tab="history">📋 Riwayat</button>
+          <span class="v-role-badge">👁 Spectator</span>
+        </div>
       </div>
       <div class="v-waiting">
         <div>
@@ -825,11 +977,15 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <button class="wheel-mode-btn active" data-mode="names">📝 Nama</button>
         <button class="wheel-mode-btn" data-mode="numbers">🍀 Nomor</button>
       </div>
-      <div class="name-chips" id="wheel-chips"></div>
+      <div class="name-chips wheel-mode-names" id="wheel-chips"></div>
       <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-add-row">
         <input id="wheel-name-input" placeholder="Tambah nama…" maxlength="20">
         <button class="btn btn-ghost btn-sm" id="wheel-add-btn">+ Add</button>
         <button class="btn btn-ghost btn-sm" id="wheel-use-players">Pakai Pemain</button>
+      </div>
+      <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-actions-row">
+        <button class="btn btn-ghost btn-sm" id="wheel-shuffle-btn">🔀 Acak Urutan</button>
+        <button class="btn btn-ghost btn-sm" id="wheel-reset-btn">🗑 Reset Semua</button>
       </div>
       <div class="add-row wheel-admin-only wheel-mode-numbers" id="wheel-range-row" style="display:none">
         <input type="number" id="wheel-num-min" placeholder="Min" value="1" min="0" max="9999">
@@ -912,6 +1068,125 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
         <div id="track-admin-list"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- LUCKY BOX -->
+  <div id="lucky-screen" class="screen">
+    <div class="tool-wrap">
+      <h2 class="tool-title">Kotak <span class="accent">Keberuntungan</span></h2>
+
+      <div class="lucky-stage">
+        <div class="lucky-box-wrap">
+          <div class="lucky-box" id="lucky-box" title="Klik untuk buka"><span>🎁</span></div>
+          <div class="lucky-card-reveal" id="lucky-card-reveal" style="display:none">
+            <div class="lucky-card-img-wrap" id="lucky-card-img-wrap">
+              <img id="lucky-card-img" src="" alt="">
+            </div>
+            <div class="lucky-card-label" id="lucky-card-label"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="lucky-open-btn" style="width:100%;max-width:320px">🎁 Buka Kotak</button>
+        <div class="lucky-status" id="lucky-status"></div>
+      </div>
+
+      <!-- Admin card manager -->
+      <div class="lucky-admin-only" style="display:none">
+        <div class="lucky-section-hd">
+          <span class="label">Tambah kartu baru</span>
+        </div>
+        <div class="add-row">
+          <input id="lucky-card-label-input" placeholder="Nama hadiah / kartu" maxlength="120">
+        </div>
+        <div class="add-row">
+          <input id="lucky-card-url-input" placeholder="URL gambar (opsional)">
+          <label class="lucky-upload-label">
+            📷 Upload
+            <input type="file" id="lucky-card-file-input" accept="image/*" style="display:none">
+          </label>
+        </div>
+        <div class="lucky-form-preview" id="lucky-form-preview" style="display:none">
+          <img id="lucky-form-preview-img" src="" alt="">
+          <span class="lucky-form-preview-name" id="lucky-form-preview-name"></span>
+          <button class="btn btn-ghost btn-xs" id="lucky-form-clear-img" style="margin-left:auto">×</button>
+        </div>
+        <button class="btn btn-primary btn-sm" id="lucky-add-btn" style="width:100%">+ Tambah Kartu</button>
+
+        <div class="lucky-section-hd">
+          <span class="label">Kartu di kotak (<span id="lucky-card-count">0</span>)</span>
+          <button class="btn btn-ghost btn-xs" id="lucky-clear-cards-btn">Hapus Semua</button>
+        </div>
+      </div>
+
+      <div id="lucky-card-list"></div>
+
+      <div class="lucky-section-hd">
+        <span class="label">Riwayat pengundian</span>
+        <button class="btn btn-ghost btn-xs lucky-admin-only" id="lucky-clear-draws-btn" style="display:none">Hapus</button>
+      </div>
+      <div id="lucky-draws-list"></div>
+    </div>
+  </div>
+
+  <!-- AUCTION -->
+  <div id="auction-screen" class="screen">
+    <div class="tool-wrap">
+      <h2 class="tool-title">Lelang <span class="accent">Live</span></h2>
+
+      <!-- Admin: create new auction -->
+      <div class="auction-admin-only" style="display:none">
+        <div class="auction-section-hd">
+          <span class="label">Buat lelang baru</span>
+          <button class="btn btn-ghost btn-xs" id="auction-toggle-form-btn">+ Tambah</button>
+        </div>
+        <div class="auction-create-form" id="auction-create-form" style="display:none">
+          <input id="auction-title-input" placeholder="Nama barang *" maxlength="200">
+          <textarea id="auction-desc-input" placeholder="Deskripsi (opsional)" maxlength="800" rows="2"></textarea>
+          <div class="add-row">
+            <input id="auction-image-url-input" placeholder="URL gambar (opsional)">
+            <label class="lucky-upload-label">
+              📷 Upload
+              <input type="file" id="auction-image-file-input" accept="image/*" style="display:none">
+            </label>
+          </div>
+          <div class="auction-form-preview" id="auction-form-preview" style="display:none">
+            <img id="auction-form-preview-img" src="" alt="">
+            <span class="lucky-form-preview-name" id="auction-form-preview-name"></span>
+            <button class="btn btn-ghost btn-xs" id="auction-form-clear-img" style="margin-left:auto">×</button>
+          </div>
+          <div class="auction-price-row">
+            <label class="auction-price-label">
+              <span>Harga awal (Rp)</span>
+              <input type="number" id="auction-start-price-input" min="0" step="1000" value="0">
+            </label>
+            <label class="auction-price-label">
+              <span>Kelipatan minimum</span>
+              <input type="number" id="auction-increment-input" min="0" step="1000" value="0">
+            </label>
+          </div>
+          <div class="auction-duration-row">
+            <span class="auction-duration-label">Durasi</span>
+            <input type="number" id="auction-dur-h-input" min="0" max="168" value="1" placeholder="Jam">
+            <span class="auction-duration-unit">jam</span>
+            <input type="number" id="auction-dur-m-input" min="0" max="59" value="0" placeholder="Menit">
+            <span class="auction-duration-unit">menit</span>
+          </div>
+          <button class="btn btn-primary btn-sm" id="auction-create-btn">⚡ Mulai Lelang</button>
+        </div>
+      </div>
+
+      <!-- Active auctions -->
+      <div class="auction-section-hd">
+        <span class="label">Lelang aktif (<span id="auction-active-count">0</span>)</span>
+      </div>
+      <div id="auction-active-list"></div>
+
+      <!-- History -->
+      <div class="auction-section-hd">
+        <span class="label">Lelang selesai</span>
+        <button class="btn btn-ghost btn-xs auction-admin-only" id="auction-clear-history-btn" style="display:none">Hapus Riwayat</button>
+      </div>
+      <div id="auction-history-list"></div>
     </div>
   </div>
 
@@ -1160,21 +1435,22 @@ let replaySpeed = 1, replayAnim = null, replayLastTime = 0, replayAccum = 0, rep
 let wheelNames = [], wheelRotation = 0, wheelVelocity = 0, wheelDecel = 0, wheelSpinning = false, wheelLastTime = 0;
 let wheelWinnerIdx = -1, wheelPrevSegment = -1, wheelIdleAnim = 0;
 let pendingSpinPhysics = null, isReplayingSpin = false;
-let currentTab = 'race';
+let currentTab = 'home';
 let broadcastTimer = null;
 let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
+let _lastStateSync = null;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DOM
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
-const $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen');
+const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 const ctx = $canvas.getContext('2d');
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$setup,$race,$results,$wheel,$historyScr,$trackScr];
+const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -1531,32 +1807,40 @@ function setupSocketListeners(){
     if(adminToken) socket.emit('admin-auth', adminToken, res => { if(res && res.ok) setRole('admin'); else { clearAdminToken(); setRole('viewer'); } });
   });
   socket.on('state-sync', s => {
+    _lastStateSync = s;
     liveState = s.state;
     if(s.players && s.players.length) players = s.players.map((p,i)=>({id:nextId(),name:p.name||p,colorIdx:p.colorIdx!=null?p.colorIdx:i}));
     if(s.settings) Object.assign(settings, s.settings);
     if(role==='viewer' && !replayMode){
       renderViewerLineup();
+      // Always cache the race data so the user can resume by tapping Balapan,
+      // but only auto-navigate to the race screen when they're already on it.
       if(s.state==='lobby' && s.racers){
         racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
         viewerTargetPos = racers.map(()=>0);
         viewerCurPos = racers.map(()=>0);
-        showScreen($race); $tabBar.classList.add('hidden');
-        $('race-lobby-bar').style.display = 'none';
-        resizeCanvas(); drawRace(); updateScoreboard();
-        $('race-clock').textContent = '00:00';
-        setCommentary('PEMAIN SIAP DI GARIS START');
+        if(currentTab === 'race'){
+          showScreen($race); $tabBar.classList.add('hidden');
+          $('race-lobby-bar').style.display = 'none';
+          resizeCanvas(); drawRace(); updateScoreboard();
+          $('race-clock').textContent = '00:00';
+          setCommentary('PEMAIN SIAP DI GARIS START');
+        }
       } else if(s.state==='racing' && s.racers){
         racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
         viewerTargetPos = s.positions || racers.map(()=>0);
         viewerCurPos = [...viewerTargetPos];
-        viewerRacing = true; commentaryText = s.commentary || '';
-        showScreen($race); $tabBar.classList.add('hidden');
-        resizeCanvas(); sfx.startCrowd(); music.play();
-        requestAnimationFrame(viewerLoop);
+        commentaryText = s.commentary || '';
+        if(currentTab === 'race'){
+          viewerRacing = true;
+          showScreen($race); $tabBar.classList.add('hidden');
+          resizeCanvas(); sfx.startCrowd(); music.play();
+          requestAnimationFrame(viewerLoop);
+        }
       } else if(s.state==='results' && s.lastResults){
         finishOrder = s.lastResults.results || [];
         if(s.lastResults.racers) racers = s.lastResults.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:1,finished:true,finishTime:0}));
-        showPodium(s.lastResults, true);
+        if(currentTab === 'race') showPodium(s.lastResults, true);
       }
     }
     updateStatusUI();
@@ -1638,6 +1922,41 @@ function setupSocketListeners(){
     updateStatusUI();
   });
   socket.on('viewer-count', n => {/* silent */});
+  socket.on('lucky-cards-updated', () => { if(currentTab === 'lucky') loadLuckyCards(); });
+  socket.on('lucky-draw-made', d => {
+    luckyDraws.unshift(d);
+    if(luckyDraws.length > 30) luckyDraws.length = 30;
+    if(currentTab === 'lucky') renderLuckyDraws();
+  });
+  socket.on('lucky-draws-cleared', () => { luckyDraws = []; if(currentTab === 'lucky') renderLuckyDraws(); });
+  socket.on('auction-created', a => {
+    auctionsActive.push(a);
+    auctionsActive.sort((x, y) => new Date(x.ends_at) - new Date(y.ends_at));
+    if(currentTab === 'auction') renderAuctionActive();
+  });
+  socket.on('auction-updated', a => {
+    const i = auctionsActive.findIndex(x => x.id === a.id);
+    if(i >= 0) auctionsActive[i] = a;
+    else auctionsActive.push(a);
+    auctionsActive.sort((x, y) => new Date(x.ends_at) - new Date(y.ends_at));
+    if(currentTab === 'auction') renderAuctionActive();
+  });
+  socket.on('auction-closed', a => {
+    auctionsActive = auctionsActive.filter(x => x.id !== a.id);
+    auctionsHistory.unshift(a);
+    if(auctionsHistory.length > 30) auctionsHistory.length = 30;
+    if(currentTab === 'auction') renderAuctionLists();
+  });
+  socket.on('auction-deleted', ({id}) => {
+    auctionsActive = auctionsActive.filter(x => x.id !== id);
+    auctionsHistory = auctionsHistory.filter(x => x.id !== id);
+    if(currentTab === 'auction') renderAuctionLists();
+  });
+  socket.on('auctions-cleared', ({scope}) => {
+    if(scope === 'all'){ auctionsActive = []; auctionsHistory = []; }
+    else auctionsHistory = [];
+    if(currentTab === 'auction') renderAuctionLists();
+  });
 }
 
 let viewerLastT = 0;
@@ -1686,9 +2005,14 @@ function setRole(r){
   $('clear-history-btn').style.display = isAdmin ? '' : 'none';
   $('wheel-clear-hist-btn').style.display = isAdmin ? '' : 'none';
   document.querySelectorAll('.wheel-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  if(isAdmin) setWheelMode(wheelMode);
   $('wheel-viewer-note').style.display = isAdmin ? 'none' : '';
   document.querySelectorAll('.track-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   if(isAdmin && currentTab==='track') loadTrackAdminList();
+  document.querySelectorAll('.lucky-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  renderLuckyCards();
+  document.querySelectorAll('.auction-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  renderAuctionLists();
   renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
@@ -1725,18 +2049,107 @@ $('login-submit').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
+const VALID_TABS = ['home','race','wheel','lucky','auction','track','history'];
+let _suppressHistoryPush = false;
+
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
     if(raceActive) return;
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active'); currentTab = t.dataset.tab;
+    document.body.setAttribute('data-tab', currentTab);
     $('kick-off-row').style.display = (role==='admin' && currentTab==='race' && !raceActive) ? '' : 'none';
-    if(currentTab==='race'){ exitReplay(); showScreen($setup); }
+    if(currentTab==='home'){ exitReplay(); showScreen($home); }
+    else if(currentTab==='race'){ exitReplay(); resumeRaceTab(); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
+    else if(currentTab==='lucky'){ showScreen($luckyScr); resetLuckyStage(); loadLuckyCards(); loadLuckyDraws(); }
+    else if(currentTab==='auction'){ showScreen($auctionScr); loadAuctions(); }
     else if(currentTab==='track'){ showScreen($trackScr); if(role==='admin') loadTrackAdminList(); }
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
+    if(!_suppressHistoryPush && history.state?.tab !== currentTab){
+      const url = currentTab === 'home'
+        ? location.pathname + location.search
+        : location.pathname + location.search + '#' + currentTab;
+      history.pushState({tab: currentTab}, '', url);
+    }
   });
 });
+
+document.querySelectorAll('.home-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    const target = tile.dataset.target;
+    const btn = document.querySelector(`#tab-bar .tab[data-tab="${target}"]`);
+    if(btn) btn.click();
+  });
+});
+
+document.addEventListener('click', e => {
+  const trigger = e.target.closest('[data-go-tab]');
+  if(!trigger) return;
+  e.preventDefault();
+  const target = trigger.dataset.goTab;
+  const btn = document.querySelector(`#tab-bar .tab[data-tab="${target}"]`);
+  if(btn) btn.click();
+});
+
+function goHome(){
+  if(raceActive) return;
+  const btn = document.querySelector(`#tab-bar .tab[data-tab="home"]`);
+  if(btn) btn.click();
+}
+
+function resumeRaceTab(){
+  // For viewers: if a live race is happening, jump straight back into the right view.
+  // For admins or when nothing's live: show the setup screen as usual.
+  const s = _lastStateSync;
+  if(role === 'viewer' && !replayMode && s){
+    if(s.state === 'lobby' && racers && racers.length){
+      showScreen($race); $tabBar.classList.add('hidden');
+      $('race-lobby-bar').style.display = 'none';
+      resizeCanvas(); drawRace(); updateScoreboard();
+      setCommentary('PEMAIN SIAP DI GARIS START');
+      return;
+    }
+    if(s.state === 'racing' && racers && racers.length){
+      viewerRacing = true;
+      showScreen($race); $tabBar.classList.add('hidden');
+      resizeCanvas(); sfx.startCrowd(); music.play();
+      requestAnimationFrame(viewerLoop);
+      return;
+    }
+    if(s.state === 'results' && s.lastResults){
+      showPodium(s.lastResults, true);
+      return;
+    }
+  }
+  showScreen($setup);
+}
+$('home-back-btn')?.addEventListener('click', e => { e.preventDefault(); goHome(); });
+$('home-logo')?.addEventListener('click', e => { e.preventDefault(); goHome(); });
+
+window.addEventListener('popstate', e => {
+  if(raceActive) return;
+  const tab = e.state?.tab || (VALID_TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home');
+  if(tab === currentTab) return;
+  const btn = document.querySelector(`#tab-bar .tab[data-tab="${tab}"]`);
+  if(!btn) return;
+  _suppressHistoryPush = true;
+  btn.click();
+  _suppressHistoryPush = false;
+});
+
+// Seed initial history entry so the very first back press has a state to pop to.
+// If the URL already targets a tool tab via hash, navigate there.
+(function initHistory(){
+  const hashTab = location.hash.slice(1);
+  if(VALID_TABS.includes(hashTab) && hashTab !== 'home'){
+    history.replaceState({tab: 'home'}, '', location.pathname + location.search);
+    const btn = document.querySelector(`#tab-bar .tab[data-tab="${hashTab}"]`);
+    if(btn) btn.click();
+  } else {
+    history.replaceState({tab: 'home'}, '', location.pathname + location.search + (location.hash || ''));
+  }
+})();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SETUP SCREEN
@@ -2463,7 +2876,7 @@ $('new-race-btn').addEventListener('click', () => {
   if(role==='admin'){ $('kick-off-row').style.display=''; if(socket) socket.emit('back-to-setup'); }
   showScreen($setup);
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab==='race'));
-  currentTab='race';
+  currentTab='race'; document.body.setAttribute('data-tab','race');
 });
 $('save-room-btn').addEventListener('click', () => {
   const name = prompt('Nama ruangan:'); if(!name) return;
@@ -2672,7 +3085,7 @@ function updSpeedBtns(){ document.querySelectorAll('.speed-btn').forEach(b => b.
 $('replay-btn').addEventListener('click', () => { replayFromHistory = false; enterReplay(); });
 $('r-back').addEventListener('click', () => {
   exitReplay();
-  if(replayFromHistory){ replayFromHistory=false; loadHistory().then(renderHistory); showScreen($historyScr); document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab==='history')); currentTab='history'; }
+  if(replayFromHistory){ replayFromHistory=false; loadHistory().then(renderHistory); showScreen($historyScr); document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab==='history')); currentTab='history'; document.body.setAttribute('data-tab','history'); }
   else showPodium({results:finishOrder.map(r=>({name:r.name,colorIdx:r.colorIdx,finishTime:r.finishTime}))}, role==='viewer');
 });
 $('r-play').addEventListener('click', () => {
@@ -3071,6 +3484,24 @@ async function clearWheelHistory(){
 $('wheel-add-btn').addEventListener('click', () => { if(role!=='admin')return; const v=$('wheel-name-input').value.trim(); if(v){ wheelNames.push(v); $('wheel-name-input').value=''; resetWheelState(); renderWheelChips(); drawWheel(); $('wheel-name-input').focus(); }});
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
 $('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Pemain '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
+$('wheel-shuffle-btn').addEventListener('click', () => {
+  if(role!=='admin' || wheelSpinning) return;
+  if(wheelNames.length < 2){ toast('Belum cukup nama'); return; }
+  for(let i = wheelNames.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [wheelNames[i], wheelNames[j]] = [wheelNames[j], wheelNames[i]];
+  }
+  resetWheelState(); renderWheelChips(); drawWheel();
+  toast('Urutan diacak');
+});
+$('wheel-reset-btn').addEventListener('click', () => {
+  if(role!=='admin' || wheelSpinning) return;
+  if(!wheelNames.length){ toast('Sudah kosong'); return; }
+  if(!confirm('Hapus semua nama di roda?')) return;
+  wheelNames = [];
+  resetWheelState(); renderWheelChips(); drawWheel();
+  toast('Roda dikosongkan');
+});
 
 // Wheel mode toggle (Names vs Lucky Number)
 let wheelMode = 'names';
@@ -3218,6 +3649,486 @@ $('track-save-btn').addEventListener('click', saveShipment);
 $('track-refresh-btn').addEventListener('click', loadTrackAdminList);
 ['track-add-phone','track-add-code','track-add-courier','track-add-note'].forEach(id => {
   $(id).addEventListener('keydown', e => { if(e.key === 'Enter') saveShipment(); });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LUCKY BOX
+// ═══════════════════════════════════════════════════════════════════════════
+let luckyCards = [];
+let luckyDraws = [];
+let luckyOpening = false;
+let pendingLuckyImage = '';
+
+async function loadLuckyCards(){
+  try { const r = await fetch('/api/lucky-cards'); luckyCards = r.ok ? await r.json() : []; }
+  catch { luckyCards = []; }
+  renderLuckyCards();
+}
+async function loadLuckyDraws(){
+  try { const r = await fetch('/api/lucky-draws?limit=30'); luckyDraws = r.ok ? await r.json() : []; }
+  catch { luckyDraws = []; }
+  renderLuckyDraws();
+}
+function renderLuckyCards(){
+  const countEl = $('lucky-card-count');
+  if(countEl) countEl.textContent = luckyCards.length;
+  const el = $('lucky-card-list'); if(!el) return;
+  if(!luckyCards.length){
+    el.innerHTML = `<div class="empty-msg">${role==='admin'?'Tambah kartu untuk mengisi kotak':'Kotak masih kosong'}</div>`;
+    return;
+  }
+  const isAdmin = role === 'admin';
+  el.innerHTML = luckyCards.map(c => `
+    <div class="lucky-row">
+      ${c.image_url ? `<img class="lucky-row-img" src="${escapeHtml(c.image_url)}" alt="">` : `<div class="lucky-row-img-empty">🎁</div>`}
+      <div class="lucky-row-label">${escapeHtml(c.label)}</div>
+      ${isAdmin ? `<button class="lucky-row-del" data-id="${c.id}">Hapus</button>` : '<span></span>'}
+    </div>`).join('');
+  if(isAdmin) el.querySelectorAll('.lucky-row-del').forEach(b =>
+    b.addEventListener('click', () => deleteLuckyCard(+b.dataset.id)));
+}
+function renderLuckyDraws(){
+  const el = $('lucky-draws-list'); if(!el) return;
+  if(!luckyDraws.length){ el.innerHTML = '<div class="empty-msg">Belum ada pengundian</div>'; return; }
+  el.innerHTML = luckyDraws.map(d => {
+    const ds = new Date(d.created_at).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' });
+    return `<div class="lucky-draw-row">
+      ${d.image_url ? `<img class="lucky-draw-row-img" src="${escapeHtml(d.image_url)}" alt="">` : `<div class="lucky-row-img-empty" style="width:36px;height:36px;font-size:18px">🎁</div>`}
+      <div class="lucky-draw-row-label">🎉 ${escapeHtml(d.card_label)}</div>
+      <span class="lucky-draw-row-meta">${ds}</span>
+    </div>`;
+  }).join('');
+}
+async function deleteLuckyCard(id){
+  if(role !== 'admin') return;
+  try {
+    const r = await fetch(`/api/lucky-cards/${id}`, { method:'DELETE', headers:{'x-admin-token': adminToken} });
+    if(!r.ok){ toast('Gagal menghapus'); return; }
+    luckyCards = luckyCards.filter(c => c.id !== id);
+    renderLuckyCards();
+  } catch { toast('Gagal menghapus'); }
+}
+async function clearLuckyCards(){
+  if(role !== 'admin') return;
+  if(!luckyCards.length){ toast('Sudah kosong'); return; }
+  if(!confirm('Hapus semua kartu di kotak?')) return;
+  try {
+    await fetch('/api/lucky-cards', { method:'DELETE', headers:{'x-admin-token': adminToken} });
+    luckyCards = []; renderLuckyCards();
+    toast('Kotak dikosongkan');
+  } catch { toast('Gagal menghapus'); }
+}
+async function clearLuckyDraws(){
+  if(role !== 'admin') return;
+  if(!confirm('Hapus semua riwayat?')) return;
+  try {
+    await fetch('/api/lucky-draws', { method:'DELETE', headers:{'x-admin-token': adminToken} });
+    luckyDraws = []; renderLuckyDraws();
+    toast('Riwayat dihapus');
+  } catch { toast('Gagal menghapus'); }
+}
+async function addLuckyCard(){
+  if(role !== 'admin') return;
+  const label = $('lucky-card-label-input').value.trim();
+  if(!label){ toast('Isi nama kartu'); return; }
+  const url = $('lucky-card-url-input').value.trim();
+  const image_url = pendingLuckyImage || url || '';
+  try {
+    const r = await fetch('/api/lucky-cards', {
+      method: 'POST',
+      headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ label, image_url })
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.error || 'fail'); }
+    const card = await r.json();
+    luckyCards.push(card);
+    renderLuckyCards();
+    $('lucky-card-label-input').value = '';
+    $('lucky-card-url-input').value = '';
+    pendingLuckyImage = '';
+    $('lucky-card-file-input').value = '';
+    $('lucky-form-preview').style.display = 'none';
+    toast('Kartu ditambah');
+  } catch(e) { toast('Gagal menyimpan'); }
+}
+function resetLuckyStage(){
+  const box = $('lucky-box'), reveal = $('lucky-card-reveal');
+  if(!box || !reveal) return;
+  box.style.display = '';
+  box.classList.remove('shake', 'opening');
+  reveal.style.display = 'none';
+  $('lucky-status').textContent = '';
+  $('lucky-open-btn').disabled = false;
+  luckyOpening = false;
+}
+async function openLuckyBox(){
+  if(luckyOpening) return;
+  if(!luckyCards.length){ toast('Kotak masih kosong'); return; }
+  luckyOpening = true;
+  const btn = $('lucky-open-btn');
+  btn.disabled = true;
+  $('lucky-status').textContent = 'Mengocok...';
+  const box = $('lucky-box'), reveal = $('lucky-card-reveal');
+  reveal.style.display = 'none';
+  box.style.display = '';
+  box.classList.remove('opening');
+  void box.offsetWidth;
+  box.classList.add('shake');
+  // Crowd / tick during shake
+  if(typeof sfx !== 'undefined' && sfx.enabled){ try { sfx.tick && sfx.tick(); } catch(e){} }
+
+  setTimeout(() => {
+    box.classList.remove('shake');
+    box.classList.add('opening');
+    if(typeof sfx !== 'undefined' && sfx.enabled){ try { sfx.cheer && sfx.cheer(); } catch(e){} }
+  }, 1100);
+
+  setTimeout(() => {
+    const card = luckyCards[Math.floor(Math.random() * luckyCards.length)];
+    box.style.display = 'none';
+    const wrap = $('lucky-card-img-wrap');
+    const img = $('lucky-card-img');
+    let empty = wrap.querySelector('.lucky-card-img-empty');
+    if(card.image_url){
+      img.src = card.image_url;
+      img.style.display = '';
+      if(empty) empty.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      if(!empty){
+        empty = document.createElement('div');
+        empty.className = 'lucky-card-img-empty';
+        empty.textContent = '🎁';
+        wrap.appendChild(empty);
+      }
+      empty.style.display = 'flex';
+    }
+    $('lucky-card-label').textContent = card.label;
+    reveal.style.display = '';
+    $('lucky-status').textContent = '🎉 Selamat!';
+
+    fetch('/api/lucky-draws', {
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body: JSON.stringify({ card_label: card.label, image_url: card.image_url || '' })
+    }).then(() => loadLuckyDraws()).catch(()=>{});
+
+    setTimeout(() => { btn.disabled = false; luckyOpening = false; }, 1400);
+  }, 1700);
+}
+
+$('lucky-card-file-input')?.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingLuckyImage = reader.result;
+    $('lucky-form-preview-img').src = pendingLuckyImage;
+    $('lucky-form-preview-name').textContent = file.name;
+    $('lucky-form-preview').style.display = '';
+    $('lucky-card-url-input').value = '';
+  };
+  reader.readAsDataURL(file);
+});
+$('lucky-form-clear-img')?.addEventListener('click', () => {
+  pendingLuckyImage = '';
+  $('lucky-card-file-input').value = '';
+  $('lucky-form-preview').style.display = 'none';
+});
+$('lucky-add-btn')?.addEventListener('click', addLuckyCard);
+$('lucky-card-label-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') addLuckyCard(); });
+$('lucky-card-url-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') addLuckyCard(); });
+$('lucky-clear-cards-btn')?.addEventListener('click', clearLuckyCards);
+$('lucky-clear-draws-btn')?.addEventListener('click', clearLuckyDraws);
+$('lucky-open-btn')?.addEventListener('click', openLuckyBox);
+$('lucky-box')?.addEventListener('click', () => { if(!luckyOpening) openLuckyBox(); });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUCTION
+// ═══════════════════════════════════════════════════════════════════════════
+let auctionsActive = [];
+let auctionsHistory = [];
+let pendingAuctionImage = '';
+let auctionCountdownTimer = null;
+
+function fmtRupiah(n){
+  if(n == null) return '–';
+  return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
+}
+function fmtCountdown(ms){
+  if(ms <= 0) return '00:00';
+  const total = Math.floor(ms / 1000);
+  const d = Math.floor(total / 86400);
+  const h = Math.floor((total % 86400) / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = n => String(n).padStart(2, '0');
+  if(d > 0) return `${d}h ${pad(h)}:${pad(m)}:${pad(s)}`;
+  if(h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  return `${pad(m)}:${pad(s)}`;
+}
+
+async function loadAuctions(){
+  try {
+    const r = await fetch('/api/auctions');
+    if(!r.ok) throw 0;
+    const data = await r.json();
+    auctionsActive = data.active || [];
+    auctionsHistory = data.history || [];
+  } catch { auctionsActive = []; auctionsHistory = []; }
+  renderAuctionLists();
+  startAuctionCountdown();
+}
+
+function renderAuctionLists(){
+  renderAuctionActive();
+  renderAuctionHistory();
+}
+
+function renderAuctionActive(){
+  const el = $('auction-active-list'); if(!el) return;
+  $('auction-active-count').textContent = auctionsActive.length;
+  if(!auctionsActive.length){
+    el.innerHTML = '<div class="empty-msg">Belum ada lelang aktif</div>';
+    return;
+  }
+  const isAdmin = role === 'admin';
+  el.innerHTML = auctionsActive.map(a => auctionCardHtml(a, false, isAdmin)).join('');
+  if(isAdmin) attachAuctionActionHandlers(el);
+}
+
+function renderAuctionHistory(){
+  const el = $('auction-history-list'); if(!el) return;
+  if(!auctionsHistory.length){
+    el.innerHTML = '<div class="empty-msg">Belum ada lelang selesai</div>';
+    return;
+  }
+  const isAdmin = role === 'admin';
+  el.innerHTML = auctionsHistory.map(a => auctionCardHtml(a, true, isAdmin)).join('');
+  if(isAdmin) attachAuctionActionHandlers(el);
+}
+
+function auctionCardHtml(a, closed, isAdmin){
+  const img = a.image_url
+    ? `<img class="auction-card-img" src="${escapeHtml(a.image_url)}" alt="">`
+    : `<div class="auction-card-img-empty">📦</div>`;
+  const desc = a.description ? `<div class="auction-card-desc">${escapeHtml(a.description)}</div>` : '';
+  const bid = a.current_bid != null
+    ? `<div class="auction-card-price-block"><span class="auction-card-price-label">Tawaran</span><span class="auction-card-price bid">${fmtRupiah(a.current_bid)}</span></div>`
+    : '';
+  const bidder = a.current_bidder ? `<div class="auction-card-bidder">oleh <strong>${escapeHtml(a.current_bidder)}</strong></div>` : '';
+  const winner = closed && a.current_bidder
+    ? `<div class="auction-card-winner">🏆 ${escapeHtml(a.current_bidder)} · ${fmtRupiah(a.current_bid)}</div>`
+    : (closed ? `<div class="auction-card-winner">Tidak ada penawar</div>` : '');
+  const timer = closed
+    ? `<div class="auction-card-timer">Selesai</div>`
+    : `<div class="auction-card-timer" data-ends="${a.ends_at}">--:--</div>`;
+  const adminActions = (isAdmin && !closed) ? `
+    <div class="auction-card-actions">
+      <button class="btn btn-primary btn-sm" data-act="bid" data-id="${a.id}">💰 Update Tawaran</button>
+      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="300">+5m</button>
+      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="900">+15m</button>
+      <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}">✎ Edit</button>
+      <button class="btn btn-ghost btn-sm" data-act="close" data-id="${a.id}">⏹ Tutup</button>
+      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑</button>
+    </div>` : (isAdmin && closed ? `
+    <div class="auction-card-actions">
+      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑 Hapus</button>
+    </div>` : '');
+  return `<div class="auction-card${closed ? ' closed' : ''}" data-id="${a.id}">
+    ${img}
+    <div class="auction-card-body">
+      <h3 class="auction-card-title">${escapeHtml(a.title)}</h3>
+      ${desc}
+      <div class="auction-card-prices">
+        <div class="auction-card-price-block">
+          <span class="auction-card-price-label">Harga awal</span>
+          <span class="auction-card-price">${fmtRupiah(a.starting_price)}</span>
+        </div>
+        ${bid}
+      </div>
+      ${bidder}
+      ${winner}
+      ${timer}
+      ${adminActions}
+    </div>
+  </div>`;
+}
+
+function attachAuctionActionHandlers(scope){
+  scope.querySelectorAll('[data-act]').forEach(b => {
+    const act = b.dataset.act;
+    const id = +b.dataset.id;
+    if(act === 'bid') b.addEventListener('click', () => promptUpdateBid(id));
+    else if(act === 'extend') b.addEventListener('click', () => extendAuction(id, +b.dataset.sec));
+    else if(act === 'edit') b.addEventListener('click', () => promptEditAuction(id));
+    else if(act === 'close') b.addEventListener('click', () => closeAuction(id));
+    else if(act === 'delete') b.addEventListener('click', () => deleteAuction(id));
+  });
+}
+
+function startAuctionCountdown(){
+  if(auctionCountdownTimer) return;
+  auctionCountdownTimer = setInterval(() => {
+    if(currentTab !== 'auction') return;
+    document.querySelectorAll('.auction-card-timer[data-ends]').forEach(el => {
+      const ends = new Date(el.dataset.ends).getTime();
+      const ms = ends - Date.now();
+      el.textContent = fmtCountdown(ms);
+      const card = el.closest('.auction-card');
+      if(card){
+        card.classList.toggle('ending', ms > 0 && ms < 60_000);
+      }
+    });
+  }, 1000);
+}
+
+async function createAuction(){
+  if(role !== 'admin') return;
+  const title = $('auction-title-input').value.trim();
+  if(!title){ toast('Nama barang wajib diisi'); return; }
+  const description = $('auction-desc-input').value.trim();
+  const url = $('auction-image-url-input').value.trim();
+  const image_url = pendingAuctionImage || url || '';
+  const starting_price = Number($('auction-start-price-input').value) || 0;
+  const min_increment = Number($('auction-increment-input').value) || 0;
+  const hours = Number($('auction-dur-h-input').value) || 0;
+  const minutes = Number($('auction-dur-m-input').value) || 0;
+  const duration_seconds = hours * 3600 + minutes * 60;
+  if(duration_seconds < 60){ toast('Durasi minimal 1 menit'); return; }
+  try {
+    const r = await fetch('/api/auctions', {
+      method: 'POST',
+      headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
+      body: JSON.stringify({ title, description, image_url, starting_price, min_increment, duration_seconds })
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.error || 'fail'); }
+    // Will arrive via socket auction-created
+    $('auction-title-input').value = '';
+    $('auction-desc-input').value = '';
+    $('auction-image-url-input').value = '';
+    $('auction-start-price-input').value = '0';
+    $('auction-increment-input').value = '0';
+    $('auction-dur-h-input').value = '1';
+    $('auction-dur-m-input').value = '0';
+    pendingAuctionImage = '';
+    $('auction-image-file-input').value = '';
+    $('auction-form-preview').style.display = 'none';
+    $('auction-create-form').style.display = 'none';
+    toast('Lelang dimulai');
+  } catch(e) { toast('Gagal membuat lelang'); }
+}
+
+async function promptUpdateBid(id){
+  if(role !== 'admin') return;
+  const a = auctionsActive.find(x => x.id === id); if(!a) return;
+  const minimum = Math.max(
+    a.current_bid != null ? a.current_bid + (a.min_increment || 0) : a.starting_price,
+    a.starting_price
+  );
+  const amountStr = prompt(`Tawaran baru untuk "${a.title}"\nMinimal: ${fmtRupiah(minimum)}`, String(Math.round(minimum)));
+  if(amountStr == null) return;
+  const amount = Number(String(amountStr).replace(/[^\d.-]/g, ''));
+  if(!amount || amount < a.starting_price){ toast('Tawaran tidak valid'); return; }
+  const bidder = prompt('Nama penawar', a.current_bidder || '');
+  if(bidder == null) return;
+  try {
+    const r = await fetch(`/api/auctions/${id}`, {
+      method:'PATCH',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify({ current_bid: amount, current_bidder: bidder.trim() })
+    });
+    if(!r.ok){ toast('Gagal update'); return; }
+    toast('Tawaran diperbarui');
+  } catch { toast('Gagal update'); }
+}
+
+async function extendAuction(id, seconds){
+  if(role !== 'admin') return;
+  try {
+    const r = await fetch(`/api/auctions/${id}`, {
+      method:'PATCH',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify({ extend_seconds: seconds })
+    });
+    if(!r.ok){ toast('Gagal'); return; }
+    toast(`Diperpanjang ${Math.round(seconds/60)} menit`);
+  } catch { toast('Gagal'); }
+}
+
+async function promptEditAuction(id){
+  if(role !== 'admin') return;
+  const a = auctionsActive.find(x => x.id === id); if(!a) return;
+  const title = prompt('Nama barang', a.title);
+  if(title == null) return;
+  const description = prompt('Deskripsi', a.description || '');
+  if(description == null) return;
+  try {
+    const r = await fetch(`/api/auctions/${id}`, {
+      method:'PATCH',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify({ title: title.trim(), description: description.trim() })
+    });
+    if(!r.ok){ toast('Gagal update'); return; }
+    toast('Lelang diperbarui');
+  } catch { toast('Gagal update'); }
+}
+
+async function closeAuction(id){
+  if(role !== 'admin') return;
+  if(!confirm('Tutup lelang ini sekarang?')) return;
+  try {
+    const r = await fetch(`/api/auctions/${id}/close`, { method:'POST', headers:{'x-admin-token':adminToken} });
+    if(!r.ok){ toast('Gagal menutup'); return; }
+    toast('Lelang ditutup');
+  } catch { toast('Gagal menutup'); }
+}
+
+async function deleteAuction(id){
+  if(role !== 'admin') return;
+  if(!confirm('Hapus lelang ini? Tidak bisa dibatalkan.')) return;
+  try {
+    const r = await fetch(`/api/auctions/${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} });
+    if(!r.ok){ toast('Gagal menghapus'); return; }
+    toast('Dihapus');
+  } catch { toast('Gagal menghapus'); }
+}
+
+async function clearAuctionHistory(){
+  if(role !== 'admin') return;
+  if(!confirm('Hapus semua riwayat lelang?')) return;
+  try {
+    await fetch('/api/auctions?scope=history', { method:'DELETE', headers:{'x-admin-token':adminToken} });
+    auctionsHistory = []; renderAuctionHistory();
+    toast('Riwayat dihapus');
+  } catch { toast('Gagal menghapus'); }
+}
+
+$('auction-toggle-form-btn')?.addEventListener('click', () => {
+  const f = $('auction-create-form');
+  f.style.display = f.style.display === 'none' ? '' : 'none';
+});
+$('auction-create-btn')?.addEventListener('click', createAuction);
+$('auction-clear-history-btn')?.addEventListener('click', clearAuctionHistory);
+$('auction-image-file-input')?.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = () => {
+    pendingAuctionImage = reader.result;
+    $('auction-form-preview-img').src = pendingAuctionImage;
+    $('auction-form-preview-name').textContent = file.name;
+    $('auction-form-preview').style.display = '';
+    $('auction-image-url-input').value = '';
+  };
+  reader.readAsDataURL(file);
+});
+$('auction-form-clear-img')?.addEventListener('click', () => {
+  pendingAuctionImage = '';
+  $('auction-image-file-input').value = '';
+  $('auction-form-preview').style.display = 'none';
 });
 
 // ═══════════════════════════════════════════════════════════════════════════

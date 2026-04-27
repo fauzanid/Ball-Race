@@ -79,6 +79,43 @@ async function initDB() {
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_shipments_phone ON shipments (phone)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_shipments_created ON shipments (created_at DESC)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lucky_cards (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        label VARCHAR(120) NOT NULL,
+        image_url TEXT
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_lucky_cards_created ON lucky_cards (created_at)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS lucky_draws (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        card_label VARCHAR(120) NOT NULL,
+        image_url TEXT,
+        drawn_by VARCHAR(60)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_lucky_draws_created ON lucky_draws (created_at DESC)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS auctions (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        title VARCHAR(200) NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        starting_price NUMERIC(15,2) NOT NULL DEFAULT 0,
+        min_increment NUMERIC(15,2) NOT NULL DEFAULT 0,
+        current_bid NUMERIC(15,2),
+        current_bidder VARCHAR(120),
+        ends_at TIMESTAMPTZ NOT NULL,
+        closed BOOLEAN DEFAULT FALSE,
+        closed_at TIMESTAMPTZ
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_closed_ends ON auctions (closed, ends_at)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_created ON auctions (created_at DESC)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -286,6 +323,291 @@ app.delete('/api/shipments/:id', requireAdmin, async (req, res) => {
     res.status(500).json({ error: 'Failed to delete' });
   }
 });
+
+// ===== LUCKY BOX API =====
+app.get('/api/lucky-cards', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const { rows } = await pool.query(
+      `SELECT id, created_at, label, image_url FROM lucky_cards ORDER BY created_at ASC`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/lucky-cards:', err.message);
+    res.status(500).json({ error: 'Failed to load cards' });
+  }
+});
+
+app.post('/api/lucky-cards', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const label = String(req.body?.label || '').trim();
+    const image_url = String(req.body?.image_url || '').trim() || null;
+    if (!label) return res.status(400).json({ error: 'Label required' });
+    if (label.length > 120) return res.status(400).json({ error: 'Label too long' });
+    if (image_url && image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+    const { rows } = await pool.query(
+      `INSERT INTO lucky_cards (label, image_url) VALUES ($1, $2)
+       RETURNING id, created_at, label, image_url`,
+      [label, image_url]
+    );
+    io.emit('lucky-cards-updated');
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('POST /api/lucky-cards:', err.message);
+    res.status(500).json({ error: 'Failed to save card' });
+  }
+});
+
+app.delete('/api/lucky-cards/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    await pool.query('DELETE FROM lucky_cards WHERE id = $1', [req.params.id]);
+    io.emit('lucky-cards-updated');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+app.delete('/api/lucky-cards', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    await pool.query('DELETE FROM lucky_cards');
+    io.emit('lucky-cards-updated');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear' });
+  }
+});
+
+app.get('/api/lucky-draws', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 30, 100);
+    const { rows } = await pool.query(
+      `SELECT id, created_at, card_label, image_url, drawn_by
+       FROM lucky_draws ORDER BY created_at DESC LIMIT $1`,
+      [limit]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/lucky-draws:', err.message);
+    res.status(500).json({ error: 'Failed to load draws' });
+  }
+});
+
+// Public: anyone can draw
+app.post('/api/lucky-draws', async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const card_label = String(req.body?.card_label || '').trim();
+    const image_url = String(req.body?.image_url || '').trim() || null;
+    const drawn_by = String(req.body?.drawn_by || '').trim().slice(0, 60) || null;
+    if (!card_label) return res.status(400).json({ error: 'Card required' });
+    const { rows } = await pool.query(
+      `INSERT INTO lucky_draws (card_label, image_url, drawn_by)
+       VALUES ($1, $2, $3) RETURNING id, created_at, card_label, image_url, drawn_by`,
+      [card_label, image_url, drawn_by]
+    );
+    io.emit('lucky-draw-made', rows[0]);
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('POST /api/lucky-draws:', err.message);
+    res.status(500).json({ error: 'Failed to save draw' });
+  }
+});
+
+app.delete('/api/lucky-draws', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    await pool.query('DELETE FROM lucky_draws');
+    io.emit('lucky-draws-cleared');
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear' });
+  }
+});
+
+// ===== AUCTIONS API =====
+function rowToAuction(r) {
+  return {
+    id: r.id,
+    created_at: r.created_at,
+    title: r.title,
+    description: r.description,
+    image_url: r.image_url,
+    starting_price: Number(r.starting_price),
+    min_increment: Number(r.min_increment || 0),
+    current_bid: r.current_bid != null ? Number(r.current_bid) : null,
+    current_bidder: r.current_bidder,
+    ends_at: r.ends_at,
+    closed: !!r.closed,
+    closed_at: r.closed_at,
+  };
+}
+
+app.get('/api/auctions', async (req, res) => {
+  if (!dbReady) return res.json({ active: [], history: [] });
+  try {
+    const active = await pool.query(
+      `SELECT * FROM auctions WHERE closed = FALSE ORDER BY ends_at ASC`
+    );
+    const history = await pool.query(
+      `SELECT * FROM auctions WHERE closed = TRUE ORDER BY closed_at DESC LIMIT 30`
+    );
+    res.json({
+      active: active.rows.map(rowToAuction),
+      history: history.rows.map(rowToAuction),
+    });
+  } catch (err) {
+    console.error('GET /api/auctions:', err.message);
+    res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
+app.post('/api/auctions', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const title = String(req.body?.title || '').trim();
+    const description = String(req.body?.description || '').trim() || null;
+    const image_url = String(req.body?.image_url || '').trim() || null;
+    const starting_price = Number(req.body?.starting_price) || 0;
+    const min_increment = Number(req.body?.min_increment) || 0;
+    const duration_seconds = Math.max(60, Math.min(7 * 24 * 3600, Number(req.body?.duration_seconds) || 3600));
+    if (!title) return res.status(400).json({ error: 'Title required' });
+    if (image_url && image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+    const ends_at = new Date(Date.now() + duration_seconds * 1000);
+    const { rows } = await pool.query(
+      `INSERT INTO auctions (title, description, image_url, starting_price, min_increment, ends_at)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [title, description, image_url, starting_price, min_increment, ends_at]
+    );
+    const row = rowToAuction(rows[0]);
+    io.emit('auction-created', row);
+    res.json(row);
+  } catch (err) {
+    console.error('POST /api/auctions:', err.message);
+    res.status(500).json({ error: 'Failed to create' });
+  }
+});
+
+app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = parseInt(req.params.id);
+    const fields = [];
+    const values = [];
+    let i = 1;
+    if (req.body?.current_bid !== undefined) {
+      fields.push(`current_bid = $${i++}`);
+      values.push(Number(req.body.current_bid) || 0);
+    }
+    if (req.body?.current_bidder !== undefined) {
+      fields.push(`current_bidder = $${i++}`);
+      values.push(String(req.body.current_bidder || '').trim().slice(0, 120) || null);
+    }
+    if (req.body?.title !== undefined) {
+      fields.push(`title = $${i++}`);
+      values.push(String(req.body.title).trim().slice(0, 200));
+    }
+    if (req.body?.description !== undefined) {
+      fields.push(`description = $${i++}`);
+      values.push(String(req.body.description || '').trim() || null);
+    }
+    if (req.body?.image_url !== undefined) {
+      const img = String(req.body.image_url || '').trim();
+      if (img.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+      fields.push(`image_url = $${i++}`);
+      values.push(img || null);
+    }
+    if (req.body?.starting_price !== undefined) {
+      fields.push(`starting_price = $${i++}`);
+      values.push(Number(req.body.starting_price) || 0);
+    }
+    if (req.body?.min_increment !== undefined) {
+      fields.push(`min_increment = $${i++}`);
+      values.push(Number(req.body.min_increment) || 0);
+    }
+    if (req.body?.extend_seconds !== undefined) {
+      const ext = Math.min(24 * 3600, Math.max(0, Number(req.body.extend_seconds) || 0));
+      fields.push(`ends_at = ends_at + ($${i++} || ' seconds')::interval`);
+      values.push(String(ext));
+    }
+    if (!fields.length) return res.status(400).json({ error: 'No fields to update' });
+    values.push(id);
+    const { rows } = await pool.query(
+      `UPDATE auctions SET ${fields.join(', ')} WHERE id = $${i} AND closed = FALSE RETURNING *`,
+      values
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Auction not found or closed' });
+    const row = rowToAuction(rows[0]);
+    io.emit('auction-updated', row);
+    res.json(row);
+  } catch (err) {
+    console.error('PATCH /api/auctions:', err.message);
+    res.status(500).json({ error: 'Failed to update' });
+  }
+});
+
+app.post('/api/auctions/:id/close', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const { rows } = await pool.query(
+      `UPDATE auctions SET closed = TRUE, closed_at = NOW() WHERE id = $1 AND closed = FALSE RETURNING *`,
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    const row = rowToAuction(rows[0]);
+    io.emit('auction-closed', row);
+    res.json(row);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to close' });
+  }
+});
+
+app.delete('/api/auctions/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = parseInt(req.params.id);
+    await pool.query('DELETE FROM auctions WHERE id = $1', [id]);
+    io.emit('auction-deleted', { id });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
+
+app.delete('/api/auctions', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const scope = req.query.scope || 'history';
+    if (scope === 'all') {
+      await pool.query('DELETE FROM auctions');
+    } else {
+      await pool.query('DELETE FROM auctions WHERE closed = TRUE');
+    }
+    io.emit('auctions-cleared', { scope });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear' });
+  }
+});
+
+// Periodically auto-close auctions whose ends_at has passed
+async function autoCloseAuctions() {
+  if (!dbReady) return;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE auctions SET closed = TRUE, closed_at = NOW()
+       WHERE closed = FALSE AND ends_at <= NOW() RETURNING *`
+    );
+    for (const r of rows) io.emit('auction-closed', rowToAuction(r));
+  } catch (err) {
+    console.error('autoCloseAuctions:', err.message);
+  }
+}
+setInterval(autoCloseAuctions, 5000);
 
 // ===== LIVE RACE (single global state) =====
 const liveRace = {
