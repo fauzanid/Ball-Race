@@ -298,10 +298,11 @@ body[data-theme="light"] .name-tag{background:rgba(255,255,255,.92);color:#1a1a1
 .scoreboard{background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden;flex:1;display:flex;flex-direction:column;min-height:0}
 .scoreboard-hd{padding:10px 14px;background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:14px;letter-spacing:.04em;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center}
 .scoreboard-list{flex:1;overflow-y:auto;padding:4px}
-.score-row{display:grid;grid-template-columns:28px 28px 1fr 50px;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-family:var(--font-cond);transition:background .2s}
-.score-row.top1{background:rgba(255,215,0,.12)}
-.score-row.top2{background:rgba(192,192,192,.08)}
-.score-row.top3{background:rgba(205,127,50,.08)}
+.score-row{display:grid;grid-template-columns:28px 28px 1fr 50px;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.04);border-left:3px solid var(--team, transparent);font-family:var(--font-cond);transition:background .2s,box-shadow .2s;background:color-mix(in srgb, var(--team, transparent) 8%, transparent)}
+.score-row .score-name{color:var(--team, var(--ink-50))}
+.score-row.top1{background:color-mix(in srgb, var(--team, #ffd700) 22%, rgba(255,215,0,.10));box-shadow:inset 4px 0 0 var(--team, #ffd700)}
+.score-row.top2{background:color-mix(in srgb, var(--team, #c0c0c0) 18%, rgba(192,192,192,.08));box-shadow:inset 4px 0 0 var(--team, #c0c0c0)}
+.score-row.top3{background:color-mix(in srgb, var(--team, #cd7f32) 18%, rgba(205,127,50,.08));box-shadow:inset 4px 0 0 var(--team, #cd7f32)}
 .score-rank{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--accent-2);text-align:center}
 .score-name{font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .score-pct{font-family:var(--font-mono);font-size:12px;color:var(--ink-200);text-align:right}
@@ -390,9 +391,9 @@ body[data-theme="light"] .name-tag{background:rgba(255,255,255,.92);color:#1a1a1
 }
 
 .results-list{display:flex;flex-direction:column;gap:6px;max-height:420px;overflow-y:auto}
-.result-row{display:grid;grid-template-columns:36px 32px 1fr 60px;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md)}
+.result-row{display:grid;grid-template-columns:36px 32px 1fr 60px;align-items:center;gap:12px;padding:10px 14px;background:color-mix(in srgb, var(--team, transparent) 8%, rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.06);border-left:3px solid var(--team, transparent);border-radius:var(--r-md)}
 .result-row .rank{font-family:var(--font-display);font-style:italic;font-size:22px;color:var(--ink-200);text-align:center}
-.result-row .name{font-family:var(--font-cond);font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase}
+.result-row .name{font-family:var(--font-cond);font-weight:600;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--team, var(--ink-50))}
 .result-row .time{font-family:var(--font-mono);font-size:12px;color:var(--ink-200);text-align:right}
 .actions-row{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
 .viewer-result-msg{padding:20px;text-align:center;color:var(--ink-200);font-family:var(--font-cond);letter-spacing:.05em;text-transform:uppercase;display:none}
@@ -707,8 +708,8 @@ body[data-theme="light"] .history-players{color:#4a4a45}
 body[data-theme="light"] .history-date{color:#8a8a85}
 
 /* Results / podium keep most bits dark for contrast */
-body[data-theme="light"] .result-row{background:#ffffff;border-color:rgba(0,0,0,.08);color:#1a1a16}
-body[data-theme="light"] .result-row .name{color:#1a1a16}
+body[data-theme="light"] .result-row{background:color-mix(in srgb, var(--team, transparent) 8%, #ffffff);border-color:rgba(0,0,0,.08);border-left-color:var(--team, transparent);color:#1a1a16}
+body[data-theme="light"] .result-row .name{color:var(--team, #1a1a16)}
 body[data-theme="light"] .result-row .rank,body[data-theme="light"] .result-row .time{color:#6b6a62}
 body[data-theme="light"] .results-title{color:#6b6a62}
 body[data-theme="light"] .podium-title{color:#1a1a16}
@@ -1281,6 +1282,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
 <script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/DRACOLoader.js"></script>
 <script src="https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1952,6 +1954,7 @@ function setupSocketListeners(){
     viewerCurPos = racers.map(()=>0);
     viewerRacing = true; recording = [];
     raceStartRealTime = performance.now();
+    if(race3D) race3D.launchStartTime = raceStartRealTime;
     setCommentary("KICK OFF! AND WE ARE UNDERWAY!");
     sfx.whistle(); sfx.startCrowd(); music.play();
     requestAnimationFrame(viewerLoop);
@@ -2038,7 +2041,7 @@ function viewerLoop(ts){
   viewerLastT = ts;
 
   if(viewerTargetPos && viewerCurPos){
-    viewerCurPos = viewerCurPos.map((c,i)=>c + (viewerTargetPos[i]-c) * .25);
+    viewerCurPos = viewerCurPos.map((c,i)=>c + (viewerTargetPos[i]-c) * .45);
     racers.forEach((r,i)=>{
       const prevPos = r.position;
       r.position = viewerCurPos[i];
@@ -2308,6 +2311,7 @@ function renderSkinPicker(){
   $('skin-picker').querySelectorAll('.skin-tile').forEach(t => t.addEventListener('click', () => {
     settings.ballSkin = t.dataset.skin;
     saveSettings(); renderSkinPicker(); renderPlayerList(); broadcastSettings();
+    if(race3D && race3D.ready) rebuildRacerBalls3D();
   }));
 }
 
@@ -2336,6 +2340,7 @@ function applySettings(){
   $('stat-duration').textContent = settings.duration+'s';
   document.querySelectorAll('.duration-preset').forEach(b => b.classList.toggle('active', +b.dataset.val===settings.duration));
   renderSkinPicker();
+  if(race3D && race3D.ready) rebuildRacerBalls3D();
 }
 
 function updateKickOffUI(){
@@ -2477,7 +2482,10 @@ function resetLobbyVisuals(){
   // from wherever the camera ended the previous race.
   setCameraMode('drone');
   race3D.camera.position.set(0, 4.0, 13.5);
+  race3D.camera.up.set(0, 1, 0);
   race3D.camera.lookAt(0, 1.8, 0);
+  // Clear cinematic launch state so the next race retriggers it cleanly.
+  race3D.launchStartTime = 0;
 }
 
 // Admin-side continuous lobby render so the cinematic camera animates
@@ -2547,6 +2555,7 @@ function startRaceFromLobby(){
     raceActive = true; lastTime = 0;
     lastLeader = -1; lastCommentaryTime = 0; nextCommentaryDelay = 400;
     raceStartRealTime = performance.now();
+    if(race3D) race3D.launchStartTime = raceStartRealTime;
     setCommentary(pick(COMMS.start));
     sfx.whistle(); sfx.startCrowd(); music.play();
     if(socket){
@@ -2571,10 +2580,11 @@ function cancelLobby(){
 
 function startBroadcasting(){
   clearInterval(broadcastTimer);
+  // 30 Hz broadcast — fast enough that the viewer's lerp catches up to admin
   broadcastTimer = setInterval(() => {
     if(!raceActive){ clearInterval(broadcastTimer); return; }
     if(socket) socket.emit('race-update', {positions:racers.map(r=>r.position), commentary:commentaryText, commentaryType});
-  }, 50);
+  }, 33);
 }
 
 function resizeCanvas(){
@@ -2843,7 +2853,7 @@ const race3D = {
   camera: null,
   pitchMat: null,
   pitchTex: null,
-  soccerTex: null,
+  ballTextures: null,
   goalGroup: null,
   bannerMesh: null,
   banner0Z: null,
@@ -2867,6 +2877,9 @@ const race3D = {
   cameraTargetPos: null,
   cameraTargetLook: null,
   startTime: 0,
+  // Cinematic launch transition — set when racing starts so the camera plays
+  // a "chopper takeoff" arc before settling into the steady drone orbit.
+  launchStartTime: 0,
   shake: 0,
   finishedFireworks: new Set(),
   fireworkParticles: null,
@@ -2901,6 +2914,13 @@ function loadRunnerGLTF(){
   if(typeof THREE === 'undefined' || !THREE.GLTFLoader){ _runnerGLTF.failed = true; return; }
   _runnerGLTF.loading = true;
   const loader = new THREE.GLTFLoader();
+  // DRACOLoader for compressed meshes — uses Google's CDN-hosted decoder
+  if(THREE.DRACOLoader){
+    const draco = new THREE.DRACOLoader();
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.6/');
+    draco.setDecoderConfig({ type: 'js' });
+    loader.setDRACOLoader(draco);
+  }
   const loadOne = (url) => new Promise((resolve, reject) => loader.load(url, resolve, undefined, reject));
 
   const finalize = (scene, animations) => {
@@ -2945,34 +2965,44 @@ function loadRunnerGLTF(){
     } catch(e){ /* keep defaults */ }
     _runnerGLTF.loading = false;
     console.log('player model loaded',
-      '\n  clips:', (animations || []).map(c => `${c.name} (${c.duration.toFixed(2)}s)`),
+      '\n  clips:', (animations || []).map(c => `${c.name} (${c.duration.toFixed(2)}s) [kind=${c._kind || '?'}]`),
       '\n  scale:', _runnerGLTF.scale.toFixed(4),
       '\n  yOffset:', _runnerGLTF.yOffset.toFixed(3),
       '\n  measured:', _runnerGLTF._lastBox);
     console.log('Tip: tune live with:  tuneRunner(scale, yOffset)');
   };
 
-  // Always try all three filenames in parallel; use whichever loaded.
+  // Try common case variants for Mixamo download names so it works on
+  // case-sensitive servers (Linux) regardless of the user's local casing.
+  const tryAny = (paths) => {
+    return paths.reduce((p, url) => p.catch(() => loadOne(url)), Promise.reject()).catch(() => null);
+  };
   Promise.all([
-    loadOne('/models/player.glb').catch(() => null),
-    loadOne('/models/player_idle.glb').catch(() => null),
-    loadOne('/models/player_run.glb').catch(() => null),
-  ]).then(([combined, idle, run]) => {
-    const sceneSrc = combined || idle || run;
+    tryAny(['/models/player.glb', '/models/Player.glb']),
+    tryAny(['/models/player_idle.glb', '/models/player_Idle.glb']),
+    tryAny(['/models/player_run.glb', '/models/player_Run.glb']),
+    tryAny(['/models/player_sprint.glb', '/models/player_Sprint.glb']),
+    tryAny(['/models/player_walk.glb', '/models/player_Walk.glb', '/models/player_tired.glb']),
+  ]).then(([combined, idle, run, sprint, walk]) => {
+    const sceneSrc = combined || run || idle || sprint || walk;
     if(!sceneSrc){
       _runnerGLTF.failed = true;
       _runnerGLTF.loading = false;
-      console.warn('No player model found at /models/player(.glb|_idle.glb|_run.glb)');
+      console.warn('No player model found at /models/player*.glb');
       return;
     }
+    // Tag each clip with its source file so runners can pick the right one.
+    const tag = (clips, kind) => { (clips || []).forEach(c => { c._kind = kind; }); return clips || []; };
     let allAnims;
     if(combined && (combined.animations || []).length >= 2){
-      allAnims = combined.animations;
+      allAnims = tag(combined.animations, 'auto');
     } else {
       allAnims = [
-        ...((combined && combined.animations) || []),
-        ...((idle     && idle.animations)     || []),
-        ...((run      && run.animations)      || []),
+        ...tag((combined && combined.animations) || [], 'auto'),
+        ...tag((idle     && idle.animations)     || [], 'idle'),
+        ...tag((run      && run.animations)      || [], 'run'),
+        ...tag((sprint   && sprint.animations)   || [], 'sprint'),
+        ...tag((walk     && walk.animations)     || [], 'walk'),
       ];
     }
     finalize(sceneSrc.scene, allAnims);
@@ -3111,28 +3141,57 @@ function makeRealisticRunner(teamColorHex, jerseyNumber){
     }
     return null;
   };
-  let idleClip = findClipByName(['idle', 'stand', 'wait']);
-  let runClip  = findClipByName(['run', 'sprint', 'jog']) || findClipByName(['walk']);
+  // Prefer file-tag (set by the loader) over name guessing.
+  let idleClip = allClips.find(c => c._kind === 'idle')
+              || findClipByName(['idle', 'stand', 'wait']);
+  let runClip  = allClips.find(c => c._kind === 'run')
+              || findClipByName(['run', 'sprint', 'jog'])
+              || findClipByName(['walk']);
 
-  // If specific names didn't match: pick by clip count.
-  // 1 clip total → use it for BOTH idle and run (always play, faster timescale on run).
-  // 2+ clips → use clips[0] for idle, clips[1] for run.
-  if(!idleClip && !runClip){
-    if(allClips.length === 1){ idleClip = allClips[0]; runClip = allClips[0]; }
-    else if(allClips.length >= 2){ idleClip = allClips[0]; runClip = allClips[1]; }
+  // If we still don't have one of them, pick by duration: idle is usually
+  // longer (>2s), run is shorter (<2s). Otherwise fall back to ordering.
+  if((!idleClip || !runClip) && allClips.length >= 2){
+    const longest  = [...allClips].sort((a,b) => b.duration - a.duration)[0];
+    const shortest = [...allClips].sort((a,b) => a.duration - b.duration)[0];
+    if(!idleClip) idleClip = longest;
+    if(!runClip)  runClip  = (shortest !== idleClip) ? shortest : allClips[1];
+  }
+  if(!idleClip && !runClip && allClips.length === 1){
+    idleClip = allClips[0]; runClip = allClips[0];
   } else if(!idleClip){ idleClip = runClip; }
     else if(!runClip){ runClip = idleClip; }
+  // Optional extra clips by file tag — each gracefully degrades to runClip
+  let sprintClip = allClips.find(c => c._kind === 'sprint')
+                || findClipByName(['sprint','fastrun']);
+  let walkClip   = allClips.find(c => c._kind === 'walk')
+                || findClipByName(['walk','tired','limp']);
+  // One-time per-runner log so we can verify the correct picks
+  if(jerseyNumber === 1){
+    const fmt = (c) => c ? `${c.name} (${c.duration.toFixed(2)}s)` : 'none';
+    console.log('clip selection:',
+      '\n  idle =', fmt(idleClip),
+      '\n  run =', fmt(runClip),
+      '\n  sprint =', fmt(sprintClip),
+      '\n  walk =', fmt(walkClip));
+  }
 
-  const idleAction = idleClip ? mixer.clipAction(idleClip) : null;
+  const idleAction   = idleClip   ? mixer.clipAction(idleClip)   : null;
   // If idle and run are the SAME clip, we can't cross-fade — just play the
   // single action and rely on timeScale to speed up when running.
-  const sameAction = idleClip && runClip && idleClip === runClip;
-  const runAction  = !sameAction && runClip ? mixer.clipAction(runClip) : null;
-  if(idleAction){ idleAction.play(); idleAction.setEffectiveWeight(1); }
-  if(runAction){ runAction.play(); runAction.setEffectiveWeight(0); }
+  const sameAction   = idleClip && runClip && idleClip === runClip;
+  const runAction    = !sameAction && runClip ? mixer.clipAction(runClip) : null;
+  // Optional extras — only created if the clip is distinct from idle/run.
+  const sprintAction = sprintClip && sprintClip !== runClip && sprintClip !== idleClip
+                       ? mixer.clipAction(sprintClip) : null;
+  const walkAction   = walkClip   && walkClip   !== runClip && walkClip   !== idleClip
+                       ? mixer.clipAction(walkClip)   : null;
+  if(idleAction)  { idleAction.play();   idleAction.setEffectiveWeight(1); }
+  if(runAction)   { runAction.play();    runAction.setEffectiveWeight(0); }
+  if(sprintAction){ sprintAction.play(); sprintAction.setEffectiveWeight(0); }
+  if(walkAction)  { walkAction.play();   walkAction.setEffectiveWeight(0); }
 
   scene.userData = {
-    mixer, idleAction, runAction,
+    mixer, idleAction, runAction, sprintAction, walkAction,
     sameAction,
     isRealistic: true, lastZ: 0, lastRunWeight: 0,
     yOffset: yOff,
@@ -3403,19 +3462,14 @@ function makeRunner3D(teamColorHex, jerseyNumber, hairVariant, skinVariant){
   return group;
 }
 
-function makeSoccerTexture(){
+function makeSoccerTexture(skin = 'classic', teamHex = '#ff4500'){
   const c = document.createElement('canvas');
   c.width = 1024; c.height = 512;
   const g = c.getContext('2d');
-  // Slight gradient for shading depth
-  const grad = g.createLinearGradient(0, 0, 0, c.height);
-  grad.addColorStop(0, '#f6f6f6');
-  grad.addColorStop(0.5, '#ffffff');
-  grad.addColorStop(1, '#e8e8e8');
-  g.fillStyle = grad;
-  g.fillRect(0, 0, c.width, c.height);
-  // Pentagon-like dark patches arranged in a classic ball pattern.
-  const drawPent = (cx, cy, r, rot) => {
+  const W = c.width, H = c.height;
+
+  const drawPent = (cx, cy, r, rot, fill) => {
+    g.fillStyle = fill;
     g.beginPath();
     for(let i = 0; i < 5; i++){
       const a = (rot || -Math.PI / 2) + i * (Math.PI * 2 / 5);
@@ -3426,33 +3480,153 @@ function makeSoccerTexture(){
     g.closePath();
     g.fill();
   };
-  g.fillStyle = '#1a1a1a';
-  const R = 70;
-  // Three rows of pentagons offset like a cube-faced unwrap of a soccer ball
-  const positions = [
-    [0.11, 0.5], [0.31, 0.5], [0.51, 0.5], [0.71, 0.5], [0.91, 0.5],
-    [0.21, 0.18], [0.41, 0.18], [0.61, 0.18], [0.81, 0.18], [0.01, 0.18],
-    [0.21, 0.82], [0.41, 0.82], [0.61, 0.82], [0.81, 0.82], [0.01, 0.82],
+  const drawStar = (cx, cy, r, n, fill) => {
+    g.fillStyle = fill;
+    g.beginPath();
+    for(let i = 0; i < n * 2; i++){
+      const rad = i % 2 === 0 ? r : r * 0.45;
+      const a = (Math.PI * i) / n - Math.PI / 2;
+      const px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad;
+      if(i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+    }
+    g.closePath();
+    g.fill();
+  };
+
+  // Five-pentagon-cluster layout (mirrors the SVG: center pent + 4 around)
+  // tiled three times across the texture so each face of the sphere shows it.
+  const tiles = [
+    {u: 0.18, v: 0.5}, {u: 0.5, v: 0.5}, {u: 0.82, v: 0.5},
   ];
-  for(const [u, v] of positions){
-    drawPent(u * c.width, v * c.height, R, ((u + v) * 7) % 1 * Math.PI);
-  }
-  // Stitching lines between patches — subtle dotted grid
-  g.strokeStyle = 'rgba(40,40,40,0.35)';
-  g.lineWidth = 2;
-  g.setLineDash([6, 8]);
-  for(const [u, v] of positions){
-    const cx = u * c.width, cy = v * c.height;
-    for(let i = 0; i < 5; i++){
-      const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+
+  if(skin === 'classic' || skin === 'retro'){
+    // Cream/white base
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    if(skin === 'retro'){
+      grad.addColorStop(0, '#e8dcb8');
+      grad.addColorStop(0.5, '#f0e3bf');
+      grad.addColorStop(1, '#c8b88c');
+    } else {
+      grad.addColorStop(0, '#f6f6f6');
+      grad.addColorStop(0.5, '#ffffff');
+      grad.addColorStop(1, '#e8e8e8');
+    }
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    const fill = skin === 'retro' ? '#1a1a15' : '#111';
+    const R = 60;
+    // Replicate the SVG's 5-pentagon cluster across 3 tile zones
+    for(const t of tiles){
+      const cx = t.u * W, cy = t.v * H;
+      drawPent(cx, cy - R * 1.2, R * 0.85, -Math.PI / 2, fill);
+      drawPent(cx - R * 1.6, cy - R * 0.3, R * 0.78, -Math.PI / 2, fill);
+      drawPent(cx + R * 1.6, cy - R * 0.3, R * 0.78, -Math.PI / 2, fill);
+      drawPent(cx - R * 1.0, cy + R * 1.2, R * 0.72, -Math.PI / 2, fill);
+      drawPent(cx + R * 1.0, cy + R * 1.2, R * 0.72, -Math.PI / 2, fill);
+      g.strokeStyle = fill;
+      g.lineWidth = 4;
       g.beginPath();
-      g.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R * 0.92);
-      g.lineTo(cx + Math.cos(a) * (R + 28), cy + Math.sin(a) * (R + 28) * 0.92);
+      g.moveTo(cx, cy - R * 0.4);    g.lineTo(cx - R * 1.4, cy + R * 0.5);
+      g.moveTo(cx, cy - R * 0.4);    g.lineTo(cx + R * 1.4, cy + R * 0.5);
+      g.moveTo(cx - R * 1.4, cy + R * 0.5); g.lineTo(cx - R * 0.7, cy + R * 1.7);
+      g.moveTo(cx + R * 1.4, cy + R * 0.5); g.lineTo(cx + R * 0.7, cy + R * 1.7);
+      g.moveTo(cx - R * 0.7, cy + R * 1.7); g.lineTo(cx + R * 0.7, cy + R * 1.7);
       g.stroke();
     }
+  } else if(skin === 'champions'){
+    // White base with star-circle clusters
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#f6f6f6');
+    grad.addColorStop(0.5, '#ffffff');
+    grad.addColorStop(1, '#e8e8e8');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    for(const t of tiles){
+      const cx = t.u * W, cy = t.v * H;
+      const positions = [[0, -120], [-120, 0], [120, 0], [0, 120]];
+      for(const [dx, dy] of positions){
+        g.fillStyle = '#0a2a7a';
+        g.beginPath();
+        g.arc(cx + dx, cy + dy, 60, 0, Math.PI * 2);
+        g.fill();
+        drawStar(cx + dx, cy + dy, 38, 5, '#ffffff');
+      }
+      g.fillStyle = '#0a2a7a';
+      g.beginPath(); g.arc(cx, cy, 36, 0, Math.PI * 2); g.fill();
+    }
+  } else if(skin === 'golden'){
+    // Gold base with deep gold pentagons + star
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#ffe680');
+    grad.addColorStop(0.5, '#ffd24a');
+    grad.addColorStop(1, '#c79628');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    for(const t of tiles){
+      const cx = t.u * W, cy = t.v * H;
+      drawPent(cx, cy, 100, -Math.PI / 2, 'rgba(138,90,0,0.55)');
+      drawPent(cx, cy, 78, -Math.PI / 2, '#ffd700');
+      g.strokeStyle = '#8a5a00'; g.lineWidth = 4;
+      g.beginPath();
+      for(let i = 0; i < 5; i++){
+        const a = -Math.PI / 2 + i * (Math.PI * 2 / 5);
+        const px = cx + Math.cos(a) * 78, py = cy + Math.sin(a) * 78;
+        if(i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+      }
+      g.closePath(); g.stroke();
+      drawStar(cx, cy, 50, 5, '#8a5a00');
+    }
+  } else if(skin === 'neon'){
+    // Black-green base with bright neon pentagon centers
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, '#0c1a0c');
+    grad.addColorStop(0.5, '#0a2a0a');
+    grad.addColorStop(1, '#050a05');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    for(const t of tiles){
+      const cx = t.u * W, cy = t.v * H;
+      g.strokeStyle = '#7cff00'; g.lineWidth = 6;
+      g.beginPath(); g.arc(cx, cy, 130, 0, Math.PI * 2); g.stroke();
+      drawPent(cx, cy, 80, -Math.PI / 2, '#0a2a0a');
+      g.fillStyle = '#7cff00';
+      g.beginPath(); g.arc(cx, cy, 36, 0, Math.PI * 2); g.fill();
+    }
+  } else if(skin === 'team'){
+    // Team-colored base with darker stripe band + center bullseye
+    const grad = g.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, shadeHex(teamHex, 25));
+    grad.addColorStop(0.5, teamHex);
+    grad.addColorStop(1, shadeHex(teamHex, -20));
+    g.fillStyle = grad;
+    g.fillRect(0, 0, W, H);
+    g.fillStyle = shadeHex(teamHex, -35);
+    g.fillRect(0, H * 0.42, W, H * 0.16);
+    for(const t of tiles){
+      const cx = t.u * W, cy = t.v * H;
+      g.fillStyle = 'rgba(255,255,255,0.95)';
+      g.beginPath(); g.arc(cx, cy, 56, 0, Math.PI * 2); g.fill();
+      g.fillStyle = shadeHex(teamHex, -35);
+      g.beginPath(); g.arc(cx, cy, 28, 0, Math.PI * 2); g.fill();
+    }
+  } else {
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, W, H);
   }
-  g.setLineDash([]);
   return c;
+}
+
+// Lighten or darken a #rrggbb hex string by `pct` (-100..100).
+function shadeHex(hex, pct){
+  const h = hex.replace('#', '');
+  const num = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  let r = (num >> 16) & 0xff, g = (num >> 8) & 0xff, b = num & 0xff;
+  const t = pct < 0 ? 0 : 255;
+  const p = Math.abs(pct) / 100;
+  r = Math.round((t - r) * p + r);
+  g = Math.round((t - g) * p + g);
+  b = Math.round((t - b) * p + b);
+  return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 }
 
 function makeGrassTexture(){
@@ -3867,10 +4041,42 @@ function initRace3D(){
     crowdMesh.frustumCulled = false;
     scene.add(crowdMesh);
 
-    // ── Ad boards: alternate Karboluxe-branded and "Ball Race" panels only ──
-    const karboTex = new THREE.CanvasTexture(makeAdTexture('KARBOLUXE', '#0d1018'));
+    // ── Ad boards: alternate Karboluxe logo and "Ball Race" panels ──
+    // Karboluxe panel: solid dark background, logo image drawn on top once it loads.
+    const karboCanvas = document.createElement('canvas');
+    karboCanvas.width = 256; karboCanvas.height = 64;
+    const kctx = karboCanvas.getContext('2d');
+    kctx.fillStyle = '#0d1018';
+    kctx.fillRect(0, 0, 256, 64);
+    kctx.strokeStyle = 'rgba(255,255,255,.35)';
+    kctx.lineWidth = 2;
+    kctx.strokeRect(2, 2, 252, 60);
+    const karboTex = new THREE.CanvasTexture(karboCanvas);
+    if(THREE.SRGBColorSpace) karboTex.colorSpace = THREE.SRGBColorSpace;
+    const drawKarboLogo = (logoSrc) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const aspect = img.width / img.height || (1200 / 360);
+        const pad = 6;
+        const h = 64 - pad * 2;
+        const w = h * aspect;
+        const x = (256 - w) / 2;
+        kctx.fillStyle = '#0d1018';
+        kctx.fillRect(0, 0, 256, 64);
+        kctx.strokeStyle = 'rgba(255,255,255,.35)';
+        kctx.lineWidth = 2;
+        kctx.strokeRect(2, 2, 252, 60);
+        kctx.drawImage(img, x, pad, w, h);
+        karboTex.needsUpdate = true;
+      };
+      img.onerror = () => { if(logoSrc.endsWith('.png')) drawKarboLogo('/logo.svg'); };
+      img.src = logoSrc;
+    };
+    drawKarboLogo('/logo.png');
+
     const ballRaceTex = new THREE.CanvasTexture(makeAdTexture('BALL RACE', '#ff4500'));
-    if(THREE.SRGBColorSpace){ karboTex.colorSpace = THREE.SRGBColorSpace; ballRaceTex.colorSpace = THREE.SRGBColorSpace; }
+    if(THREE.SRGBColorSpace) ballRaceTex.colorSpace = THREE.SRGBColorSpace;
     const karboMat = new THREE.MeshStandardMaterial({
       map: karboTex,
       emissive: new THREE.Color('#a8e4f0'),
@@ -4019,13 +4225,18 @@ function rebuildRacerBalls3D(){
   const trackW = Math.min(TRACK_HALF_WIDTH * 2 - 1, Math.max(6, n * 1.6));
   const laneW = trackW / n;
 
-  // Single shared soccer-ball texture
-  if(!race3D.soccerTex){
-    const tex = new THREE.CanvasTexture(makeSoccerTexture());
+  // Per-skin ball textures (cached). 'team' is a per-racer tint, so it's
+  // built fresh below; everything else is shared across racers.
+  if(!race3D.ballTextures) race3D.ballTextures = {};
+  const ensureBallTex = (skin, teamHex) => {
+    const key = skin === 'team' ? `team:${teamHex}` : skin;
+    if(race3D.ballTextures[key]) return race3D.ballTextures[key];
+    const tex = new THREE.CanvasTexture(makeSoccerTexture(skin, teamHex));
     if(THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = race3D.renderer.capabilities.getMaxAnisotropy ? race3D.renderer.capabilities.getMaxAnisotropy() : 4;
-    race3D.soccerTex = tex;
-  }
+    race3D.ballTextures[key] = tex;
+    return tex;
+  };
 
   // Real-soccer-ball radius (~22 cm) scaled to world units (~1.9 m player)
   const ballR = 0.13;
@@ -4063,14 +4274,35 @@ function rebuildRacerBalls3D(){
       race3D.nameTags.push(null);
     }
 
-    // Soccer ball — at the player's foot, slightly forward
-    const ballMat = new THREE.MeshStandardMaterial({
-      map: race3D.soccerTex,
+    // Soccer ball — texture + color tuned per admin's Ball Skin pick. The
+    // pattern (pentagons / stars / stripe) is baked into the texture; the
+    // material color is white so the texture renders as-painted (except
+    // 'team', which uses the per-racer color baked into its texture).
+    const skin = settings.ballSkin || 'classic';
+    const skinTex = ensureBallTex(skin, colorHex);
+    const matParams = {
+      map: skinTex,
       color: 0xffffff,
       roughness: 0.42,
       metalness: 0.1,
-      emissive: teamColor.clone().multiplyScalar(0.06),
-    });
+      emissive: 0x000000,
+    };
+    if(skin === 'golden'){
+      matParams.metalness = 0.55;
+      matParams.roughness = 0.32;
+      matParams.emissive = 0x3a2a00;
+    } else if(skin === 'neon'){
+      matParams.emissive = 0x224a11;
+      matParams.roughness = 0.55;
+      matParams.metalness = 0.0;
+    } else if(skin === 'champions'){
+      matParams.metalness = 0.2;
+      matParams.roughness = 0.36;
+    } else if(skin === 'retro'){
+      matParams.roughness = 0.62;
+      matParams.metalness = 0.0;
+    }
+    const ballMat = new THREE.MeshStandardMaterial(matParams);
     const ball = new THREE.Mesh(new THREE.SphereGeometry(ballR, 32, 24), ballMat);
     ball.castShadow = true;
     ball.position.set(x, ballR, 0.7);
@@ -4306,20 +4538,38 @@ function renderRace3D(){
       const wantRun = (moving && !r.finished) ? 1 : 0;
       if(u.sameAction){
         // Single-clip model: timeScale matches world ground-speed.
-        // Tune against actual race-track travel speed (~5 m/s base, 1.5× sprint).
         const targetTS = wantRun
           ? (sprint ? 1.8 : tired ? 0.9 : 1.3)
           : 0.5;
         const cur = u.idleAction.timeScale || 1;
         u.idleAction.timeScale = cur + (targetTS - cur) * 0.3;
       } else {
-        const newW = u.lastRunWeight + (wantRun - u.lastRunWeight) * 0.25;
-        u.lastRunWeight = newW;
-        if(u.runAction)  u.runAction.setEffectiveWeight(newW);
-        if(u.idleAction) u.idleAction.setEffectiveWeight(1 - newW);
-        if(u.runAction){
-          u.runAction.timeScale = sprint ? 1.5 : (tired ? 0.8 : 1.1);
+        // Multi-clip blending — pick which animation should be at weight 1.
+        const tgt = { idle: 0, run: 0, sprint: 0, walk: 0 };
+        if(r.finished || !moving){
+          tgt.idle = 1;
+        } else if(sprint){
+          tgt[u.sprintAction ? 'sprint' : 'run'] = 1;
+        } else if(tired){
+          tgt[u.walkAction ? 'walk' : 'run'] = 1;
+        } else {
+          tgt.run = 1;
         }
+        // Smoothly interpolate each action's weight toward its target.
+        const blend = 0.18;
+        const setW = (action, target) => {
+          if(!action) return;
+          const cur = action.getEffectiveWeight() ?? 0;
+          action.setEffectiveWeight(cur + (target - cur) * blend);
+        };
+        setW(u.idleAction,   tgt.idle);
+        setW(u.runAction,    tgt.run);
+        setW(u.sprintAction, tgt.sprint);
+        setW(u.walkAction,   tgt.walk);
+        // Sub-tune cadence per state
+        if(u.runAction)    u.runAction.timeScale    = 1.1;
+        if(u.sprintAction) u.sprintAction.timeScale = 1.15;
+        if(u.walkAction)   u.walkAction.timeScale   = 1.0;
       }
       // Lift the realistic model so its feet sit at ground level (compensates
       // for whatever pivot the GLB ships with).
@@ -4544,14 +4794,80 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
     cam.lookAt(0, 1.8, 0);
     return;
   }
+
   // Default: drone — sweeping aerial view of the big stadium. Camera flies
   // in a wide horizontal arc in front of the action, looking forward.
   const droneSpeed = 0.07;
   const orbitR = 16;
-  const droneAng = tNow * droneSpeed;
+  // Drone clock is anchored to launch time so the steady-state orbit picks
+  // up exactly where the cinematic transition leaves off.
+  const droneT = race3D.launchStartTime
+    ? (performance.now() - race3D.launchStartTime) / 1000
+    : tNow;
+
+  // Cinematic launch — the first ~2.6s of racing plays a "chopper takeoff"
+  // that lifts off from the lobby pose, banks sideways, and settles into
+  // the orbiting drone path. Three keyframes blended with a smooth
+  // ease-in-out curve, plus a parabolic vertical hop for liftoff feel.
+  if(mode === 'drone' && race3D.launchStartTime){
+    const LAUNCH_DUR = 2.6;
+    const tL = (performance.now() - race3D.launchStartTime) / 1000;
+    if(tL >= 0 && tL < LAUNCH_DUR){
+      const u = tL / LAUNCH_DUR;
+      // Smoothstep for the overall position blend
+      const eased = u < 0.5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2;
+
+      // Compute the steady-state drone pose at the moment the transition
+      // ends — start the orbit from there so handoff is invisible.
+      const endAng = LAUNCH_DUR * droneSpeed;
+      const endX = Math.cos(endAng) * orbitR;
+      const endZ = target.z - 26 + Math.sin(endAng) * orbitR * 0.25;
+      const endY = 22;
+
+      // Three keyframes:
+      //  K0 — lobby pose (low, front, looking back)
+      //  K1 — over-shoulder dolly (mid height, pulled back, banked right)
+      //  K2 — high orbit start (matches steady-state)
+      const k0p = new THREE.Vector3(0, 4.0, 13.5);
+      const k0l = new THREE.Vector3(0, 1.8, 0);
+      const k1p = new THREE.Vector3(11, 13, target.z - 4);
+      const k1l = new THREE.Vector3(0, 1.5, target.z + 8);
+      const k2p = new THREE.Vector3(endX, endY, endZ);
+      const k2l = new THREE.Vector3(target.x, 1.5, target.z + 6);
+
+      let pos, look;
+      if(eased < 0.5){
+        const k = eased / 0.5;
+        const ks = k * k * (3 - 2 * k); // smoothstep within segment
+        pos  = k0p.clone().lerp(k1p, ks);
+        look = k0l.clone().lerp(k1l, ks);
+      } else {
+        const k = (eased - 0.5) / 0.5;
+        const ks = k * k * (3 - 2 * k);
+        pos  = k1p.clone().lerp(k2p, ks);
+        look = k1l.clone().lerp(k2l, ks);
+      }
+
+      // Parabolic liftoff bump on Y — peaks halfway through, dies at the ends.
+      pos.y += Math.sin(u * Math.PI) * 5.5;
+
+      // Slight roll: tilt the camera as it banks for cinematic feel.
+      const roll = Math.sin(u * Math.PI) * 0.07;
+
+      cam.position.copy(pos);
+      cam.up.set(Math.sin(roll), Math.cos(roll), 0);
+      cam.lookAt(look);
+      return;
+    } else if(tL >= LAUNCH_DUR && cam.up.x !== 0){
+      // Restore default up vector once cinematic ends.
+      cam.up.set(0, 1, 0);
+    }
+  }
+
+  const droneAng = droneT * droneSpeed;
   const cx = Math.cos(droneAng) * orbitR;
   const cz = target.z - 26 + Math.sin(droneAng) * orbitR * 0.25;
-  const cy = 40 + Math.sin(tNow * 0.3) * 2;
+  const cy = 22 + Math.sin(droneT * 0.3) * 1.5;
   cam.position.lerp(new THREE.Vector3(cx, cy, cz), 0.04);
   cam.lookAt(target.x, 1.5, target.z + 6);
 }
@@ -5062,11 +5378,12 @@ function updateScoreboard(){
   $('race-status').textContent = replayMode ? 'REPLAY' : raceActive ? 'LIVE' : (viewerRacing ? 'LIVE' : finishOrder.length===racers.length ? 'FT' : '—');
   $('scoreboard-list').innerHTML = sorted.map((o,idx) => {
     const rr = o.r;
+    const teamCol = TEAM_COLORS[rr.colorIdx % TEAM_COLORS.length];
     const time = rr.finished ? formatTime(rr.finishTime/1000) : Math.round(rr.position*100)+'%';
     const cls = idx<3 ? 'top'+(idx+1) : '';
-    return `<div class="score-row ${cls}">
+    return `<div class="score-row ${cls}" style="--team:${teamCol}">
       <span class="score-rank">${idx+1}</span>
-      ${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[rr.colorIdx%TEAM_COLORS.length], 22)}
+      ${ballSvgMarkup(settings.ballSkin, teamCol, 22)}
       <span class="score-name">${escapeHtml(rr.name)}</span>
       <span class="score-pct ${rr.finished?'done':''}">${time}</span>
     </div>`;
@@ -5097,13 +5414,15 @@ function _continueShowPodium(data, isViewer){
   if(top3[2]) blocks.push(podiumBlock(top3[2], 3));
   stage.insertAdjacentHTML('beforeend', blocks.join(''));
 
-  $('leaderboard').innerHTML = results.map((r,i) => `
-    <div class="result-row">
+  $('leaderboard').innerHTML = results.map((r,i) => {
+    const teamCol = TEAM_COLORS[r.colorIdx % TEAM_COLORS.length];
+    return `<div class="result-row" style="--team:${teamCol}">
       <span class="rank">${String(i+1).padStart(2,'0')}</span>
-      ${ballSvgMarkup(settings.ballSkin, TEAM_COLORS[r.colorIdx%TEAM_COLORS.length], 24)}
+      ${ballSvgMarkup(settings.ballSkin, teamCol, 24)}
       <span class="name">${escapeHtml(r.name)}</span>
       <span class="time">${r.finishTime?formatTime(r.finishTime/1000):''}</span>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   $('result-actions').style.display = isViewer ? 'none' : '';
   $('viewer-result-msg').classList.toggle('active', isViewer);
@@ -5284,6 +5603,22 @@ function enterReplay(seekMs){
   resizeCanvas();
   replayMode = true; replayFrame = 0; replayPlaying = seekMs==null;
   replaySpeed = 1; replayLastTime = 0; replayAccum = 0;
+  // Precompute the moment each racer crosses the finish line so the
+  // scoreboard can show real finish times during replay.
+  if(racers && racers.length){
+    racers.forEach((r, i) => {
+      r.finished = false;
+      r.finishTime = 0;
+      r._replayFinishTime = null;
+    });
+    for(const f of recording){
+      racers.forEach((r, i) => {
+        if(r._replayFinishTime != null) return;
+        const p = f.positions ? f.positions[i] : null;
+        if(p != null && p >= 1.0) r._replayFinishTime = f.time;
+      });
+    }
+  }
   $('replay-bar').classList.add('active');
   $('replay-slider').value = 0;
   $('r-time-tot').textContent = replayFmt(recording[recording.length-1].time);
@@ -5326,6 +5661,14 @@ function applyFrame(idx){
     else if(vel < avgVel * 0.45 && r.position > 0.02) r.phase = 'tired';
     else r.phase = 'running';
     r.stamina = 0.7;   // stable stamina for replay indicators
+    // Apply finish state once the playhead reaches the racer's finish moment
+    if(r._replayFinishTime != null && f.time >= r._replayFinishTime){
+      r.finished = true;
+      r.finishTime = r._replayFinishTime;
+    } else {
+      r.finished = false;
+      r.finishTime = 0;
+    }
   });
   drawRace(); updateScoreboard();
   if((f.commentary || '') !== commentaryText || (f.commentaryType || '') !== commentaryType) setCommentary(f.commentary || '', f.commentaryType || '');
