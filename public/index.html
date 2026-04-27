@@ -206,26 +206,25 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 @media(max-width:640px){.kick-off-row{padding:12px 12px}.kick-off-inner{flex-direction:column-reverse;gap:8px;align-items:stretch}.kick-off-row .meta{text-align:center;font-size:11px}.kick-off-btn{width:100%;font-size:15px;padding:13px 20px}}
 
 /* Viewer lobby */
-.viewer-lobby{padding:28px 40px}
-@media(max-width:640px){.viewer-lobby{padding:18px 16px}}
-.v-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;gap:12px;flex-wrap:wrap}
-.v-role-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:var(--accent-cool);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:4px}
-.v-waiting{display:grid;place-items:center;padding:40px 20px;text-align:center}
-.v-label{font-family:var(--font-cond);font-size:14px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
-.v-title{font-family:var(--font-display);font-style:italic;font-size:clamp(40px,8vw,96px);line-height:.9;margin:0 0 18px;text-transform:uppercase}
+.viewer-lobby{padding:22px 32px;max-width:760px;margin:0 auto;width:100%}
+@media(max-width:640px){.viewer-lobby{padding:14px 16px}}
+.v-topbar{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.v-role-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;background:rgba(58,168,255,.15);color:var(--accent-cool);border:1px solid rgba(58,168,255,.35);font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border-radius:6px}
+.v-waiting{padding:8px 0;text-align:left;display:flex;flex-direction:column;gap:18px}
+.v-title{font-family:var(--font-display);font-style:italic;font-size:clamp(28px,6vw,46px);line-height:1;margin:0;text-transform:uppercase;letter-spacing:-.01em}
 .v-title .accent{color:var(--accent)}
-.v-sub{font-size:16px;color:var(--ink-200);max-width:520px;margin:0 auto 36px;line-height:1.5}
-.v-status-card{display:inline-flex;align-items:center;gap:18px;padding:18px 28px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-lg);margin-bottom:36px}
+.v-sub{font-family:var(--font-cond);font-size:13px;color:var(--ink-200);max-width:560px;margin:0;line-height:1.55;letter-spacing:.02em}
+.v-status-card{display:flex;align-items:center;gap:14px;padding:12px 16px;background:rgba(10,10,8,.6);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md)}
 .v-status-dots{display:flex;gap:6px}
-.v-status-dots i{width:10px;height:10px;border-radius:50%;background:var(--accent);animation:dot-bounce 1.2s ease-in-out infinite}
+.v-status-dots i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:dot-bounce 1.2s ease-in-out infinite}
 .v-status-dots i:nth-child(2){animation-delay:.15s}
 .v-status-dots i:nth-child(3){animation-delay:.3s}
 @keyframes dot-bounce{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-6px);opacity:1}}
-.v-status-text{font-family:var(--font-display);font-style:italic;font-size:16px;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-50)}
-.v-lineup{max-width:860px;margin:0 auto;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:20px 24px}
-.v-lineup-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap}
-.v-lineup-hd-t{font-family:var(--font-display);font-style:italic;font-size:18px;text-transform:uppercase;letter-spacing:.04em}
-.v-lineup-meta{font-family:var(--font-cond);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200)}
+.v-status-text{font-family:var(--font-cond);font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-50)}
+.v-lineup{background:rgba(10,10,8,.6);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:14px 16px}
+.v-lineup-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap}
+.v-lineup-hd-t{font-family:var(--font-cond);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-50)}
+.v-lineup-meta{font-family:var(--font-cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-300)}
 .v-lineup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
 .v-racer{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md)}
 .v-racer-num{font-family:var(--font-display);font-style:italic;font-size:11px;color:var(--accent);width:18px}
@@ -836,31 +835,23 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <!-- Viewer lobby -->
     <div class="viewer-lobby" id="viewer-setup" style="display:none">
       <div class="v-topbar">
-        <div style="display:flex;align-items:center;gap:14px">
-          <span class="live-badge">LIVE</span>
-          <div style="font-family:var(--font-display);font-style:italic;font-size:20px;text-transform:uppercase">Ball Race <span style="color:var(--ink-200);font-size:12px;letter-spacing:.14em">'26</span></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn btn-ghost btn-xs" data-go-tab="history">📋 Riwayat</button>
-          <span class="v-role-badge">👁 Spectator</span>
-        </div>
+        <span class="live-badge">LIVE</span>
+        <span class="v-role-badge">👁 Spectator</span>
+        <button class="btn btn-ghost btn-xs" data-go-tab="history" style="margin-left:auto">📋 Riwayat</button>
       </div>
       <div class="v-waiting">
-        <div>
-          <div class="v-label">Siap-Siap</div>
-          <h1 class="v-title">MENUNGGU<br><span class="accent">KICK-OFF</span></h1>
-          <p class="v-sub">Admin sedang menyiapkan pertandingan. Kamu terkunci sebagai penonton — saat peluit dibunyikan, kamu akan berada di pinggir lapangan.</p>
-          <div class="v-status-card">
-            <div class="v-status-dots"><i></i><i></i><i></i></div>
-            <div class="v-status-text" id="v-status-text">Menunggu admin membuka ruangan</div>
+        <h1 class="v-title">Menunggu <span class="accent">kick-off</span></h1>
+        <p class="v-sub">Admin sedang menyiapkan pertandingan. Saat peluit dibunyikan, kamu otomatis pindah ke pinggir lapangan.</p>
+        <div class="v-status-card">
+          <div class="v-status-dots"><i></i><i></i><i></i></div>
+          <div class="v-status-text" id="v-status-text">Menunggu admin membuka ruangan</div>
+        </div>
+        <div class="v-lineup">
+          <div class="v-lineup-hd">
+            <div class="v-lineup-hd-t">Daftar Pemain</div>
+            <div class="v-lineup-meta" id="v-meta">0 pemain · 20s balapan</div>
           </div>
-          <div class="v-lineup">
-            <div class="v-lineup-hd">
-              <div class="v-lineup-hd-t">Daftar Pemain</div>
-              <div class="v-lineup-meta" id="v-meta">0 pemain · 20s balapan</div>
-            </div>
-            <div id="v-lineup-grid"></div>
-          </div>
+          <div id="v-lineup-grid"></div>
         </div>
       </div>
     </div>
@@ -1986,6 +1977,9 @@ function viewerLoop(ts){
     drawRace();
     updateScoreboard();
   }
+  if(viewerRacing && raceStartRealTime){
+    updateRaceClock(performance.now() - raceStartRealTime);
+  }
   if(viewerRacing) requestAnimationFrame(viewerLoop);
 }
 
@@ -2680,9 +2674,13 @@ function drawRace(){
     ctx.fillRect(0, i*laneH, w, laneH);
   }
   // Track-flow scroll — moves opposite to racer direction so the field
-  // appears to flow past, creating a sense of speed even at fixed camera.
+  // appears to flow past. The finish line uses the SAME scroll so it feels
+  // painted on the field. Track scroll factor controls how far the world
+  // travels over the race; lower values = wider window where the painted
+  // finish line is visible during the final stretch.
   const avgPos = racers.reduce((s,r) => s + r.position, 0) / n;
-  const scroll = avgPos * w * 4;
+  const trackScrollFactor = 0.4;
+  const scroll = avgPos * w * trackScrollFactor;
   // Mow pattern verticals (scroll left as racers advance)
   const stripeW = 160 * devicePixelRatio;
   const stripeOffset = ((-scroll) % stripeW + stripeW) % stripeW;
@@ -2692,10 +2690,11 @@ function drawRace(){
     ctx.fillRect(x, 0, stripeW * 0.5, h);
   }
   ctx.globalAlpha = 1;
-  // Per-lane scrolling chevrons — subtle track-direction markers
+  // Per-lane scrolling chevrons — subtle track-direction markers, foreground
   const chevSpacing = 70 * devicePixelRatio;
   const chevSize = Math.min(10 * devicePixelRatio, laneH * 0.18);
-  const chevOffset = ((-scroll * 1.6) % chevSpacing + chevSpacing) % chevSpacing;
+  const chevScrollFactor = 1.6;
+  const chevOffset = ((-scroll * chevScrollFactor) % chevSpacing + chevSpacing) % chevSpacing;
   ctx.strokeStyle = 'rgba(255,255,255,.07)';
   ctx.lineWidth = 1.5 * devicePixelRatio;
   ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -2731,12 +2730,19 @@ function drawRace(){
   ctx.strokeStyle = 'rgba(255,255,255,.4)'; ctx.lineWidth = 2*devicePixelRatio;
   ctx.beginPath(); ctx.moveTo(sX, 0); ctx.lineTo(sX, h); ctx.stroke();
 
-  // Finish checker — painted on the field at fX, fully static.
-  const checkSz = 10*devicePixelRatio;
-  const rows = Math.ceil(h/checkSz);
-  for(let r = 0; r < rows; r++) for(let col = 0; col < 2; col++){
-    ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
-    ctx.fillRect(fX + col*checkSz, r*checkSz, checkSz, checkSz);
+  // Finish checker — painted on the field at the very end of the track,
+  // scrolls at the same rate as the chevrons so it feels like a marking on
+  // the same surface. Stays offscreen until racers approach, then enters
+  // from the right and lands exactly at fX when avgPos hits 1.
+  const finishWorldX = fX + chevScrollFactor * trackScrollFactor * w;
+  const finishLineX = finishWorldX - scroll * chevScrollFactor;
+  if(finishLineX < w){
+    const checkSz = 10*devicePixelRatio;
+    const rows = Math.ceil(h/checkSz);
+    for(let r = 0; r < rows; r++) for(let col = 0; col < 2; col++){
+      ctx.fillStyle = (r+col)%2===0 ? '#fff' : '#222';
+      ctx.fillRect(finishLineX + col*checkSz, r*checkSz, checkSz, checkSz);
+    }
   }
 
   // Ranking for place bubbles
