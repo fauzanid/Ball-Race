@@ -1999,7 +1999,7 @@ function setupSocketListeners(){
           // Skip the cinematic launch arc if the race is already past it,
           // otherwise the late joiner sees a chopper takeoff mid-race.
           if(race3D){
-            const LAUNCH_DUR_MS = 2600;
+            const LAUNCH_DUR_MS = 4500;
             race3D.launchStartTime = elapsed > LAUNCH_DUR_MS ? 0 : raceStartRealTime;
           }
         } else {
@@ -2336,7 +2336,7 @@ function resumeRaceTab(){
         const elapsed = s.serverNow - s.startTime;
         raceStartRealTime = performance.now() - elapsed;
         if(race3D){
-          const LAUNCH_DUR_MS = 2600;
+          const LAUNCH_DUR_MS = 4500;
           race3D.launchStartTime = elapsed > LAUNCH_DUR_MS ? 0 : raceStartRealTime;
         }
       }
@@ -2610,11 +2610,6 @@ function showLobbyOverlay(on){
 function resetLobbyVisuals(){
   if(!race3D || !race3D.ready) return;
   hidePodium3D();
-  // Clear trail dust
-  if(race3D.trailAlphas){
-    for(let i = 0; i < race3D.trailAlphas.length; i++) race3D.trailAlphas[i] = 0;
-    if(race3D.trailGeometry?.attributes?.aAlpha) race3D.trailGeometry.attributes.aAlpha.needsUpdate = true;
-  }
   // Clear fireworks
   if(race3D.fireworkParticles){
     const fp = race3D.fireworkParticles;
@@ -3063,12 +3058,6 @@ const race3D = {
   ballGroup: null,
   laneGroup: null,
   laneCount: 0,
-  trailPoints: null,
-  trailGeometry: null,
-  trailPositions: null,
-  trailColors: null,
-  trailAlphas: null,
-  trailHeads: null,
   cameraTargetPos: null,
   cameraTargetLook: null,
   startTime: 0,
@@ -3978,12 +3967,6 @@ function disposeRace3DScene(){
   race3D.runnerMeshes = [];
   race3D.nameTags = [];
   race3D.laneCount = 0;
-  race3D.trailPoints = null;
-  race3D.trailGeometry = null;
-  race3D.trailPositions = null;
-  race3D.trailColors = null;
-  race3D.trailAlphas = null;
-  race3D.trailHeads = null;
   race3D.trophyMesh = null;
   race3D.fireworkParticles = null;
   race3D.finishedFireworks = new Set();
@@ -4338,12 +4321,9 @@ function initRace3D(){
       scene.add(beam);
     }
 
-    // ── Trail / dust particles for racers ──
-    const trailMaxPerBall = 30;
+    // ── Per-racer ball + runner container ──
     const ballGroup = new THREE.Group();
     scene.add(ballGroup);
-
-    // We'll create the trail Points lazily once we know racer count.
 
     Object.assign(race3D, {
       ready: true,
@@ -4411,11 +4391,6 @@ function rebuildRacerBalls3D(){
   race3D.finishedFireworks.clear();
   const tagsContainer = $('name-tags');
   if(tagsContainer) tagsContainer.innerHTML = '';
-  if(race3D.trailPoints){
-    race3D.scene.remove(race3D.trailPoints);
-    race3D.trailGeometry?.dispose();
-    race3D.trailPoints = null;
-  }
 
   const n = racers.length;
   if(!n) return;
@@ -4523,72 +4498,6 @@ function rebuildRacerBalls3D(){
     race3D.ballRings.push(ring);
   });
 
-  // Trail Points: per-ball ring buffer of recent positions
-  const trailMax = 28;
-  const total = n * trailMax;
-  const trailGeo = new THREE.BufferGeometry();
-  const positions = new Float32Array(total * 3);
-  const colors = new Float32Array(total * 3);
-  const alphas = new Float32Array(total);
-  const heads = new Int32Array(n);
-  // Init positions far below pitch so they're invisible
-  for(let i = 0; i < total; i++){
-    positions[i*3] = 0; positions[i*3+1] = -50; positions[i*3+2] = 0;
-    alphas[i] = 0;
-  }
-  for(let i = 0; i < n; i++){
-    const c = new THREE.Color(TEAM_COLORS[racers[i].colorIdx % TEAM_COLORS.length]);
-    for(let k = 0; k < trailMax; k++){
-      const idx = i * trailMax + k;
-      colors[idx*3]     = c.r;
-      colors[idx*3 + 1] = c.g;
-      colors[idx*3 + 2] = c.b;
-    }
-  }
-  trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  trailGeo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
-  trailGeo.setAttribute('aAlpha', new THREE.BufferAttribute(alphas, 1));
-
-  const trailMat = new THREE.ShaderMaterial({
-    uniforms: { size: { value: 22 } },
-    transparent: true,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    vertexShader: `
-      attribute vec3 aColor;
-      attribute float aAlpha;
-      varying float vAlpha;
-      varying vec3 vColor;
-      uniform float size;
-      void main(){
-        vAlpha = aAlpha;
-        vColor = aColor;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = size * (60.0 / max(-mv.z, 1.0));
-        gl_Position = projectionMatrix * mv;
-      }
-    `,
-    fragmentShader: `
-      varying float vAlpha;
-      varying vec3 vColor;
-      void main(){
-        vec2 uv = gl_PointCoord - vec2(0.5);
-        float d = length(uv);
-        float a = smoothstep(0.5, 0.05, d) * vAlpha;
-        gl_FragColor = vec4(vColor, a);
-      }
-    `,
-  });
-  const points = new THREE.Points(trailGeo, trailMat);
-  points.frustumCulled = false;
-  race3D.scene.add(points);
-  race3D.trailPoints = points;
-  race3D.trailGeometry = trailGeo;
-  race3D.trailPositions = positions;
-  race3D.trailColors = colors;
-  race3D.trailAlphas = alphas;
-  race3D.trailHeads = heads;
-  race3D.trailMax = trailMax;
 }
 
 function setCameraMode(mode){
@@ -4812,20 +4721,6 @@ function renderRace3D(){
     }
     if(r.position > maxPos){ maxPos = r.position; leaderIdx = i; }
 
-    // Trail dust at feet
-    if(race3D.trailPositions && moving){
-      const head = race3D.trailHeads[i];
-      const idx = i * race3D.trailMax + head;
-      const px = runner.position.x + (Math.random() - 0.5) * 0.3;
-      const py = 0.18 + Math.random() * 0.08;
-      const pz = z - 0.45 + (Math.random() - 0.5) * 0.2;
-      race3D.trailPositions[idx*3]     = px;
-      race3D.trailPositions[idx*3 + 1] = py;
-      race3D.trailPositions[idx*3 + 2] = pz;
-      race3D.trailAlphas[idx] = sprint ? 1.0 : 0.65;
-      race3D.trailHeads[i] = (head + 1) % race3D.trailMax;
-    }
-
     // Finish-line celebration: spawn a quick particle burst once when finished
     if(r.finished && !race3D.finishedFireworks.has(i)){
       race3D.finishedFireworks.add(i);
@@ -4835,14 +4730,6 @@ function renderRace3D(){
 
   // Project HTML name tags above each runner's head
   updateNameTags();
-
-  // Decay all trail alphas
-  if(race3D.trailAlphas){
-    const arr = race3D.trailAlphas;
-    for(let i = 0; i < arr.length; i++) arr[i] *= 0.93;
-    race3D.trailGeometry.attributes.aAlpha.needsUpdate = true;
-    race3D.trailGeometry.attributes.position.needsUpdate = true;
-  }
 
   // Update fireworks
   updateFireworks(tNow);
@@ -5016,7 +4903,7 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
   // the orbiting drone path. Three keyframes blended with a smooth
   // ease-in-out curve, plus a parabolic vertical hop for liftoff feel.
   if(mode === 'drone' && race3D.launchStartTime){
-    const LAUNCH_DUR = 2.6;
+    const LAUNCH_DUR = 4.5;
     const tL = (performance.now() - race3D.launchStartTime) / 1000;
     if(tL >= 0 && tL < LAUNCH_DUR){
       const u = tL / LAUNCH_DUR;
