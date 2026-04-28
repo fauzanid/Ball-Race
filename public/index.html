@@ -2082,15 +2082,15 @@ function setRole(r){
   $('clear-history-btn').style.display = isAdmin ? '' : 'none';
   $('wheel-clear-hist-btn').style.display = isAdmin ? '' : 'none';
   document.querySelectorAll('.wheel-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-  if(isAdmin) setWheelMode(wheelMode);
+  if(isAdmin && typeof setWheelMode === 'function') setWheelMode(typeof wheelMode === 'string' ? wheelMode : 'names');
   $('wheel-viewer-note').style.display = isAdmin ? 'none' : '';
   document.querySelectorAll('.track-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-  if(isAdmin && currentTab==='track') loadTrackAdminList();
+  if(isAdmin && currentTab==='track' && typeof loadTrackAdminList === 'function') loadTrackAdminList();
   document.querySelectorAll('.lucky-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-  renderLuckyCards();
+  if(typeof renderLuckyCards === 'function') renderLuckyCards();
   document.querySelectorAll('.auction-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
-  renderAuctionLists();
-  renderWheelChips();
+  if(typeof renderAuctionLists === 'function') renderAuctionLists();
+  if(typeof renderWheelChips === 'function') renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
   if(isAdmin){ if(players.length<2) seedDefaultPlayers(); renderPlayerList(); } else renderViewerLineup();
@@ -2317,20 +2317,35 @@ function renderSkinPicker(){
 
 // Duration
 $('dur-slider').addEventListener('input', e => {
+  // Block duration tweaks during a live race — changing it would tear down
+  // the 3D scene mid-tick.
+  if(raceActive){ e.target.value = settings.duration; return; }
   settings.duration = +e.target.value;
   $('dur-num').textContent = settings.duration;
   $('stat-duration').textContent = settings.duration+'s';
   document.querySelectorAll('.duration-preset').forEach(b => b.classList.toggle('active', +b.dataset.val===settings.duration));
+  recomputeTrackLen();
   saveSettings(); broadcastSettings(); updateKickOffUI();
 });
 document.querySelectorAll('.duration-preset').forEach(b => b.addEventListener('click', () => {
+  if(raceActive) return;
   settings.duration = +b.dataset.val;
   $('dur-slider').value = settings.duration;
   $('dur-num').textContent = settings.duration;
   $('stat-duration').textContent = settings.duration+'s';
   document.querySelectorAll('.duration-preset').forEach(x => x.classList.toggle('active', x===b));
+  recomputeTrackLen();
   saveSettings(); broadcastSettings(); updateKickOffUI();
 }));
+function setDurationControlsLocked(locked){
+  const slider = $('dur-slider');
+  if(slider) slider.disabled = !!locked;
+  document.querySelectorAll('.duration-preset').forEach(b => {
+    b.disabled = !!locked;
+    b.classList.toggle('locked', !!locked);
+  });
+}
+
 function applySettings(){
   sfx.enabled = settings.sound;
   $('header-sound-btn').textContent = sfx.enabled ? '🔊' : '🔇';
@@ -2339,8 +2354,15 @@ function applySettings(){
   $('dur-num').textContent = settings.duration;
   $('stat-duration').textContent = settings.duration+'s';
   document.querySelectorAll('.duration-preset').forEach(b => b.classList.toggle('active', +b.dataset.val===settings.duration));
+  recomputeTrackLen();
   renderSkinPicker();
-  if(race3D && race3D.ready) rebuildRacerBalls3D();
+  setDurationControlsLocked(raceActive);
+  if(race3D && race3D.ready){
+    // Track-length changed → tear down so the next render rebuilds the
+    // static field at the new size; otherwise just refresh ball skins.
+    if(race3D.staleTrackLen) disposeRace3DScene();
+    else rebuildRacerBalls3D();
+  }
 }
 
 function updateKickOffUI(){
@@ -2508,6 +2530,9 @@ function enterRaceLobby(){
   showScreen($race); $tabBar.classList.add('hidden');
   $('kick-off-row').style.display = 'none';
   $('replay-bar').classList.remove('active');
+  // If race-duration changed since the scene was built, the track length
+  // moved — tear down and rebuild static geometry.
+  if(race3D.ready && race3D.staleTrackLen) disposeRace3DScene();
   resizeCanvas();
   initRacers();
   recording = []; raceActive = false;
@@ -2553,6 +2578,7 @@ function startRaceFromLobby(){
   if(socket) socket.emit('race-countdown');
   runCountdown().then(() => {
     raceActive = true; lastTime = 0;
+    setDurationControlsLocked(true);
     lastLeader = -1; lastCommentaryTime = 0; nextCommentaryDelay = 400;
     raceStartRealTime = performance.now();
     if(race3D) race3D.launchStartTime = raceStartRealTime;
@@ -2658,6 +2684,7 @@ function raceLoop(ts){
   if(finishOrder.length >= racers.length){
     stopTickDriver();
     raceActive = false; lastTime = 0;
+    setDurationControlsLocked(false);
     clearInterval(broadcastTimer);
     sfx.stopCrowd(); music.stop(); sfx.fanfare();
     updateFairStats();
@@ -2843,7 +2870,19 @@ logoImg.src = 'logo.png';
 // ═══════════════════════════════════════════════════════════════════════════
 // RACE 3D — Three.js: stadium, crowd, floodlights, soccer balls, dust trails
 // ═══════════════════════════════════════════════════════════════════════════
-const TRACK_LEN = 100;
+// Track length scales with race duration so player world speed (≈5 m/s)
+// stays constant — longer race = longer field, not slower legs. Base
+// duration of 20s maps to the original 100-unit length.
+const BASE_DURATION = 20, BASE_TRACK_LEN = 100;
+let TRACK_LEN = BASE_TRACK_LEN;
+function recomputeTrackLen(){
+  const d = Math.max(5, Math.min(90, settings.duration || BASE_DURATION));
+  const newLen = Math.round(BASE_TRACK_LEN * (d / BASE_DURATION));
+  if(newLen !== TRACK_LEN){
+    TRACK_LEN = newLen;
+    if(race3D && race3D.ready) race3D.staleTrackLen = true;
+  }
+}
 const TRACK_HALF_WIDTH = 12;
 const race3D = {
   ready: false,
@@ -2871,9 +2910,6 @@ const race3D = {
   trailColors: null,
   trailAlphas: null,
   trailHeads: null,
-  crowdMesh: null,
-  crowdSeed: null,
-  crowdBaseY: null,
   cameraTargetPos: null,
   cameraTargetLook: null,
   startTime: 0,
@@ -2899,6 +2935,13 @@ const race3D = {
   orbitDragging: false,
   orbitLastX: 0,
   orbitLastY: 0,
+  // Camera-mode tween: when admin clicks chase/side/ball/orbit, snapshot the
+  // current pose and ease into the new mode's pose over `tweenDur` seconds.
+  modeTweenStart: 0,
+  modeTweenDur: 0.55,
+  modeTweenFromPos: null,
+  modeTweenFromLook: null,
+  modeTweenLook: null, // running smoothed look-at vector
 };
 
 // Realistic player model. Drop your rigged GLB(s) in /models/:
@@ -2977,35 +3020,38 @@ function loadRunnerGLTF(){
   const tryAny = (paths) => {
     return paths.reduce((p, url) => p.catch(() => loadOne(url)), Promise.reject()).catch(() => null);
   };
-  Promise.all([
-    tryAny(['/models/player.glb', '/models/Player.glb']),
-    tryAny(['/models/player_idle.glb', '/models/player_Idle.glb']),
-    tryAny(['/models/player_run.glb', '/models/player_Run.glb']),
-    tryAny(['/models/player_sprint.glb', '/models/player_Sprint.glb']),
-    tryAny(['/models/player_walk.glb', '/models/player_Walk.glb', '/models/player_tired.glb']),
-  ]).then(([combined, idle, run, sprint, walk]) => {
-    const sceneSrc = combined || run || idle || sprint || walk;
-    if(!sceneSrc){
-      _runnerGLTF.failed = true;
-      _runnerGLTF.loading = false;
-      console.warn('No player model found at /models/player*.glb');
+  const tag = (clips, kind) => { (clips || []).forEach(c => { c._kind = kind; }); return clips || []; };
+
+  // Fast path: a single combined player.glb with multiple clips. Skip the
+  // four per-clip GLBs entirely so we download ~9 MB instead of ~38 MB.
+  tryAny(['/models/player.glb', '/models/Player.glb']).then(combined => {
+    if(combined && (combined.animations || []).length >= 2){
+      finalize(combined.scene, tag(combined.animations, 'auto'));
       return;
     }
-    // Tag each clip with its source file so runners can pick the right one.
-    const tag = (clips, kind) => { (clips || []).forEach(c => { c._kind = kind; }); return clips || []; };
-    let allAnims;
-    if(combined && (combined.animations || []).length >= 2){
-      allAnims = tag(combined.animations, 'auto');
-    } else {
-      allAnims = [
+    // Fallback: legacy per-clip files. Loaded in parallel.
+    Promise.all([
+      tryAny(['/models/player_idle.glb', '/models/player_Idle.glb']),
+      tryAny(['/models/player_run.glb', '/models/player_Run.glb']),
+      tryAny(['/models/player_sprint.glb', '/models/player_Sprint.glb']),
+      tryAny(['/models/player_walk.glb', '/models/player_Walk.glb', '/models/player_tired.glb']),
+    ]).then(([idle, run, sprint, walk]) => {
+      const sceneSrc = (combined && combined.scene) ? combined : (run || idle || sprint || walk);
+      if(!sceneSrc){
+        _runnerGLTF.failed = true;
+        _runnerGLTF.loading = false;
+        console.warn('No player model found at /models/player*.glb');
+        return;
+      }
+      const allAnims = [
         ...tag((combined && combined.animations) || [], 'auto'),
         ...tag((idle     && idle.animations)     || [], 'idle'),
         ...tag((run      && run.animations)      || [], 'run'),
         ...tag((sprint   && sprint.animations)   || [], 'sprint'),
         ...tag((walk     && walk.animations)     || [], 'walk'),
       ];
-    }
-    finalize(sceneSrc.scene, allAnims);
+      finalize(sceneSrc.scene, allAnims);
+    });
   }).catch((err) => {
     _runnerGLTF.loading = false;
     _runnerGLTF.failed = true;
@@ -3733,6 +3779,69 @@ function makeCrowdTexture(){
   return c;
 }
 
+// Tear down the static 3D scene so initRace3D can rebuild it. Used when
+// TRACK_LEN changes (race duration changed) — disposes geometry/materials,
+// nulls cached refs, but preserves the WebGL renderer + canvas context.
+function disposeRace3DScene(){
+  if(!race3D.scene) return;
+  race3D.scene.traverse(obj => {
+    if(obj.geometry) obj.geometry.dispose?.();
+    const mats = obj.material ? (Array.isArray(obj.material) ? obj.material : [obj.material]) : [];
+    for(const m of mats){
+      if(m.map) m.map.dispose?.();
+      m.dispose?.();
+    }
+  });
+  while(race3D.scene.children.length) race3D.scene.remove(race3D.scene.children[0]);
+  // Drop HTML name tags so rebuildRacerBalls3D recreates them.
+  const tagsContainer = $('name-tags');
+  if(tagsContainer) tagsContainer.innerHTML = '';
+  // Dispose renderer so initRace3D can build a fresh one on the same canvas.
+  race3D.renderer?.dispose?.();
+  race3D.renderer = null;
+  // Reset cached references and per-race lists. Keep `renderer` so the
+  // canvas context survives; initRace3D reuses it via early-return guard
+  // disabled below.
+  race3D.scene = null;
+  race3D.camera = null;
+  race3D.pitchMat = null;
+  race3D.pitchTex = null;
+  race3D.goalGroup = null;
+  race3D.bannerMesh = null;
+  race3D.banner0Z = null;
+  race3D.ballGroup = null;
+  race3D.laneGroup = null;
+  race3D.cameraTargetPos = null;
+  race3D.cameraTargetLook = null;
+  race3D.orbitTarget = null;
+  race3D.ballMeshes = [];
+  race3D.ballRings = [];
+  race3D.runnerMeshes = [];
+  race3D.nameTags = [];
+  race3D.laneCount = 0;
+  race3D.trailPoints = null;
+  race3D.trailGeometry = null;
+  race3D.trailPositions = null;
+  race3D.trailColors = null;
+  race3D.trailAlphas = null;
+  race3D.trailHeads = null;
+  race3D.trophyMesh = null;
+  race3D.fireworkParticles = null;
+  race3D.finishedFireworks = new Set();
+  race3D.podiumGroup = null;
+  race3D.podiumActive = false;
+  race3D.podiumTop3Indices = [];
+  race3D.podiumTop3Order = [];
+  if(race3D.ballTextures){
+    for(const k in race3D.ballTextures) race3D.ballTextures[k]?.dispose?.();
+  }
+  race3D.ballTextures = null;
+  race3D.shake = 0;
+  race3D.launchStartTime = 0;
+  race3D.staleTrackLen = false;
+  race3D.ready = false;
+}
+
 function initRace3D(){
   if(race3D.ready || race3D.failed) return race3D.ready;
   if(typeof THREE === 'undefined'){ race3D.failed = true; return false; }
@@ -3797,7 +3906,8 @@ function initRace3D(){
     });
     // Wide green pitch — extends well beyond the running track to fill the
     // space between players and the distant stands (big-stadium feel).
-    const pitch = new THREE.Mesh(new THREE.PlaneGeometry(110, 320, 1, 1), pitchMat);
+    const pitchLen = Math.max(320, TRACK_LEN + 220);
+    const pitch = new THREE.Mesh(new THREE.PlaneGeometry(110, pitchLen, 1, 1), pitchMat);
     pitch.rotation.x = -Math.PI / 2;
     pitch.position.set(0, 0, TRACK_LEN * 0.5);
     pitch.receiveShadow = true;
@@ -3902,7 +4012,7 @@ function initRace3D(){
     // has wide-open space around the action and stands never block the view.
     const tierMat = new THREE.MeshStandardMaterial({ color: 0x1c1a28, roughness: 0.95 });
     const tierFrontMat = new THREE.MeshStandardMaterial({ color: 0x262232, roughness: 0.92 });
-    const tierLen = 320;
+    const tierLen = Math.max(320, TRACK_LEN + 220);
     const tierZ = TRACK_LEN * 0.5;
     // Side tiers — 4 stepped rings on each side, starting ~38 units off the track edge
     const sideSteps = [
@@ -3947,99 +4057,6 @@ function initRace3D(){
       m.position.set(0, s.y, -s.dz);
       scene.add(m);
     });
-
-    // Crowd — small spheres so they read from any camera angle
-    const crowdGeo = new THREE.IcosahedronGeometry(0.32, 0);
-    const crowdMat = new THREE.MeshStandardMaterial({
-      vertexColors: false,
-      roughness: 0.9,
-      metalness: 0,
-    });
-    const crowdCount = 1800;
-    const crowdMesh = new THREE.InstancedMesh(crowdGeo, crowdMat, crowdCount);
-    const crowdSeed = new Float32Array(crowdCount); // per-instance phase
-    const crowdBaseY = new Float32Array(crowdCount); // per-instance resting Y
-    const dummy = new THREE.Object3D();
-    let instIdx = 0;
-    // Place a row of crowd dots distributed along z (track-length direction).
-    const placeAlongTrack = (centerX, baseY, zStart, zEnd, count, jitterX) => {
-      for(let i = 0; i < count; i++){
-        if(instIdx >= crowdCount) return;
-        const x = centerX + (Math.random() - 0.5) * 2 * jitterX;
-        const y = baseY + 0.5 + (Math.random() - 0.5) * 0.05;
-        const z = zStart + Math.random() * (zEnd - zStart);
-        dummy.position.set(x, y, z);
-        dummy.scale.setScalar(0.85 + Math.random() * 0.45);
-        dummy.rotation.y = 0;
-        dummy.updateMatrix();
-        crowdMesh.setMatrixAt(instIdx, dummy.matrix);
-        const col = new THREE.Color().setHSL(Math.random(), 0.6, 0.5 + Math.random() * 0.3);
-        crowdMesh.setColorAt(instIdx, col);
-        crowdSeed[instIdx] = Math.random() * Math.PI * 2;
-        crowdBaseY[instIdx] = y;
-        instIdx++;
-      }
-    };
-    // Place a row across X (perpendicular to track) — for behind-goal and behind-start stands.
-    const placeAcrossX = (centerZ, baseY, xStart, xEnd, count, jitterZ) => {
-      for(let i = 0; i < count; i++){
-        if(instIdx >= crowdCount) return;
-        const x = xStart + Math.random() * (xEnd - xStart);
-        const y = baseY + 0.5 + (Math.random() - 0.5) * 0.05;
-        const z = centerZ + (Math.random() - 0.5) * 2 * jitterZ;
-        dummy.position.set(x, y, z);
-        dummy.scale.setScalar(0.85 + Math.random() * 0.45);
-        dummy.rotation.y = 0;
-        dummy.updateMatrix();
-        crowdMesh.setMatrixAt(instIdx, dummy.matrix);
-        const col = new THREE.Color().setHSL(Math.random(), 0.6, 0.5 + Math.random() * 0.3);
-        crowdMesh.setColorAt(instIdx, col);
-        crowdSeed[instIdx] = Math.random() * Math.PI * 2;
-        crowdBaseY[instIdx] = y;
-        instIdx++;
-      }
-    };
-    // Fill the big-stadium tiers — distribute crowd dots along z (sides)
-    // and across x (behind goal/start). Tier-step y positions match the
-    // box geometry above so dots sit on top of each step.
-    const trackZStart = -160, trackZEnd = TRACK_LEN + 160;
-    const sideStepsForCrowd = [
-      { dx: 38, top: 4   },
-      { dx: 48, top: 9   },
-      { dx: 60, top: 16  },
-      { dx: 74, top: 25.5 },
-    ];
-    for(let side = 0; side < 2; side++){
-      const sx = side === 0 ? -1 : 1;
-      sideStepsForCrowd.forEach((s, idx) => {
-        const x = sx * (TRACK_HALF_WIDTH + s.dx);
-        const rows = 3 + idx;
-        for(let r = 0; r < rows; r++){
-          const offsetX = sx * (r * 0.85);
-          placeAlongTrack(x + offsetX, s.top + r * 0.5, trackZStart, trackZEnd, 110, 1.4);
-        }
-      });
-    }
-    // Stands behind goal/start — same Y heights as the BoxGeometry tops
-    const backStepsForCrowd = [
-      { dz: 30, top: 4   },
-      { dz: 42, top: 10  },
-      { dz: 56, top: 19  },
-      { dz: 72, top: 29  },
-    ];
-    backStepsForCrowd.forEach((s, idx) => {
-      const rows = 3 + idx;
-      for(let r = 0; r < rows; r++){
-        // Behind goal
-        placeAcrossX(TRACK_LEN + s.dz + r * 0.85, s.top + r * 0.5, -100, 100, 110, 1.4);
-        // Behind start
-        placeAcrossX(-s.dz - r * 0.85, s.top + r * 0.5, -100, 100, 110, 1.4);
-      }
-    });
-    crowdMesh.instanceMatrix.needsUpdate = true;
-    if(crowdMesh.instanceColor) crowdMesh.instanceColor.needsUpdate = true;
-    crowdMesh.frustumCulled = false;
-    scene.add(crowdMesh);
 
     // ── Ad boards: alternate Karboluxe logo and "Ball Race" panels ──
     // Karboluxe panel: solid dark background, logo image drawn on top once it loads.
@@ -4154,7 +4171,6 @@ function initRace3D(){
       goalGroup, ballGroup, laneGroup,
       bannerMesh: banner,
       banner0Z: banner.position.z,
-      crowdMesh, crowdSeed, crowdBaseY,
       cameraTargetPos: new THREE.Vector3(0, 6, -14),
       cameraTargetLook: new THREE.Vector3(0, 1.5, 8),
       startTime: performance.now(),
@@ -4396,6 +4412,15 @@ function rebuildRacerBalls3D(){
 
 function setCameraMode(mode){
   if(!race3D) return;
+  // Snapshot current camera pose so applyCameraMode can ease into the new
+  // mode's pose instead of snapping the look-at.
+  if(race3D.camera && race3D.cameraMode !== mode){
+    race3D.modeTweenFromPos = race3D.camera.position.clone();
+    const fwd = new THREE.Vector3();
+    race3D.camera.getWorldDirection(fwd);
+    race3D.modeTweenFromLook = race3D.camera.position.clone().add(fwd.multiplyScalar(8));
+    race3D.modeTweenStart = performance.now();
+  }
   race3D.cameraMode = mode;
   document.querySelectorAll('.cam-btn').forEach(b => b.classList.toggle('active', b.dataset.cam === mode));
   // For ball cam, default to leader index
@@ -4486,24 +4511,6 @@ function renderRace3D(){
     }
     posAttr.needsUpdate = true;
     m.rotation.z = Math.sin(tNow * 0.9) * 0.02;
-  }
-
-  // Animate crowd: tiny vertical bob per instance using per-instance base Y
-  if(race3D.crowdMesh && race3D.crowdSeed && race3D.crowdBaseY){
-    const m = race3D.crowdMesh;
-    const dummy = new THREE.Object3D();
-    const tmp = new THREE.Matrix4();
-    const count = race3D.crowdSeed.length;
-    for(let i = 0; i < count; i++){
-      m.getMatrixAt(i, tmp);
-      tmp.decompose(dummy.position, dummy.quaternion, dummy.scale);
-      const phase = race3D.crowdSeed[i];
-      const bob = Math.sin(tNow * 3 + phase) * 0.08;
-      dummy.position.y = race3D.crowdBaseY[i] + bob;
-      dummy.updateMatrix();
-      m.setMatrixAt(i, dummy.matrix);
-    }
-    m.instanceMatrix.needsUpdate = true;
   }
 
   if(!racers.length){
@@ -4610,7 +4617,9 @@ function renderRace3D(){
     ball.position.x = runner.position.x;
     ball.position.y = ballR + ballHopY;
     ball.position.z = z + ballOffsetZ;
-    ball.rotation.x = -z * 1.7;
+    // Physically correct rolling: angle = distance / radius, so the painted
+    // pentagons rotate past the camera at the rate a real ball would.
+    ball.rotation.x = -z / ballR;
     ball.rotation.z = Math.sin(tNow * 4 + i) * 0.08;
 
     // Ground ring under runner
@@ -4714,6 +4723,25 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
     target.z = (sum / racers.length) * TRACK_LEN;
   }
 
+  // Mode-tween override: if the user just clicked a different cam button,
+  // ease from the snapshotted pose to the new mode's pose over modeTweenDur
+  // seconds. Returns true when the tween consumed this frame so the mode's
+  // default per-frame lerp is bypassed.
+  const applyModeTween = (targetPos, targetLook, lerpFactor) => {
+    const now = performance.now();
+    const t = race3D.modeTweenStart ? (now - race3D.modeTweenStart) / 1000 : 999;
+    if(race3D.modeTweenFromPos && race3D.modeTweenFromLook && t < race3D.modeTweenDur){
+      const u = t / race3D.modeTweenDur;
+      const eased = u < 0.5 ? 4*u*u*u : 1 - Math.pow(-2*u + 2, 3) / 2;
+      cam.position.copy(race3D.modeTweenFromPos).lerp(targetPos, eased);
+      const look = race3D.modeTweenFromLook.clone().lerp(targetLook, eased);
+      cam.lookAt(look);
+    } else {
+      cam.position.lerp(targetPos, lerpFactor);
+      cam.lookAt(targetLook);
+    }
+  };
+
   if(mode === 'chase' && leader){
     const t = Math.min(1, maxPos);
     const reveal = Math.max(0, (t - 0.78) / 0.22);
@@ -4727,13 +4755,12 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
       camHeight + wobbleY,
       leader.position.z - camDist,
     );
-    cam.position.lerp(race3D.cameraTargetPos, 0.085);
     race3D.cameraTargetLook.set(
       leader.position.x * 0.32,
       1.5 + reveal * 0.8,
       leader.position.z + camLookFwd,
     );
-    cam.lookAt(race3D.cameraTargetLook);
+    applyModeTween(race3D.cameraTargetPos, race3D.cameraTargetLook, 0.085);
     return;
   }
 
@@ -4743,8 +4770,7 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
     const tx = -28;
     const ty = 6 + (race3D.shake * (Math.random() - 0.5) * 0.4);
     const tz = followZ + (race3D.shake * (Math.random() - 0.5));
-    cam.position.lerp(new THREE.Vector3(tx, ty, tz), 0.07);
-    cam.lookAt(0, 1.5, followZ + 4);
+    applyModeTween(new THREE.Vector3(tx, ty, tz), new THREE.Vector3(0, 1.5, followZ + 4), 0.07);
     return;
   }
 
@@ -4753,9 +4779,9 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
     const runner = race3D.runnerMeshes[idx];
     if(runner){
       // First-person from just behind & above the runner's head
-      const camPos = new THREE.Vector3(runner.position.x, 2.3 + runner.position.y, runner.position.z - 1.4);
-      cam.position.lerp(camPos, 0.18);
-      cam.lookAt(runner.position.x, 1.6 + runner.position.y, runner.position.z + 6);
+      const camPos  = new THREE.Vector3(runner.position.x, 2.3 + runner.position.y, runner.position.z - 1.4);
+      const camLook = new THREE.Vector3(runner.position.x, 1.6 + runner.position.y, runner.position.z + 6);
+      applyModeTween(camPos, camLook, 0.18);
       return;
     }
   }
@@ -4768,8 +4794,7 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
     const x = target.x + Math.cos(el) * Math.sin(az) * r;
     const y = target.y + Math.sin(el) * r;
     const z = target.z + Math.cos(el) * Math.cos(az) * r;
-    cam.position.lerp(new THREE.Vector3(x, y, z), 0.16);
-    cam.lookAt(target);
+    applyModeTween(new THREE.Vector3(x, y, z), target, 0.16);
     return;
   }
 
@@ -4868,8 +4893,7 @@ function applyCameraMode(tNow, leaderIdx, maxPos){
   const cx = Math.cos(droneAng) * orbitR;
   const cz = target.z - 26 + Math.sin(droneAng) * orbitR * 0.25;
   const cy = 22 + Math.sin(droneT * 0.3) * 1.5;
-  cam.position.lerp(new THREE.Vector3(cx, cy, cz), 0.04);
-  cam.lookAt(target.x, 1.5, target.z + 6);
+  applyModeTween(new THREE.Vector3(cx, cy, cz), new THREE.Vector3(target.x, 1.5, target.z + 6), 0.04);
 }
 
 // Champion trophy mesh — gold cup with handles and base
@@ -5604,13 +5628,23 @@ function enterReplay(seekMs){
   replayMode = true; replayFrame = 0; replayPlaying = seekMs==null;
   replaySpeed = 1; replayLastTime = 0; replayAccum = 0;
   // Precompute the moment each racer crosses the finish line so the
-  // scoreboard can show real finish times during replay.
+  // scoreboard can show real finish times during replay. Prefer the
+  // authoritative finish time from `finishOrder` (live race result) over
+  // re-deriving from sampled recording — sampled frames can miss the
+  // exact crossing on close finishes and swap the standings order.
   if(racers && racers.length){
-    racers.forEach((r, i) => {
+    const finishByName = {};
+    if(finishOrder && finishOrder.length){
+      finishOrder.forEach(f => {
+        if(f && f.name && f.finishTime != null) finishByName[f.name] = f.finishTime;
+      });
+    }
+    racers.forEach((r) => {
       r.finished = false;
       r.finishTime = 0;
-      r._replayFinishTime = null;
+      r._replayFinishTime = finishByName[r.name] != null ? finishByName[r.name] : null;
     });
+    // Backfill any racers without an authoritative time from the recording
     for(const f of recording){
       racers.forEach((r, i) => {
         if(r._replayFinishTime != null) return;
@@ -5757,1110 +5791,11 @@ document.addEventListener('keydown', (e) => {
   else if(e.key === 'Escape'){ e.preventDefault(); $('r-back').click(); }
 });
 
-// ═══════════════════════════════════════════════════════════════════════════
-// WHEEL
-// ═══════════════════════════════════════════════════════════════════════════
-// Wheel entries can be plain strings (legacy) or objects { label, image },
-// where `image` is a data URL or remote URL. Helpers normalise access.
-function wheelEntryLabel(e){ return typeof e === 'string' ? e : (e?.label ?? ''); }
-function wheelEntryImage(e){ return typeof e === 'string' ? null : (e?.image ?? null); }
-function wheelEntrySet(i, entry){ wheelNames[i] = entry; }
-
-// Cache HTMLImageElement per data-URL so drawWheel can blit them per frame.
-const _wheelImgCache = new Map();
-function getWheelImageEl(url){
-  if(!url) return null;
-  let img = _wheelImgCache.get(url);
-  if(img) return img.complete ? img : null;
-  img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = url;
-  _wheelImgCache.set(url, img);
-  img.onload = () => { drawWheel(); };
-  return null;
-}
-
-function renderWheelChips(){
-  const el = $('wheel-chips');
-  if(!wheelNames.length){
-    el.innerHTML = role==='admin'
-      ? '<span class="empty-msg">Tambah nama untuk putar</span>'
-      : '<span class="empty-msg">Menunggu admin menyiapkan roda</span>';
-    return;
-  }
-  const isAdmin = role === 'admin';
-  el.innerHTML = wheelNames.map((n,i)=>{
-    const label = wheelEntryLabel(n);
-    const img = wheelEntryImage(n);
-    const thumb = img ? `<img src="${escapeHtml(img)}" alt="" style="width:18px;height:18px;border-radius:3px;object-fit:cover;margin-right:4px;vertical-align:middle">` : '';
-    return `<span class="chip" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${thumb}${escapeHtml(label)}${isAdmin?`<button class="rm-btn" data-widx="${i}">×</button>`:''}</span>`;
-  }).join('');
-  if(isAdmin) el.querySelectorAll('.rm-btn').forEach(b => b.addEventListener('click', () => { wheelNames.splice(+b.dataset.widx, 1); resetWheelState(); renderWheelChips(); drawWheel(); }));
-}
-function resizeWheelCanvas(){const wrap=$wCanvas.parentElement; $wCanvas.width=wrap.clientWidth*devicePixelRatio; $wCanvas.height=wrap.clientWidth*devicePixelRatio;}
-function drawWheel(){
-  const w=$wCanvas.width,h=$wCanvas.height,cx=w/2,cy=h/2;
-  const outerR = Math.min(cx,cy)*.96;
-  const r = outerR - 10*devicePixelRatio;
-  wCtx.clearRect(0,0,w,h);
-
-  // Outer dark frame
-  wCtx.beginPath(); wCtx.arc(cx,cy,outerR,0,Math.PI*2);
-  wCtx.fillStyle='#0e0e0c'; wCtx.fill();
-  wCtx.strokeStyle='rgba(255,215,64,.4)'; wCtx.lineWidth=2*devicePixelRatio; wCtx.stroke();
-
-  if(wheelNames.length<2){
-    // Empty state — subtle pitch-ish dashed inner
-    wCtx.beginPath(); wCtx.arc(cx,cy,r,0,Math.PI*2);
-    wCtx.fillStyle='#15411f'; wCtx.fill();
-    wCtx.setLineDash([6*devicePixelRatio,6*devicePixelRatio]);
-    wCtx.strokeStyle='rgba(255,255,255,.15)'; wCtx.lineWidth=2*devicePixelRatio;
-    wCtx.beginPath(); wCtx.arc(cx,cy,r*.6,0,Math.PI*2); wCtx.stroke();
-    wCtx.setLineDash([]);
-    wCtx.fillStyle='rgba(255,255,255,.5)';
-    wCtx.font=`italic 900 ${Math.min(18*devicePixelRatio, r*.11)}px 'Archivo Black',sans-serif`;
-    wCtx.textAlign='center'; wCtx.textBaseline='middle';
-    wCtx.fillText(role==='admin' ? 'TAMBAH MINIMAL 2 NAMA' : 'TUNGGU ADMIN', cx, cy);
-    return;
-  }
-
-  const n=wheelNames.length, slice=Math.PI*2/n;
-  const now = performance.now();
-
-  // Decorative dots on outer ring
-  const dotCount = Math.max(n*2, 16);
-  for(let i=0;i<dotCount;i++){
-    const a = (Math.PI*2*i)/dotCount + wheelRotation*0.1;
-    const dx = cx + Math.cos(a)*(outerR-5*devicePixelRatio);
-    const dy = cy + Math.sin(a)*(outerR-5*devicePixelRatio);
-    wCtx.beginPath(); wCtx.arc(dx,dy,1.8*devicePixelRatio,0,Math.PI*2);
-    wCtx.fillStyle = i%2===0 ? 'rgba(255,215,64,.7)' : 'rgba(255,255,255,.2)';
-    wCtx.fill();
-  }
-
-  // Segments
-  wCtx.save(); wCtx.translate(cx,cy); wCtx.rotate(wheelRotation);
-  for(let i=0;i<n;i++){
-    const sa = i*slice, ea = sa+slice;
-    const color = TEAM_COLORS[i%TEAM_COLORS.length];
-    const isWinner = wheelWinnerIdx === i && !wheelSpinning;
-
-    // Radial gradient for depth
-    const grad = wCtx.createRadialGradient(0,0,r*.12,0,0,r);
-    grad.addColorStop(0, shade(color,-30));
-    grad.addColorStop(.45, shade(color,-8));
-    grad.addColorStop(1, color);
-
-    wCtx.beginPath();
-    wCtx.moveTo(0,0);
-    wCtx.arc(0,0,r,sa,ea);
-    wCtx.closePath();
-    wCtx.fillStyle = grad;
-    wCtx.fill();
-
-    // Winner pulse overlay
-    if(isWinner){
-      const pulse = (Math.sin(now/180)+1)/2;
-      wCtx.fillStyle = `rgba(255,215,64,${0.18 + pulse*0.22})`;
-      wCtx.fill();
-    }
-
-    // Outer gloss — brighter at rim, slight inner shadow
-    wCtx.save();
-    wCtx.beginPath(); wCtx.moveTo(0,0); wCtx.arc(0,0,r,sa,ea); wCtx.closePath();
-    wCtx.clip();
-    const rimGrad = wCtx.createRadialGradient(0,0,r*.55,0,0,r);
-    rimGrad.addColorStop(0, 'rgba(255,255,255,0)');
-    rimGrad.addColorStop(1, 'rgba(255,255,255,.18)');
-    wCtx.fillStyle = rimGrad;
-    wCtx.fillRect(-r,-r,r*2,r*2);
-    wCtx.restore();
-
-    // Segment divider (radial line at slice start)
-    wCtx.beginPath();
-    wCtx.moveTo(0,0);
-    wCtx.lineTo(Math.cos(sa)*r, Math.sin(sa)*r);
-    wCtx.strokeStyle = 'rgba(0,0,0,.35)';
-    wCtx.lineWidth = 2*devicePixelRatio;
-    wCtx.stroke();
-
-    // Image (if entry has one) — drawn near outer half of the segment
-    const entryImage = wheelEntryImage(wheelNames[i]);
-    if(entryImage){
-      const imgEl = getWheelImageEl(entryImage);
-      if(imgEl){
-        const imgR = r * 0.55;            // distance from wheel center
-        const imgSize = Math.min(r * 0.18, slice * imgR * 0.9);
-        const ax = sa + slice / 2;
-        const ix = Math.cos(ax) * imgR;
-        const iy = Math.sin(ax) * imgR;
-        wCtx.save();
-        wCtx.beginPath();
-        wCtx.arc(ix, iy, imgSize, 0, Math.PI * 2);
-        wCtx.closePath();
-        wCtx.clip();
-        wCtx.drawImage(imgEl, ix - imgSize, iy - imgSize, imgSize * 2, imgSize * 2);
-        wCtx.restore();
-        // Image border ring
-        wCtx.beginPath();
-        wCtx.arc(ix, iy, imgSize, 0, Math.PI * 2);
-        wCtx.strokeStyle = 'rgba(255,255,255,.85)';
-        wCtx.lineWidth = 2 * devicePixelRatio;
-        wCtx.stroke();
-      }
-    }
-
-    // Name label (closer to center if image is shown to avoid overlap)
-    wCtx.save(); wCtx.rotate(sa+slice/2);
-    const fs = Math.min(15*devicePixelRatio, r*.11);
-    wCtx.fillStyle = '#fff';
-    wCtx.font = `italic 800 ${fs}px 'Archivo Black',sans-serif`;
-    wCtx.textAlign = 'right'; wCtx.textBaseline = 'middle';
-    wCtx.shadowColor = 'rgba(0,0,0,.75)';
-    wCtx.shadowBlur = 4*devicePixelRatio;
-    let name = wheelEntryLabel(wheelNames[i]).toUpperCase();
-    const maxLabelEnd = entryImage ? r * 0.42 : r * 0.72;
-    const labelEnd = entryImage ? r * 0.36 : r - 16*devicePixelRatio;
-    if(wCtx.measureText(name).width > maxLabelEnd){
-      while(name.length > 3 && wCtx.measureText(name+'…').width > maxLabelEnd) name = name.slice(0,-1);
-      name += '…';
-    }
-    wCtx.fillText(name, labelEnd, 0);
-    wCtx.restore();
-  }
-  wCtx.restore();
-
-  // Winner rim highlight (drawn in world space so it stays aligned to pointer)
-  if(wheelWinnerIdx>=0 && !wheelSpinning){
-    const pulse = (Math.sin(now/180)+1)/2;
-    const wa = wheelRotation + wheelWinnerIdx*slice;
-    wCtx.save();
-    wCtx.translate(cx,cy);
-    wCtx.beginPath();
-    wCtx.arc(0,0,r,wa,wa+slice);
-    wCtx.lineTo(0,0);
-    wCtx.closePath();
-    wCtx.strokeStyle = `rgba(255,215,64,${0.8+pulse*0.2})`;
-    wCtx.lineWidth = 4*devicePixelRatio;
-    wCtx.stroke();
-    wCtx.restore();
-  }
-
-  // Center hub
-  const hubR = r*.13;
-  const hubGrad = wCtx.createRadialGradient(cx-hubR*.4,cy-hubR*.4,0,cx,cy,hubR);
-  hubGrad.addColorStop(0,'#3a3a33');
-  hubGrad.addColorStop(.7,'#1a1a16');
-  hubGrad.addColorStop(1,'#0a0a08');
-  wCtx.beginPath(); wCtx.arc(cx,cy,hubR,0,Math.PI*2);
-  wCtx.fillStyle = hubGrad; wCtx.fill();
-  wCtx.strokeStyle='rgba(255,215,64,.8)';
-  wCtx.lineWidth=2*devicePixelRatio; wCtx.stroke();
-  // Hub inner dot
-  wCtx.beginPath(); wCtx.arc(cx,cy,hubR*.35,0,Math.PI*2);
-  wCtx.fillStyle = '#ff4500'; wCtx.fill();
-  // Hub highlight
-  wCtx.beginPath(); wCtx.arc(cx-hubR*.3,cy-hubR*.3,hubR*.18,0,Math.PI*2);
-  wCtx.fillStyle = 'rgba(255,255,255,.35)'; wCtx.fill();
-}
-
-function currentWheelSegment(){
-  const n = wheelNames.length;
-  if(n < 2) return -1;
-  let a = (-Math.PI/2 - wheelRotation) % (Math.PI*2);
-  if(a<0) a += Math.PI*2;
-  return Math.floor(a / (Math.PI*2/n));
-}
-function spinWheel(){
-  if(wheelNames.length<2||wheelSpinning) return;
-  const startRot = wheelRotation;
-  const vel = 18 + Math.random()*14;   // ~18-32 rad/s
-  const dec = 2.0 + Math.random()*1.3;  // ~2-3.3 rad/s²
-  pendingSpinPhysics = { start_rotation: startRot, initial_velocity: vel, deceleration: dec };
-  isReplayingSpin = false;
-  wheelVelocity = vel;
-  wheelDecel = dec;
-  wheelSpinning = true;
-  wheelLastTime = 0;
-  wheelWinnerIdx = -1;
-  wheelPrevSegment = currentWheelSegment();
-  const btn = $('wheel-spin-btn');
-  btn.classList.add('spinning');
-  btn.disabled = true;
-  btn.innerHTML = 'BERPUTAR';
-  $('wheel-result').classList.remove('announce');
-  $('wheel-result').textContent = '';
-  sfx.beep(660,.1,.15);
-  requestAnimationFrame(wheelLoop);
-}
-
-function replaySpinFromHistory(h){
-  if(wheelSpinning) return;
-  if(h.initial_velocity == null || h.deceleration == null){ toast('Tidak ada data replay'); return; }
-  // Set names list exactly as it was — pair with images if available so the
-  // replay shows the same picture entries, not just labels.
-  const histNames = Array.isArray(h.names) ? h.names : [];
-  const histImgs  = Array.isArray(h.images) ? h.images : [];
-  wheelNames = histNames.map((n, i) => {
-    const img = histImgs[i];
-    return img ? { label: n, image: img } : n;
-  });
-  resetWheelState();
-  renderWheelChips();
-  // Physics
-  wheelRotation = h.start_rotation || 0;
-  wheelVelocity = h.initial_velocity;
-  wheelDecel    = h.deceleration;
-  wheelSpinning = true;
-  wheelLastTime = 0;
-  wheelWinnerIdx = -1;
-  wheelPrevSegment = currentWheelSegment();
-  isReplayingSpin = true;
-  pendingSpinPhysics = null;
-  const btn = $('wheel-spin-btn');
-  if(btn){ btn.classList.add('spinning'); btn.disabled = true; btn.innerHTML = 'MEMUTAR ULANG'; }
-  const res = $('wheel-result');
-  res.classList.remove('announce'); res.textContent = '';
-  // Focus the wheel on mobile
-  document.getElementById('wheel-canvas')?.scrollIntoView({ behavior:'smooth', block:'center' });
-  sfx.beep(660,.08,.12);
-  requestAnimationFrame(wheelLoop);
-}
-
-function wheelLoop(ts){
-  if(!wheelLastTime) wheelLastTime = ts;
-  const dt = Math.min(ts-wheelLastTime, 50)/1000;
-  wheelLastTime = ts;
-
-  if(wheelSpinning){
-    wheelRotation += wheelVelocity * dt;
-    wheelVelocity -= wheelDecel * dt;
-
-    // Tick when the pointer crosses a new segment
-    const seg = currentWheelSegment();
-    if(seg !== wheelPrevSegment && wheelVelocity > 1.2){
-      // Pitch scales slightly with speed so it slows musically as it stops
-      const pitch = 900 + Math.min(600, wheelVelocity*30);
-      sfx.beep(pitch, 0.03, 0.08, 'square');
-      const p = $('wheel-pointer') || document.querySelector('.wheel-pointer');
-      if(p){ p.classList.remove('ticking'); void p.offsetWidth; p.classList.add('ticking'); }
-      wheelPrevSegment = seg;
-    }
-
-    if(wheelVelocity <= 0){
-      wheelVelocity = 0;
-      wheelSpinning = false;
-      wheelWinnerIdx = currentWheelSegment();
-      const winner = wheelEntryLabel(wheelNames[wheelWinnerIdx]);
-      const res = $('wheel-result');
-      res.textContent = (isReplayingSpin ? '↻ ' : '🎉 ') + winner + '!';
-      res.classList.remove('announce'); void res.offsetWidth; res.classList.add('announce');
-      const btn = $('wheel-spin-btn');
-      btn.classList.remove('spinning');
-      // Only admins get the spin button visible; hidden for viewers but we still normalize
-      btn.disabled = false;
-      btn.innerHTML = '⚡ Putar Lagi';
-      sfx.fanfare();
-      celebrateWheelWin();
-      // Reveal the "Remove Winner" button (admin only)
-      const rmBtn = $('wheel-remove-winner-btn');
-      if(rmBtn && role === 'admin' && !isReplayingSpin){
-        rmBtn.style.display = '';
-        rmBtn.innerHTML = `🗑 Hapus "${winner}"`;
-      }
-      if(!isReplayingSpin) saveWheelSpin(
-        winner,
-        wheelNames.map(wheelEntryLabel),
-        pendingSpinPhysics,
-        wheelNames.map(e => wheelEntryImage(e) || '')
-      );
-      isReplayingSpin = false;
-      pendingSpinPhysics = null;
-    }
-  }
-
-  drawWheel();
-
-  // Keep the loop alive while spinning OR to animate the winner pulse
-  if(wheelSpinning || wheelWinnerIdx >= 0) requestAnimationFrame(wheelLoop);
-}
-
-// Clear winner highlight + reset button when names change or wheel is reset
-function resetWheelState(){
-  wheelWinnerIdx = -1;
-  const res = $('wheel-result');
-  if(res){ res.textContent = ''; res.classList.remove('announce'); }
-  const btn = $('wheel-spin-btn');
-  if(btn){
-    btn.classList.remove('spinning');
-    btn.disabled = false;
-    btn.innerHTML = '⚡ Putar';
-  }
-  const rmBtn = $('wheel-remove-winner-btn');
-  if(rmBtn) rmBtn.style.display = 'none';
-}
-
-$('wheel-remove-winner-btn')?.addEventListener('click', () => {
-  if(role !== 'admin') return;
-  if(wheelWinnerIdx < 0 || wheelWinnerIdx >= wheelNames.length) return;
-  const winnerLabel = wheelEntryLabel(wheelNames[wheelWinnerIdx]);
-  wheelNames.splice(wheelWinnerIdx, 1);
-  resetWheelState();
-  renderWheelChips();
-  drawWheel();
-  toast(`"${winnerLabel}" dihapus`);
-});
-
-// ── Wheel history (database) ──
-let wheelHistory = [];
-async function loadWheelHistory(){
-  try { const r = await fetch('/api/wheel-spins?limit=30'); wheelHistory = r.ok ? await r.json() : []; }
-  catch { wheelHistory = []; }
-  renderWheelHistory();
-}
-async function saveWheelSpin(winner, names, physics, images){
-  if(role !== 'admin') return;    // only admin writes
-  try {
-    await fetch('/api/wheel-spins', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ names, images: images || null, winner, ...(physics || {}) })
-    });
-    loadWheelHistory();
-  } catch(e) { console.error('save wheel spin', e); }
-}
-function renderWheelHistory(){
-  const el = $('wheel-history');
-  if(!el) return;
-  if(!wheelHistory.length){ el.innerHTML = '<div class="empty-msg">Belum ada putaran</div>'; return; }
-  el.innerHTML = wheelHistory.map((h, idx) => {
-    const d = new Date(h.created_at);
-    const ds = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-    const names = Array.isArray(h.names) ? h.names : [];
-    const imgs  = Array.isArray(h.images) ? h.images : [];
-    const chips = names.map((n, i) => {
-      const isWinner = n === h.winner;
-      const img = imgs[i];
-      const thumb = img ? `<img src="${escapeHtml(img)}" alt="" style="width:14px;height:14px;border-radius:3px;object-fit:cover;margin-right:4px;vertical-align:middle">` : '';
-      return `<span class="wheel-hist-chip${isWinner?' winner':''}" style="border-left:3px solid ${TEAM_COLORS[i%TEAM_COLORS.length]}">${isWinner?'🏆 ':''}${thumb}${escapeHtml(n)}</span>`;
-    }).join('');
-    const canReplay = h.initial_velocity != null && h.deceleration != null;
-    const replayBtn = canReplay ? `<button class="wheel-hist-replay" data-idx="${idx}" title="Putar ulang">▶</button>` : '';
-    return `<div class="wheel-hist-row" data-idx="${idx}">
-      <div class="wheel-hist-summary">
-        <span class="wheel-hist-winner">🎉 ${escapeHtml(h.winner)}</span>
-        <span class="wheel-hist-meta">${names.length} nama · ${ds}</span>
-        ${replayBtn}
-        <span class="wheel-hist-toggle" aria-hidden="true">▾</span>
-      </div>
-      <div class="wheel-hist-details">
-        <div class="wheel-hist-label">Peserta roda</div>
-        <div class="wheel-hist-chips">${chips}</div>
-      </div>
-    </div>`;
-  }).join('');
-  el.querySelectorAll('.wheel-hist-summary').forEach(s => {
-    s.addEventListener('click', (e) => {
-      if(e.target.closest('.wheel-hist-replay')) return; // don't toggle when hitting replay
-      s.parentElement.classList.toggle('open');
-    });
-  });
-  el.querySelectorAll('.wheel-hist-replay').forEach(b => b.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const idx = +b.dataset.idx;
-    const h = wheelHistory[idx];
-    if(h) replaySpinFromHistory(h);
-  }));
-}
-async function clearWheelHistory(){
-  if(role !== 'admin'){ toast('Khusus admin'); return; }
-  try {
-    await fetch('/api/wheel-spins', { method:'DELETE', headers:{'x-admin-token': adminToken} });
-    wheelHistory = []; renderWheelHistory(); toast('Dihapus');
-  } catch { toast('Gagal menghapus'); }
-}
-let _pendingWheelImage = '';
-$('wheel-add-btn').addEventListener('click', () => {
-  if(role!=='admin') return;
-  const v = $('wheel-name-input').value.trim();
-  if(!v && !_pendingWheelImage) return;
-  const entry = _pendingWheelImage ? { label: v || 'Item', image: _pendingWheelImage } : v;
-  wheelNames.push(entry);
-  $('wheel-name-input').value = '';
-  _pendingWheelImage = '';
-  $('wheel-img-input').value = '';
-  $('wheel-img-preview-row').style.display = 'none';
-  resetWheelState();
-  renderWheelChips();
-  drawWheel();
-  $('wheel-name-input').focus();
-});
-$('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
-$('wheel-img-input')?.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    _pendingWheelImage = reader.result;
-    $('wheel-img-preview').src = _pendingWheelImage;
-    $('wheel-img-preview-name').textContent = file.name;
-    $('wheel-img-preview-row').style.display = '';
-  };
-  reader.readAsDataURL(file);
-});
-$('wheel-img-clear')?.addEventListener('click', () => {
-  _pendingWheelImage = '';
-  $('wheel-img-input').value = '';
-  $('wheel-img-preview-row').style.display = 'none';
-});
-$('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Pemain '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
-$('wheel-shuffle-btn').addEventListener('click', () => {
-  if(role!=='admin' || wheelSpinning) return;
-  if(wheelNames.length < 2){ toast('Belum cukup nama'); return; }
-  for(let i = wheelNames.length - 1; i > 0; i--){
-    const j = Math.floor(Math.random() * (i + 1));
-    [wheelNames[i], wheelNames[j]] = [wheelNames[j], wheelNames[i]];
-  }
-  resetWheelState(); renderWheelChips(); drawWheel();
-  toast('Urutan diacak');
-});
-$('wheel-reset-btn').addEventListener('click', () => {
-  if(role!=='admin' || wheelSpinning) return;
-  if(!wheelNames.length){ toast('Sudah kosong'); return; }
-  if(!confirm('Hapus semua nama di roda?')) return;
-  wheelNames = [];
-  resetWheelState(); renderWheelChips(); drawWheel();
-  toast('Roda dikosongkan');
-});
-
-// Wheel mode toggle (Names vs Lucky Number)
-let wheelMode = 'names';
-function setWheelMode(mode){
-  wheelMode = mode;
-  document.querySelectorAll('.wheel-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  document.querySelectorAll('.wheel-mode-names').forEach(el => el.style.display = mode === 'names' ? '' : 'none');
-  document.querySelectorAll('.wheel-mode-numbers').forEach(el => el.style.display = mode === 'numbers' ? '' : 'none');
-  $('wheel-title-mode').textContent = mode === 'names' ? 'Nama' : 'Nomor';
-}
-document.querySelectorAll('.wheel-mode-btn').forEach(b => b.addEventListener('click', () => {
-  if(role !== 'admin') return;
-  setWheelMode(b.dataset.mode);
-}));
-$('wheel-num-apply').addEventListener('click', () => {
-  if(role !== 'admin') return;
-  let min = parseInt($('wheel-num-min').value);
-  let max = parseInt($('wheel-num-max').value);
-  if(!Number.isFinite(min)) min = 1;
-  if(!Number.isFinite(max)) max = 10;
-  if(max < min) [min, max] = [max, min];
-  if(max - min > 199){ toast('Maksimal 200 angka'); return; }
-  wheelNames = [];
-  for(let i = min; i <= max; i++) wheelNames.push(String(i));
-  resetWheelState(); renderWheelChips(); drawWheel();
-});
-$('wheel-spin-btn').addEventListener('click', () => { if(role!=='admin')return; spinWheel(); });
-$('wheel-clear-hist-btn').addEventListener('click', clearWheelHistory);
-
-// ═══════════════════════════════════════════════════════════════════════════
-// TRACK — shipment lookup (public) + admin management
-// ═══════════════════════════════════════════════════════════════════════════
-function normPhone(p){ return String(p || '').replace(/[^\d+]/g, ''); }
-function fmtPhoneMask(p){
-  // Mask middle digits for privacy in admin list (e.g. 0812****5678)
-  if(!p || p.length < 6) return p || '';
-  return p.slice(0, 4) + '****' + p.slice(-4);
-}
-function fmtTrackDate(iso){
-  const d = new Date(iso);
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-}
-
-async function lookupShipment(){
-  const phone = normPhone($('track-phone-input').value);
-  const out = $('track-lookup-result');
-  if(!phone || phone.length < 4){
-    out.innerHTML = '<div class="track-result-empty">Masukkan minimal 4 digit nomor</div>';
-    return;
-  }
-  out.innerHTML = '<div class="track-result-empty">Mencari…</div>';
-  try {
-    const r = await fetch('/api/shipments/lookup?phone=' + encodeURIComponent(phone));
-    if(!r.ok){ out.innerHTML = '<div class="track-result-empty">Gagal memuat</div>'; return; }
-    const rows = await r.json();
-    if(!rows.length){
-      out.innerHTML = '<div class="track-result-empty">Tidak ada resi untuk nomor ini</div>';
-      return;
-    }
-    out.innerHTML = rows.map(s => `
-      <div class="track-card">
-        <div class="track-card-code">${escapeHtml(s.tracking_code)}</div>
-        <button class="track-card-copy" data-copy="${escapeHtml(s.tracking_code)}">Salin</button>
-        <div class="track-card-meta">
-          ${s.courier ? `<span>📦 ${escapeHtml(s.courier)}</span><span class="sep">·</span>` : ''}
-          <span>🕒 ${fmtTrackDate(s.created_at)}</span>
-        </div>
-        ${s.note ? `<div class="track-card-note">${escapeHtml(s.note)}</div>` : ''}
-      </div>`).join('');
-    out.querySelectorAll('.track-card-copy').forEach(b => b.addEventListener('click', () => {
-      const code = b.dataset.copy;
-      (navigator.clipboard?.writeText(code) || Promise.reject())
-        .then(() => toast('Kode resi disalin'))
-        .catch(() => toast(code));
-    }));
-  } catch(e){
-    out.innerHTML = '<div class="track-result-empty">Gagal memuat</div>';
-  }
-}
-
-async function saveShipment(){
-  if(role !== 'admin'){ toast('Khusus admin'); return; }
-  const phone = normPhone($('track-add-phone').value);
-  const tracking_code = $('track-add-code').value.trim();
-  const courier = $('track-add-courier').value.trim();
-  const note = $('track-add-note').value.trim();
-  if(!phone || phone.length < 4){ toast('Nomor HP tidak valid'); return; }
-  if(!tracking_code){ toast('Kode resi wajib diisi'); return; }
-  try {
-    const r = await fetch('/api/shipments', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ phone, tracking_code, courier, note }),
-    });
-    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
-    toast('Resi tersimpan');
-    $('track-add-phone').value = '';
-    $('track-add-code').value = '';
-    $('track-add-courier').value = '';
-    $('track-add-note').value = '';
-    loadTrackAdminList();
-  } catch(e){ toast('Gagal menyimpan'); }
-}
-
-async function loadTrackAdminList(){
-  if(role !== 'admin') return;
-  const el = $('track-admin-list');
-  el.innerHTML = '<div class="track-result-empty">Memuat…</div>';
-  try {
-    const r = await fetch('/api/shipments?limit=200', { headers: { 'x-admin-token': adminToken }});
-    if(!r.ok){ el.innerHTML = '<div class="track-result-empty">Gagal memuat</div>'; return; }
-    const rows = await r.json();
-    if(!rows.length){ el.innerHTML = '<div class="track-result-empty">Belum ada resi</div>'; return; }
-    el.innerHTML = rows.map(s => `
-      <div class="track-row" data-id="${s.id}">
-        <div class="track-row-main">
-          <span class="track-row-phone">${escapeHtml(s.phone)}</span>
-          <span class="track-row-code">${escapeHtml(s.tracking_code)}</span>
-        </div>
-        <button class="track-row-del" data-del="${s.id}">×</button>
-        <div class="track-row-meta">
-          ${s.courier ? `${escapeHtml(s.courier)} · ` : ''}${fmtTrackDate(s.created_at)}${s.note ? ' · ' + escapeHtml(s.note) : ''}
-        </div>
-      </div>`).join('');
-    el.querySelectorAll('.track-row-del').forEach(b => b.addEventListener('click', () => deleteShipment(+b.dataset.del)));
-  } catch(e){
-    el.innerHTML = '<div class="track-result-empty">Gagal memuat</div>';
-  }
-}
-
-async function deleteShipment(id){
-  if(role !== 'admin') return;
-  if(!confirm('Hapus resi ini?')) return;
-  try {
-    const r = await fetch('/api/shipments/' + id, { method:'DELETE', headers: { 'x-admin-token': adminToken }});
-    if(!r.ok){ toast('Gagal menghapus'); return; }
-    toast('Dihapus');
-    loadTrackAdminList();
-  } catch(e){ toast('Gagal menghapus'); }
-}
-
-$('track-lookup-btn').addEventListener('click', lookupShipment);
-$('track-phone-input').addEventListener('keydown', e => { if(e.key === 'Enter') lookupShipment(); });
-$('track-save-btn').addEventListener('click', saveShipment);
-$('track-refresh-btn').addEventListener('click', loadTrackAdminList);
-['track-add-phone','track-add-code','track-add-courier','track-add-note'].forEach(id => {
-  $(id).addEventListener('keydown', e => { if(e.key === 'Enter') saveShipment(); });
-});
-
-// ═══════════════════════════════════════════════════════════════════════════
-// LUCKY BOX
-// ═══════════════════════════════════════════════════════════════════════════
-let luckyCards = [];
-let luckyDraws = [];
-let luckyOpening = false;
-let pendingLuckyImage = '';
-
-async function loadLuckyCards(){
-  try { const r = await fetch('/api/lucky-cards'); luckyCards = r.ok ? await r.json() : []; }
-  catch { luckyCards = []; }
-  renderLuckyCards();
-}
-async function loadLuckyDraws(){
-  try { const r = await fetch('/api/lucky-draws?limit=30'); luckyDraws = r.ok ? await r.json() : []; }
-  catch { luckyDraws = []; }
-  renderLuckyDraws();
-}
-function renderLuckyCards(){
-  const countEl = $('lucky-card-count');
-  if(countEl) countEl.textContent = luckyCards.length;
-  const el = $('lucky-card-list'); if(!el) return;
-  if(!luckyCards.length){
-    el.innerHTML = `<div class="empty-msg">${role==='admin'?'Tambah kartu untuk mengisi kotak':'Kotak masih kosong'}</div>`;
-    return;
-  }
-  const isAdmin = role === 'admin';
-  el.innerHTML = luckyCards.map(c => `
-    <div class="lucky-row">
-      ${c.image_url ? `<img class="lucky-row-img" src="${escapeHtml(c.image_url)}" alt="">` : `<div class="lucky-row-img-empty">🎁</div>`}
-      <div class="lucky-row-label">${escapeHtml(c.label)}</div>
-      ${isAdmin ? `<button class="lucky-row-del" data-id="${c.id}">Hapus</button>` : '<span></span>'}
-    </div>`).join('');
-  if(isAdmin) el.querySelectorAll('.lucky-row-del').forEach(b =>
-    b.addEventListener('click', () => deleteLuckyCard(+b.dataset.id)));
-}
-function renderLuckyDraws(){
-  const el = $('lucky-draws-list'); if(!el) return;
-  if(!luckyDraws.length){ el.innerHTML = '<div class="empty-msg">Belum ada pengundian</div>'; return; }
-  el.innerHTML = luckyDraws.map(d => {
-    const ds = new Date(d.created_at).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' });
-    return `<div class="lucky-draw-row">
-      ${d.image_url ? `<img class="lucky-draw-row-img" src="${escapeHtml(d.image_url)}" alt="">` : `<div class="lucky-row-img-empty" style="width:36px;height:36px;font-size:18px">🎁</div>`}
-      <div class="lucky-draw-row-label">🎉 ${escapeHtml(d.card_label)}</div>
-      <span class="lucky-draw-row-meta">${ds}</span>
-    </div>`;
-  }).join('');
-}
-async function deleteLuckyCard(id){
-  if(role !== 'admin') return;
-  try {
-    const r = await fetch(`/api/lucky-cards/${id}`, { method:'DELETE', headers:{'x-admin-token': adminToken} });
-    if(!r.ok){ toast('Gagal menghapus'); return; }
-    luckyCards = luckyCards.filter(c => c.id !== id);
-    renderLuckyCards();
-  } catch { toast('Gagal menghapus'); }
-}
-async function clearLuckyCards(){
-  if(role !== 'admin') return;
-  if(!luckyCards.length){ toast('Sudah kosong'); return; }
-  if(!confirm('Hapus semua kartu di kotak?')) return;
-  try {
-    await fetch('/api/lucky-cards', { method:'DELETE', headers:{'x-admin-token': adminToken} });
-    luckyCards = []; renderLuckyCards();
-    toast('Kotak dikosongkan');
-  } catch { toast('Gagal menghapus'); }
-}
-async function clearLuckyDraws(){
-  if(role !== 'admin') return;
-  if(!confirm('Hapus semua riwayat?')) return;
-  try {
-    await fetch('/api/lucky-draws', { method:'DELETE', headers:{'x-admin-token': adminToken} });
-    luckyDraws = []; renderLuckyDraws();
-    toast('Riwayat dihapus');
-  } catch { toast('Gagal menghapus'); }
-}
-async function addLuckyCard(){
-  if(role !== 'admin') return;
-  const label = $('lucky-card-label-input').value.trim();
-  if(!label){ toast('Isi nama kartu'); return; }
-  const url = $('lucky-card-url-input').value.trim();
-  const image_url = pendingLuckyImage || url || '';
-  try {
-    const r = await fetch('/api/lucky-cards', {
-      method: 'POST',
-      headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ label, image_url })
-    });
-    if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.error || 'fail'); }
-    const card = await r.json();
-    luckyCards.push(card);
-    renderLuckyCards();
-    $('lucky-card-label-input').value = '';
-    $('lucky-card-url-input').value = '';
-    pendingLuckyImage = '';
-    $('lucky-card-file-input').value = '';
-    $('lucky-form-preview').style.display = 'none';
-    toast('Kartu ditambah');
-  } catch(e) { toast('Gagal menyimpan'); }
-}
-function resetLuckyStage(){
-  const box = $('lucky-box'), reveal = $('lucky-card-reveal');
-  if(!box || !reveal) return;
-  box.style.display = '';
-  box.classList.remove('shake', 'opening');
-  reveal.style.display = 'none';
-  $('lucky-status').textContent = '';
-  $('lucky-open-btn').disabled = false;
-  luckyOpening = false;
-}
-async function openLuckyBox(){
-  if(luckyOpening) return;
-  if(!luckyCards.length){ toast('Kotak masih kosong'); return; }
-  luckyOpening = true;
-  const btn = $('lucky-open-btn');
-  btn.disabled = true;
-  $('lucky-status').textContent = 'Mengocok...';
-  const box = $('lucky-box'), reveal = $('lucky-card-reveal');
-  reveal.style.display = 'none';
-  box.style.display = '';
-  box.classList.remove('opening');
-  void box.offsetWidth;
-  box.classList.add('shake');
-  // Crowd / tick during shake
-  if(typeof sfx !== 'undefined' && sfx.enabled){ try { sfx.tick && sfx.tick(); } catch(e){} }
-
-  setTimeout(() => {
-    box.classList.remove('shake');
-    box.classList.add('opening');
-    if(typeof sfx !== 'undefined' && sfx.enabled){ try { sfx.cheer && sfx.cheer(); } catch(e){} }
-  }, 1100);
-
-  setTimeout(() => {
-    const card = luckyCards[Math.floor(Math.random() * luckyCards.length)];
-    box.style.display = 'none';
-    const wrap = $('lucky-card-img-wrap');
-    const img = $('lucky-card-img');
-    let empty = wrap.querySelector('.lucky-card-img-empty');
-    if(card.image_url){
-      img.src = card.image_url;
-      img.style.display = '';
-      if(empty) empty.style.display = 'none';
-    } else {
-      img.style.display = 'none';
-      if(!empty){
-        empty = document.createElement('div');
-        empty.className = 'lucky-card-img-empty';
-        empty.textContent = '🎁';
-        wrap.appendChild(empty);
-      }
-      empty.style.display = 'flex';
-    }
-    $('lucky-card-label').textContent = card.label;
-    reveal.style.display = '';
-    $('lucky-status').textContent = '🎉 Selamat!';
-
-    fetch('/api/lucky-draws', {
-      method:'POST',
-      headers:{'content-type':'application/json'},
-      body: JSON.stringify({ card_label: card.label, image_url: card.image_url || '' })
-    }).then(() => loadLuckyDraws()).catch(()=>{});
-
-    setTimeout(() => { btn.disabled = false; luckyOpening = false; }, 1400);
-  }, 1700);
-}
-
-$('lucky-card-file-input')?.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    pendingLuckyImage = reader.result;
-    $('lucky-form-preview-img').src = pendingLuckyImage;
-    $('lucky-form-preview-name').textContent = file.name;
-    $('lucky-form-preview').style.display = '';
-    $('lucky-card-url-input').value = '';
-  };
-  reader.readAsDataURL(file);
-});
-$('lucky-form-clear-img')?.addEventListener('click', () => {
-  pendingLuckyImage = '';
-  $('lucky-card-file-input').value = '';
-  $('lucky-form-preview').style.display = 'none';
-});
-$('lucky-add-btn')?.addEventListener('click', addLuckyCard);
-$('lucky-card-label-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') addLuckyCard(); });
-$('lucky-card-url-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') addLuckyCard(); });
-$('lucky-clear-cards-btn')?.addEventListener('click', clearLuckyCards);
-$('lucky-clear-draws-btn')?.addEventListener('click', clearLuckyDraws);
-$('lucky-open-btn')?.addEventListener('click', openLuckyBox);
-$('lucky-box')?.addEventListener('click', () => { if(!luckyOpening) openLuckyBox(); });
-
-// ═══════════════════════════════════════════════════════════════════════════
-// AUCTION
-// ═══════════════════════════════════════════════════════════════════════════
-let auctionsActive = [];
-let auctionsHistory = [];
-let pendingAuctionImage = '';
-let auctionCountdownTimer = null;
-
-function fmtRupiah(n){
-  if(n == null) return '–';
-  return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
-}
-function fmtCountdown(ms){
-  if(ms <= 0) return '00:00';
-  const total = Math.floor(ms / 1000);
-  const d = Math.floor(total / 86400);
-  const h = Math.floor((total % 86400) / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = total % 60;
-  const pad = n => String(n).padStart(2, '0');
-  if(d > 0) return `${d}h ${pad(h)}:${pad(m)}:${pad(s)}`;
-  if(h > 0) return `${pad(h)}:${pad(m)}:${pad(s)}`;
-  return `${pad(m)}:${pad(s)}`;
-}
-
-async function loadAuctions(){
-  try {
-    const r = await fetch('/api/auctions');
-    if(!r.ok) throw 0;
-    const data = await r.json();
-    auctionsActive = data.active || [];
-    auctionsHistory = data.history || [];
-  } catch { auctionsActive = []; auctionsHistory = []; }
-  renderAuctionLists();
-  startAuctionCountdown();
-}
-
-function renderAuctionLists(){
-  renderAuctionActive();
-  renderAuctionHistory();
-}
-
-function renderAuctionActive(){
-  const el = $('auction-active-list'); if(!el) return;
-  $('auction-active-count').textContent = auctionsActive.length;
-  if(!auctionsActive.length){
-    el.innerHTML = '<div class="empty-msg">Belum ada lelang aktif</div>';
-    return;
-  }
-  const isAdmin = role === 'admin';
-  el.innerHTML = auctionsActive.map(a => auctionCardHtml(a, false, isAdmin)).join('');
-  if(isAdmin) attachAuctionActionHandlers(el);
-}
-
-function renderAuctionHistory(){
-  const el = $('auction-history-list'); if(!el) return;
-  if(!auctionsHistory.length){
-    el.innerHTML = '<div class="empty-msg">Belum ada lelang selesai</div>';
-    return;
-  }
-  const isAdmin = role === 'admin';
-  el.innerHTML = auctionsHistory.map(a => auctionCardHtml(a, true, isAdmin)).join('');
-  if(isAdmin) attachAuctionActionHandlers(el);
-}
-
-function auctionCardHtml(a, closed, isAdmin){
-  const img = a.image_url
-    ? `<img class="auction-card-img" src="${escapeHtml(a.image_url)}" alt="">`
-    : `<div class="auction-card-img-empty">📦</div>`;
-  const desc = a.description ? `<div class="auction-card-desc">${escapeHtml(a.description)}</div>` : '';
-  const bid = a.current_bid != null
-    ? `<div class="auction-card-price-block"><span class="auction-card-price-label">Tawaran</span><span class="auction-card-price bid">${fmtRupiah(a.current_bid)}</span></div>`
-    : '';
-  const bidder = a.current_bidder ? `<div class="auction-card-bidder">oleh <strong>${escapeHtml(a.current_bidder)}</strong></div>` : '';
-  const winner = closed && a.current_bidder
-    ? `<div class="auction-card-winner">🏆 ${escapeHtml(a.current_bidder)} · ${fmtRupiah(a.current_bid)}</div>`
-    : (closed ? `<div class="auction-card-winner">Tidak ada penawar</div>` : '');
-  const timer = closed
-    ? `<div class="auction-card-timer">Selesai</div>`
-    : `<div class="auction-card-timer" data-ends="${a.ends_at}">--:--</div>`;
-  const adminActions = (isAdmin && !closed) ? `
-    <div class="auction-card-actions">
-      <button class="btn btn-primary btn-sm" data-act="bid" data-id="${a.id}">💰 Update Tawaran</button>
-      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="300">+5m</button>
-      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="900">+15m</button>
-      <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}">✎ Edit</button>
-      <button class="btn btn-ghost btn-sm" data-act="close" data-id="${a.id}">⏹ Tutup</button>
-      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑</button>
-    </div>` : (isAdmin && closed ? `
-    <div class="auction-card-actions">
-      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑 Hapus</button>
-    </div>` : '');
-  return `<div class="auction-card${closed ? ' closed' : ''}" data-id="${a.id}">
-    ${img}
-    <div class="auction-card-body">
-      <h3 class="auction-card-title">${escapeHtml(a.title)}</h3>
-      ${desc}
-      <div class="auction-card-prices">
-        <div class="auction-card-price-block">
-          <span class="auction-card-price-label">Harga awal</span>
-          <span class="auction-card-price">${fmtRupiah(a.starting_price)}</span>
-        </div>
-        ${bid}
-      </div>
-      ${bidder}
-      ${winner}
-      ${timer}
-      ${adminActions}
-    </div>
-  </div>`;
-}
-
-function attachAuctionActionHandlers(scope){
-  scope.querySelectorAll('[data-act]').forEach(b => {
-    const act = b.dataset.act;
-    const id = +b.dataset.id;
-    if(act === 'bid') b.addEventListener('click', () => promptUpdateBid(id));
-    else if(act === 'extend') b.addEventListener('click', () => extendAuction(id, +b.dataset.sec));
-    else if(act === 'edit') b.addEventListener('click', () => promptEditAuction(id));
-    else if(act === 'close') b.addEventListener('click', () => closeAuction(id));
-    else if(act === 'delete') b.addEventListener('click', () => deleteAuction(id));
-  });
-}
-
-function startAuctionCountdown(){
-  if(auctionCountdownTimer) return;
-  auctionCountdownTimer = setInterval(() => {
-    if(currentTab !== 'auction') return;
-    document.querySelectorAll('.auction-card-timer[data-ends]').forEach(el => {
-      const ends = new Date(el.dataset.ends).getTime();
-      const ms = ends - Date.now();
-      el.textContent = fmtCountdown(ms);
-      const card = el.closest('.auction-card');
-      if(card){
-        card.classList.toggle('ending', ms > 0 && ms < 60_000);
-      }
-    });
-  }, 1000);
-}
-
-async function createAuction(){
-  if(role !== 'admin') return;
-  const title = $('auction-title-input').value.trim();
-  if(!title){ toast('Nama barang wajib diisi'); return; }
-  const description = $('auction-desc-input').value.trim();
-  const url = $('auction-image-url-input').value.trim();
-  const image_url = pendingAuctionImage || url || '';
-  const starting_price = Number($('auction-start-price-input').value) || 0;
-  const min_increment = Number($('auction-increment-input').value) || 0;
-  const hours = Number($('auction-dur-h-input').value) || 0;
-  const minutes = Number($('auction-dur-m-input').value) || 0;
-  const duration_seconds = hours * 3600 + minutes * 60;
-  if(duration_seconds < 60){ toast('Durasi minimal 1 menit'); return; }
-  try {
-    const r = await fetch('/api/auctions', {
-      method: 'POST',
-      headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ title, description, image_url, starting_price, min_increment, duration_seconds })
-    });
-    if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.error || 'fail'); }
-    // Will arrive via socket auction-created
-    $('auction-title-input').value = '';
-    $('auction-desc-input').value = '';
-    $('auction-image-url-input').value = '';
-    $('auction-start-price-input').value = '0';
-    $('auction-increment-input').value = '0';
-    $('auction-dur-h-input').value = '1';
-    $('auction-dur-m-input').value = '0';
-    pendingAuctionImage = '';
-    $('auction-image-file-input').value = '';
-    $('auction-form-preview').style.display = 'none';
-    $('auction-create-form').style.display = 'none';
-    toast('Lelang dimulai');
-  } catch(e) { toast('Gagal membuat lelang'); }
-}
-
-async function promptUpdateBid(id){
-  if(role !== 'admin') return;
-  const a = auctionsActive.find(x => x.id === id); if(!a) return;
-  const minimum = Math.max(
-    a.current_bid != null ? a.current_bid + (a.min_increment || 0) : a.starting_price,
-    a.starting_price
-  );
-  const amountStr = prompt(`Tawaran baru untuk "${a.title}"\nMinimal: ${fmtRupiah(minimum)}`, String(Math.round(minimum)));
-  if(amountStr == null) return;
-  const amount = Number(String(amountStr).replace(/[^\d.-]/g, ''));
-  if(!amount || amount < a.starting_price){ toast('Tawaran tidak valid'); return; }
-  const bidder = prompt('Nama penawar', a.current_bidder || '');
-  if(bidder == null) return;
-  try {
-    const r = await fetch(`/api/auctions/${id}`, {
-      method:'PATCH',
-      headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ current_bid: amount, current_bidder: bidder.trim() })
-    });
-    if(!r.ok){ toast('Gagal update'); return; }
-    toast('Tawaran diperbarui');
-  } catch { toast('Gagal update'); }
-}
-
-async function extendAuction(id, seconds){
-  if(role !== 'admin') return;
-  try {
-    const r = await fetch(`/api/auctions/${id}`, {
-      method:'PATCH',
-      headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ extend_seconds: seconds })
-    });
-    if(!r.ok){ toast('Gagal'); return; }
-    toast(`Diperpanjang ${Math.round(seconds/60)} menit`);
-  } catch { toast('Gagal'); }
-}
-
-async function promptEditAuction(id){
-  if(role !== 'admin') return;
-  const a = auctionsActive.find(x => x.id === id); if(!a) return;
-  const title = prompt('Nama barang', a.title);
-  if(title == null) return;
-  const description = prompt('Deskripsi', a.description || '');
-  if(description == null) return;
-  try {
-    const r = await fetch(`/api/auctions/${id}`, {
-      method:'PATCH',
-      headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ title: title.trim(), description: description.trim() })
-    });
-    if(!r.ok){ toast('Gagal update'); return; }
-    toast('Lelang diperbarui');
-  } catch { toast('Gagal update'); }
-}
-
-async function closeAuction(id){
-  if(role !== 'admin') return;
-  if(!confirm('Tutup lelang ini sekarang?')) return;
-  try {
-    const r = await fetch(`/api/auctions/${id}/close`, { method:'POST', headers:{'x-admin-token':adminToken} });
-    if(!r.ok){ toast('Gagal menutup'); return; }
-    toast('Lelang ditutup');
-  } catch { toast('Gagal menutup'); }
-}
-
-async function deleteAuction(id){
-  if(role !== 'admin') return;
-  if(!confirm('Hapus lelang ini? Tidak bisa dibatalkan.')) return;
-  try {
-    const r = await fetch(`/api/auctions/${id}`, { method:'DELETE', headers:{'x-admin-token':adminToken} });
-    if(!r.ok){ toast('Gagal menghapus'); return; }
-    toast('Dihapus');
-  } catch { toast('Gagal menghapus'); }
-}
-
-async function clearAuctionHistory(){
-  if(role !== 'admin') return;
-  if(!confirm('Hapus semua riwayat lelang?')) return;
-  try {
-    await fetch('/api/auctions?scope=history', { method:'DELETE', headers:{'x-admin-token':adminToken} });
-    auctionsHistory = []; renderAuctionHistory();
-    toast('Riwayat dihapus');
-  } catch { toast('Gagal menghapus'); }
-}
-
-$('auction-toggle-form-btn')?.addEventListener('click', () => {
-  const f = $('auction-create-form');
-  f.style.display = f.style.display === 'none' ? '' : 'none';
-});
-$('auction-create-btn')?.addEventListener('click', createAuction);
-$('auction-clear-history-btn')?.addEventListener('click', clearAuctionHistory);
-$('auction-image-file-input')?.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    pendingAuctionImage = reader.result;
-    $('auction-form-preview-img').src = pendingAuctionImage;
-    $('auction-form-preview-name').textContent = file.name;
-    $('auction-form-preview').style.display = '';
-    $('auction-image-url-input').value = '';
-  };
-  reader.readAsDataURL(file);
-});
-$('auction-form-clear-img')?.addEventListener('click', () => {
-  pendingAuctionImage = '';
-  $('auction-image-file-input').value = '';
-  $('auction-form-preview').style.display = 'none';
-});
+// Wheel / Shipments / Lucky Box / Auction features extracted to /js/.
+// Their <script> tags are at the bottom of <body>; they reference globals
+// defined in this main inline script ($, escapeHtml, toast, role,
+// adminToken, sfx, players, TEAM_COLORS, shade, celebrateWheelWin, etc.)
+// and the wheel-state lets declared in the STATE section above.
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFETTI (DOM-based, matches design)
@@ -6962,8 +5897,12 @@ sfx.enabled = settings.sound;
 applySettings();
 renderSkinPicker();
 setRole('viewer');
-renderWheelChips();
-loadWheelHistory();
+// Wheel bootstrap defers to a microtask so /js/wheel.js (which declares
+// renderWheelChips/loadWheelHistory) has finished executing by then.
+setTimeout(() => {
+  if(typeof renderWheelChips === 'function') renderWheelChips();
+  if(typeof loadWheelHistory === 'function') loadWheelHistory();
+}, 0);
 connectSocket();
 bindCameraControls();
 // Pre-fetch the realistic player model so it's ready before the first race
@@ -7001,5 +5940,12 @@ window.tuneRunner = function(scale, yOffset, rotationY){
 // Autofocus name input
 setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); }, 300);
 </script>
+
+<!-- Extracted self-contained features. Each script depends on globals
+     ($, escapeHtml, toast, role, adminToken, socket, …) defined above. -->
+<script src="./js/wheel.js"></script>
+<script src="./js/shipments.js"></script>
+<script src="./js/lucky.js"></script>
+<script src="./js/auction.js"></script>
 </body>
 </html>
