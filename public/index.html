@@ -3842,6 +3842,20 @@ function disposeRace3DScene(){
   race3D.ready = false;
 }
 
+// Mobile detection — iPhone Safari has a tight WebGL memory budget (~256 MB)
+// and will silently crash the tab when exceeded, dumping the user back to
+// the page's initial route. We dial back shadow map size, pixelRatio, and
+// post-processing on phones to stay well inside the budget.
+function isMobileDevice(){
+  if(typeof navigator === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  if(/iPhone|iPad|iPod|Android/i.test(ua)) return true;
+  // iPad on iOS 13+ reports as Mac; differentiate via touch + maxTouchPoints
+  if(/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return true;
+  // Narrow viewport heuristic
+  return Math.min(window.innerWidth || 1e4, window.innerHeight || 1e4) < 820;
+}
+
 function initRace3D(){
   if(race3D.ready || race3D.failed) return race3D.ready;
   if(typeof THREE === 'undefined'){ race3D.failed = true; return false; }
@@ -3849,13 +3863,18 @@ function initRace3D(){
   // model until the file lands, then are rebuilt with the realistic clone).
   loadRunnerGLTF();
 
+  const mobile = isMobileDevice();
+  race3D.lowQuality = mobile;
+
   try {
-    const renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: true, powerPreference: 'high-performance' });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    const renderer = new THREE.WebGLRenderer({ canvas: $canvas, antialias: !mobile, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 2));
+    renderer.shadowMap.enabled = !mobile; // shadows are the biggest GPU-mem hog
+    if(!mobile) renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    if(!mobile){
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+    }
     renderer.setClearColor(0x0a1a18, 1);
     if(THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
     else if(THREE.sRGBEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
@@ -3870,7 +3889,7 @@ function initRace3D(){
     const skyTex = new THREE.CanvasTexture(makeSkyTexture());
     if(THREE.SRGBColorSpace) skyTex.colorSpace = THREE.SRGBColorSpace;
     const skyMat = new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false });
-    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(380, 48, 32), skyMat);
+    const skyDome = new THREE.Mesh(new THREE.SphereGeometry(380, mobile ? 24 : 48, mobile ? 16 : 32), skyMat);
     scene.add(skyDome);
 
     // ── Lighting: warm sunset key + cool fill + rim ──
@@ -3878,13 +3897,15 @@ function initRace3D(){
     scene.add(hemi);
     const sun = new THREE.DirectionalLight(0xffd0a0, 1.6);
     sun.position.set(60, 90, 40);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -36; sun.shadow.camera.right = 36;
-    sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -20;
-    sun.shadow.camera.near = 1; sun.shadow.camera.far = 200;
-    sun.shadow.bias = -0.0008;
-    sun.shadow.normalBias = 0.04;
+    sun.castShadow = !mobile;
+    if(!mobile){
+      sun.shadow.mapSize.set(2048, 2048);
+      sun.shadow.camera.left = -36; sun.shadow.camera.right = 36;
+      sun.shadow.camera.top = 80; sun.shadow.camera.bottom = -20;
+      sun.shadow.camera.near = 1; sun.shadow.camera.far = 200;
+      sun.shadow.bias = -0.0008;
+      sun.shadow.normalBias = 0.04;
+    }
     scene.add(sun);
     // Cool rim/back light to give silhouettes pop
     const rim = new THREE.DirectionalLight(0x6090ff, 0.5);
@@ -4133,7 +4154,7 @@ function initRace3D(){
       // Pylon
       const pylon = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 22, 8), pylonMat);
       pylon.position.set(cx, 11, cz);
-      pylon.castShadow = true;
+      pylon.castShadow = !mobile;
       scene.add(pylon);
       // Lamp head box
       const head = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.4, 1.4), lampMat);
@@ -4141,7 +4162,8 @@ function initRace3D(){
       head.position.set(cx + inward * 0.8, 21, cz);
       head.lookAt(0, 1, TRACK_LEN * 0.5);
       scene.add(head);
-      // Beam cone (downward toward center of pitch)
+      // Beam cone — translucent volumetric effect; skip on mobile to save fillrate.
+      if(mobile) continue;
       const beamLen = 32;
       const beam = new THREE.Mesh(new THREE.ConeGeometry(8, beamLen, 24, 1, true), beamMat);
       const target = new THREE.Vector3(0, 1, TRACK_LEN * 0.5);
