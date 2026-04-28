@@ -131,13 +131,19 @@ function drawWheel(){
     wCtx.lineWidth = 2*devicePixelRatio;
     wCtx.stroke();
 
-    // Image (if entry has one) — drawn near outer half of the segment
+    // Image (if entry has one) — drawn near outer half of the segment.
+    // When the entry has NO label (image-mode entry), the image occupies
+    // most of the segment so it reads clearly from across the room.
     const entryImage = wheelEntryImage(wheelNames[i]);
+    const entryLabel = wheelEntryLabel(wheelNames[i]);
+    const isImageOnly = entryImage && !entryLabel;
     if(entryImage){
       const imgEl = getWheelImageEl(entryImage);
       if(imgEl){
-        const imgR = r * 0.55;            // distance from wheel center
-        const imgSize = Math.min(r * 0.18, slice * imgR * 0.9);
+        const imgR = isImageOnly ? r * 0.62 : r * 0.55;
+        const imgSize = isImageOnly
+          ? Math.min(r * 0.32, slice * imgR * 0.95)
+          : Math.min(r * 0.18, slice * imgR * 0.9);
         const ax = sa + slice / 2;
         const ix = Math.cos(ax) * imgR;
         const iy = Math.sin(ax) * imgR;
@@ -148,32 +154,35 @@ function drawWheel(){
         wCtx.clip();
         wCtx.drawImage(imgEl, ix - imgSize, iy - imgSize, imgSize * 2, imgSize * 2);
         wCtx.restore();
-        // Image border ring
+        // Image border ring — thicker for image-only mode
         wCtx.beginPath();
         wCtx.arc(ix, iy, imgSize, 0, Math.PI * 2);
-        wCtx.strokeStyle = 'rgba(255,255,255,.85)';
-        wCtx.lineWidth = 2 * devicePixelRatio;
+        wCtx.strokeStyle = 'rgba(255,255,255,.9)';
+        wCtx.lineWidth = (isImageOnly ? 3 : 2) * devicePixelRatio;
         wCtx.stroke();
       }
     }
 
-    // Name label (closer to center if image is shown to avoid overlap)
-    wCtx.save(); wCtx.rotate(sa+slice/2);
-    const fs = Math.min(15*devicePixelRatio, r*.11);
-    wCtx.fillStyle = '#fff';
-    wCtx.font = `italic 800 ${fs}px 'Archivo Black',sans-serif`;
-    wCtx.textAlign = 'right'; wCtx.textBaseline = 'middle';
-    wCtx.shadowColor = 'rgba(0,0,0,.75)';
-    wCtx.shadowBlur = 4*devicePixelRatio;
-    let name = wheelEntryLabel(wheelNames[i]).toUpperCase();
-    const maxLabelEnd = entryImage ? r * 0.42 : r * 0.72;
-    const labelEnd = entryImage ? r * 0.36 : r - 16*devicePixelRatio;
-    if(wCtx.measureText(name).width > maxLabelEnd){
-      while(name.length > 3 && wCtx.measureText(name+'…').width > maxLabelEnd) name = name.slice(0,-1);
-      name += '…';
+    // Name label — skip entirely for image-only entries; otherwise placed
+    // closer to center if a thumb is shown to avoid overlap.
+    if(!isImageOnly){
+      wCtx.save(); wCtx.rotate(sa+slice/2);
+      const fs = Math.min(15*devicePixelRatio, r*.11);
+      wCtx.fillStyle = '#fff';
+      wCtx.font = `italic 800 ${fs}px 'Archivo Black',sans-serif`;
+      wCtx.textAlign = 'right'; wCtx.textBaseline = 'middle';
+      wCtx.shadowColor = 'rgba(0,0,0,.75)';
+      wCtx.shadowBlur = 4*devicePixelRatio;
+      let name = entryLabel.toUpperCase();
+      const maxLabelEnd = entryImage ? r * 0.42 : r * 0.72;
+      const labelEnd = entryImage ? r * 0.36 : r - 16*devicePixelRatio;
+      if(wCtx.measureText(name).width > maxLabelEnd){
+        while(name.length > 3 && wCtx.measureText(name+'…').width > maxLabelEnd) name = name.slice(0,-1);
+        name += '…';
+      }
+      wCtx.fillText(name, labelEnd, 0);
+      wCtx.restore();
     }
-    wCtx.fillText(name, labelEnd, 0);
-    wCtx.restore();
   }
   wCtx.restore();
 
@@ -245,11 +254,14 @@ function replaySpinFromHistory(h){
   if(wheelSpinning) return;
   if(h.initial_velocity == null || h.deceleration == null){ toast('Tidak ada data replay'); return; }
   // Set names list exactly as it was — pair with images if available so the
-  // replay shows the same picture entries, not just labels.
+  // replay shows the same picture entries, not just labels. Image-only
+  // entries were saved with positional "Gambar N" placeholder labels;
+  // strip those on replay so the wheel re-renders the image prominently.
   const histNames = Array.isArray(h.names) ? h.names : [];
   const histImgs  = Array.isArray(h.images) ? h.images : [];
   wheelNames = histNames.map((n, i) => {
     const img = histImgs[i];
+    if(img && /^Gambar \d+$/.test(n)) return { label: '', image: img };
     return img ? { label: n, image: img } : n;
   });
   resetWheelState();
@@ -298,9 +310,19 @@ function wheelLoop(ts){
       wheelVelocity = 0;
       wheelSpinning = false;
       wheelWinnerIdx = currentWheelSegment();
-      const winner = wheelEntryLabel(wheelNames[wheelWinnerIdx]);
+      const winnerEntry = wheelNames[wheelWinnerIdx];
+      const winner = wheelEntryLabel(winnerEntry);
+      const winnerImg = wheelEntryImage(winnerEntry);
       const res = $('wheel-result');
-      res.textContent = (isReplayingSpin ? '↻ ' : '🎉 ') + winner + '!';
+      const prefix = isReplayingSpin ? '↻ ' : '🎉 ';
+      // Image-only winner: render the picture inline; otherwise just text.
+      if(winnerImg && !winner){
+        res.innerHTML = `${prefix}<img src="${escapeHtml(winnerImg)}" alt="" style="height:1.6em;vertical-align:middle;border-radius:6px;border:2px solid #ffd740;margin:0 .3em">!`;
+      } else if(winnerImg && winner){
+        res.innerHTML = `${prefix}<img src="${escapeHtml(winnerImg)}" alt="" style="height:1.4em;vertical-align:middle;border-radius:5px;margin-right:.3em">${escapeHtml(winner)}!`;
+      } else {
+        res.textContent = `${prefix}${winner}!`;
+      }
       res.classList.remove('announce'); void res.offsetWidth; res.classList.add('announce');
       const btn = $('wheel-spin-btn');
       btn.classList.remove('spinning');
@@ -313,14 +335,19 @@ function wheelLoop(ts){
       const rmBtn = $('wheel-remove-winner-btn');
       if(rmBtn && role === 'admin' && !isReplayingSpin){
         rmBtn.style.display = '';
-        rmBtn.innerHTML = `🗑 Hapus "${winner}"`;
+        rmBtn.innerHTML = winner ? `🗑 Hapus "${winner}"` : '🗑 Hapus Pemenang';
       }
-      if(!isReplayingSpin) saveWheelSpin(
-        winner,
-        wheelNames.map(wheelEntryLabel),
-        pendingSpinPhysics,
-        wheelNames.map(e => wheelEntryImage(e) || '')
-      );
+      if(!isReplayingSpin){
+        // Image-only entries have empty labels; assign positional fallbacks
+        // so history rendering can disambiguate which entry actually won.
+        const labels = wheelNames.map((e, j) => wheelEntryLabel(e) || `Gambar ${j+1}`);
+        saveWheelSpin(
+          labels[wheelWinnerIdx],
+          labels,
+          pendingSpinPhysics,
+          wheelNames.map(e => wheelEntryImage(e) || '')
+        );
+      }
       isReplayingSpin = false;
       pendingSpinPhysics = null;
     }
@@ -481,15 +508,90 @@ $('wheel-reset-btn').addEventListener('click', () => {
   toast('Roda dikosongkan');
 });
 
-// Wheel mode toggle (Names vs Lucky Number)
+// Wheel mode toggle (Names / Numbers / Images)
 let wheelMode = 'names';
 function setWheelMode(mode){
   wheelMode = mode;
   document.querySelectorAll('.wheel-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
-  document.querySelectorAll('.wheel-mode-names').forEach(el => el.style.display = mode === 'names' ? '' : 'none');
+  document.querySelectorAll('.wheel-mode-names').forEach(el => el.style.display   = mode === 'names'   ? '' : 'none');
   document.querySelectorAll('.wheel-mode-numbers').forEach(el => el.style.display = mode === 'numbers' ? '' : 'none');
-  $('wheel-title-mode').textContent = mode === 'names' ? 'Nama' : 'Nomor';
+  document.querySelectorAll('.wheel-mode-image').forEach(el => el.style.display   = mode === 'image'   ? '' : 'none');
+  // Image grid uses grid display, not block
+  if(mode === 'image') $('wheel-image-grid').style.display = 'grid';
+  $('wheel-title-mode').textContent = mode === 'names' ? 'Nama' : mode === 'numbers' ? 'Nomor' : 'Gambar';
+  if(mode === 'image') renderWheelImageGrid();
 }
+
+// Renders the admin-only thumbnail grid for image-mode entries so they
+// can be removed individually.
+function renderWheelImageGrid(){
+  const el = $('wheel-image-grid'); if(!el) return;
+  // Show only image-only entries (label is empty / placeholder).
+  const tiles = wheelNames.map((entry, i) => {
+    const img = wheelEntryImage(entry);
+    if(!img) return '';
+    return `<div class="img-tile" data-i="${i}">
+      <img src="${escapeHtml(img)}" alt="">
+      ${role === 'admin' ? `<button data-rm="${i}" title="Hapus">×</button>` : ''}
+    </div>`;
+  }).filter(Boolean).join('');
+  el.innerHTML = tiles || '<div class="empty-msg" style="grid-column:1/-1">Belum ada gambar</div>';
+  if(role === 'admin'){
+    el.querySelectorAll('button[data-rm]').forEach(b => b.addEventListener('click', () => {
+      const i = +b.dataset.rm;
+      wheelNames.splice(i, 1);
+      resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
+    }));
+  }
+}
+
+// Image-mode upload — accepts multiple files, each becomes a pure-image entry.
+$('wheel-img-only-input')?.addEventListener('change', e => {
+  if(role !== 'admin') return;
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+  let added = 0;
+  let pending = files.length;
+  files.forEach(file => {
+    if(file.size > 1024 * 1024){ toast(`${file.name}: terlalu besar (maks 1MB)`); pending--; if(!pending) finalize(); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      // Image-only entry: empty label so the wheel renders the image
+      // prominently without text overlap.
+      wheelNames.push({ label: '', image: reader.result });
+      added++;
+      pending--;
+      if(!pending) finalize();
+    };
+    reader.onerror = () => { pending--; if(!pending) finalize(); };
+    reader.readAsDataURL(file);
+  });
+  function finalize(){
+    e.target.value = '';
+    if(added){
+      resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
+      toast(`${added} gambar ditambah`);
+    }
+  }
+});
+$('wheel-image-shuffle')?.addEventListener('click', () => {
+  if(role!=='admin' || wheelSpinning) return;
+  if(wheelNames.length < 2){ toast('Belum cukup gambar'); return; }
+  for(let i = wheelNames.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [wheelNames[i], wheelNames[j]] = [wheelNames[j], wheelNames[i]];
+  }
+  resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
+  toast('Urutan diacak');
+});
+$('wheel-image-reset')?.addEventListener('click', () => {
+  if(role!=='admin' || wheelSpinning) return;
+  if(!wheelNames.length){ toast('Sudah kosong'); return; }
+  if(!confirm('Hapus semua gambar?')) return;
+  wheelNames = [];
+  resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
+  toast('Roda dikosongkan');
+});
 document.querySelectorAll('.wheel-mode-btn').forEach(b => b.addEventListener('click', () => {
   if(role !== 'admin') return;
   setWheelMode(b.dataset.mode);
