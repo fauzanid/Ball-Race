@@ -1508,6 +1508,7 @@ let pendingSpinPhysics = null, isReplayingSpin = false;
 let currentTab = 'home';
 let broadcastTimer = null;
 let viewerTargetPos = null, viewerCurPos = null, viewerRacing = false;
+let viewerTargetPhases = null, viewerTargetFinished = null;
 let _lastStateSync = null;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1897,10 +1898,35 @@ function setupSocketListeners(){
           setCommentary('PEMAIN SIAP DI GARIS START');
         }
       } else if(s.state==='racing' && s.racers){
-        racers = s.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:s.positions?.[i]||0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
+        racers = s.racers.map((r,i)=>({
+          id:nextId(), name:r.name, colorIdx:r.colorIdx, strategy:r.strategy,
+          position: s.positions?.[i] || 0,
+          phase: s.phases?.[i] || 'running',
+          finished: !!s.finished?.[i],
+          finishTime: 0,
+          speed:0, targetSpeed:0, nextSpeedChange:0,
+        }));
         viewerTargetPos = s.positions || racers.map(()=>0);
         viewerCurPos = [...viewerTargetPos];
+        viewerTargetPhases   = s.phases    || null;
+        viewerTargetFinished = s.finished  || null;
         commentaryText = s.commentary || '';
+        commentaryType = s.commentaryType || '';
+        // Sync the race clock to admin's clock — late joiners pick up
+        // where the race actually is, not at 00:00.
+        if(s.startTime && s.serverNow){
+          const elapsed = s.serverNow - s.startTime;
+          raceStartRealTime = performance.now() - elapsed;
+          // Skip the cinematic launch arc if the race is already past it,
+          // otherwise the late joiner sees a chopper takeoff mid-race.
+          if(race3D){
+            const LAUNCH_DUR_MS = 2600;
+            race3D.launchStartTime = elapsed > LAUNCH_DUR_MS ? 0 : raceStartRealTime;
+          }
+        } else {
+          raceStartRealTime = performance.now();
+          if(race3D) race3D.launchStartTime = 0;
+        }
         if(currentTab === 'race'){
           viewerRacing = true;
           showScreen($race); $tabBar.classList.add('hidden');
@@ -1927,6 +1953,8 @@ function setupSocketListeners(){
     racers = data.racers.map((r,i)=>({id:nextId(),name:r.name,colorIdx:r.colorIdx,strategy:r.strategy,position:0,speed:0,targetSpeed:0,nextSpeedChange:0,finished:false,finishTime:0}));
     viewerTargetPos = racers.map(()=>0);
     viewerCurPos    = racers.map(()=>0);
+    viewerTargetPhases = null;
+    viewerTargetFinished = null;
     showScreen($race); $tabBar.classList.add('hidden');
     $('kick-off-row').style.display = 'none';
     $('replay-bar').classList.remove('active');
@@ -1953,7 +1981,13 @@ function setupSocketListeners(){
     viewerTargetPos = racers.map(()=>0);
     viewerCurPos = racers.map(()=>0);
     viewerRacing = true; recording = [];
-    raceStartRealTime = performance.now();
+    // Sync to admin's start time when the broadcast carries it; otherwise
+    // fall back to local now (legacy server / loopback).
+    if(data.startTime && data.serverNow){
+      raceStartRealTime = performance.now() - (data.serverNow - data.startTime);
+    } else {
+      raceStartRealTime = performance.now();
+    }
     if(race3D) race3D.launchStartTime = raceStartRealTime;
     setCommentary("KICK OFF! AND WE ARE UNDERWAY!");
     sfx.whistle(); sfx.startCrowd(); music.play();
@@ -1962,6 +1996,10 @@ function setupSocketListeners(){
   socket.on('race-frame', data => {
     if(role!=='viewer' || replayMode) return;
     viewerTargetPos = data.positions;
+    // Authoritative phase/finished from admin so the viewer's animations
+    // and scoreboard match instead of being heuristically guessed.
+    viewerTargetPhases = data.phases || null;
+    viewerTargetFinished = data.finished || null;
     // Only re-render commentary when it actually changes — otherwise the
     // DOM-replace animation resets on every broadcast (~20Hz) and the text
     // never finishes animating in.
@@ -1969,7 +2007,7 @@ function setupSocketListeners(){
     const newType = data.commentaryType || '';
     if(newText !== commentaryText || newType !== commentaryType) setCommentary(newText, newType);
     sfx.setCrowdLevel(Math.min(Math.max(...data.positions), 1));
-    recording.push({positions:[...data.positions], commentary:newText, commentaryType:newType, time:performance.now()-raceStartRealTime});
+    recording.push({positions:[...data.positions], phases:data.phases ? [...data.phases] : null, finished:data.finished ? [...data.finished] : null, commentary:newText, commentaryType:newType, time:performance.now()-raceStartRealTime});
   });
   socket.on('race-ended', data => {
     if(role!=='viewer' || replayMode) return;
@@ -2051,11 +2089,21 @@ function viewerLoop(ts){
       // Scale to a stride rate around 3-5 Hz at normal pace.
       const strideRate = Math.min(6, vel * 40 + 0.6);
       r.strideFrame = (r.strideFrame || 0) + strideRate * dt;
-      // Heuristic phase: very slow = tired, very fast = sprinting
-      const avgVel = 1 / Math.max(settings.duration || 20, 5);
-      if(vel > avgVel * 1.6) r.phase = 'sprinting';
-      else if(vel < avgVel * 0.45 && r.position > 0.02 && !r.finished) r.phase = 'tired';
-      else r.phase = 'running';
+      // Phase + finished come from admin's authoritative state when available;
+      // fall back to a velocity heuristic only if the admin's broadcast hasn't
+      // included them yet (e.g. legacy server / reconnect race condition).
+      if(viewerTargetPhases && viewerTargetPhases[i]){
+        r.phase = viewerTargetPhases[i];
+      } else {
+        const avgVel = 1 / Math.max(settings.duration || 20, 5);
+        if(vel > avgVel * 1.6) r.phase = 'sprinting';
+        else if(vel < avgVel * 0.45 && r.position > 0.02 && !r.finished) r.phase = 'tired';
+        else r.phase = 'running';
+      }
+      if(viewerTargetFinished && viewerTargetFinished[i] && !r.finished){
+        r.finished = true;
+        r.finishTime = performance.now() - raceStartRealTime;
+      }
     });
     drawRace();
     updateScoreboard();
@@ -2190,6 +2238,16 @@ function resumeRaceTab(){
     if(s.state === 'racing' && racers && racers.length){
       viewerRacing = true;
       showScreen($race); $tabBar.classList.add('hidden');
+      // Re-sync race clock to admin in case the user has been on another
+      // tab while the race progressed.
+      if(s.startTime && s.serverNow){
+        const elapsed = s.serverNow - s.startTime;
+        raceStartRealTime = performance.now() - elapsed;
+        if(race3D){
+          const LAUNCH_DUR_MS = 2600;
+          race3D.launchStartTime = elapsed > LAUNCH_DUR_MS ? 0 : raceStartRealTime;
+        }
+      }
       resizeCanvas(); sfx.startCrowd(); music.play();
       requestAnimationFrame(viewerLoop);
       return;
@@ -2606,10 +2664,19 @@ function cancelLobby(){
 
 function startBroadcasting(){
   clearInterval(broadcastTimer);
-  // 30 Hz broadcast — fast enough that the viewer's lerp catches up to admin
+  // 30 Hz broadcast — fast enough that the viewer's lerp catches up to admin.
+  // Phases (sprinting/running/tired) and finished flags ride along so the
+  // viewer's animation + scoreboard match admin's authoritative state
+  // instead of being re-derived heuristically from velocity samples.
   broadcastTimer = setInterval(() => {
     if(!raceActive){ clearInterval(broadcastTimer); return; }
-    if(socket) socket.emit('race-update', {positions:racers.map(r=>r.position), commentary:commentaryText, commentaryType});
+    if(socket) socket.emit('race-update', {
+      positions:    racers.map(r => r.position),
+      phases:       racers.map(r => r.phase || 'running'),
+      finished:     racers.map(r => !!r.finished),
+      commentary:   commentaryText,
+      commentaryType,
+    });
   }, 33);
 }
 

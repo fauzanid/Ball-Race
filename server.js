@@ -622,7 +622,11 @@ const liveRace = {
   settings: { duration: 10, fairMode: false },
   racers: null,         // during/after race: [{ name, colorIdx }]
   positions: null,      // during race
+  phases: null,         // during race: per-racer 'sprinting' | 'running' | 'tired'
+  finished: null,       // during race: per-racer bool
   commentary: '',
+  commentaryType: '',
+  startTime: 0,         // Date.now() when admin started the race — lets late joiners sync their clock
   lastResults: null,    // { results: [...], racers: [...] }
 };
 
@@ -633,7 +637,12 @@ function publicState() {
     settings: liveRace.settings,
     racers: liveRace.racers,
     positions: liveRace.positions,
+    phases: liveRace.phases,
+    finished: liveRace.finished,
     commentary: liveRace.commentary,
+    commentaryType: liveRace.commentaryType,
+    startTime: liveRace.startTime,
+    serverNow: Date.now(),
     lastResults: liveRace.lastResults,
     viewerCount: io.engine.clientsCount,
   };
@@ -697,13 +706,21 @@ io.on('connection', socket => {
     liveRace.state = 'racing';
     liveRace.racers = data.racers;
     liveRace.positions = data.racers.map(() => 0);
-    socket.broadcast.emit('race-started', data);
+    liveRace.phases    = data.racers.map(() => 'running');
+    liveRace.finished  = data.racers.map(() => false);
+    liveRace.startTime = Date.now();
+    // Tag the broadcast with the authoritative start time so viewers
+    // can offset their local clocks instead of using their own performance.now().
+    socket.broadcast.emit('race-started', { ...data, startTime: liveRace.startTime, serverNow: Date.now() });
   });
 
   socket.on('race-update', data => {
     if (!isAdmin) return;
-    liveRace.positions = data.positions;
-    liveRace.commentary = data.commentary;
+    liveRace.positions      = data.positions;
+    liveRace.phases         = data.phases    || liveRace.phases;
+    liveRace.finished       = data.finished  || liveRace.finished;
+    liveRace.commentary     = data.commentary;
+    liveRace.commentaryType = data.commentaryType || '';
     socket.broadcast.emit('race-frame', data);
   });
 
@@ -719,7 +736,11 @@ io.on('connection', socket => {
     liveRace.state = liveRace.players.length > 0 ? 'setup' : 'idle';
     liveRace.racers = null;
     liveRace.positions = null;
+    liveRace.phases = null;
+    liveRace.finished = null;
     liveRace.commentary = '';
+    liveRace.commentaryType = '';
+    liveRace.startTime = 0;
     liveRace.lastResults = null;
     io.emit('back-to-setup');
   });
