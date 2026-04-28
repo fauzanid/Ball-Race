@@ -83,18 +83,24 @@ function auctionCardHtml(a, closed, isAdmin){
   const timer = closed
     ? `<div class="auction-card-timer">Selesai</div>`
     : `<div class="auction-card-timer" data-ends="${a.ends_at}">--:--</div>`;
+  const galleryButton = a.image_count > 0
+    ? `<button class="btn btn-ghost btn-sm" data-act="gallery" data-id="${a.id}">🖼 Lihat Foto (${a.image_count})</button>`
+    : '';
   const adminActions = (isAdmin && !closed) ? `
     <div class="auction-card-actions">
       <button class="btn btn-primary btn-sm" data-act="bid" data-id="${a.id}">💰 Update Tawaran</button>
       <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="300">+5m</button>
       <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="900">+15m</button>
       <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}">✎ Edit</button>
+      <button class="btn btn-ghost btn-sm" data-act="add-photos" data-id="${a.id}">📷 + Foto</button>
+      ${galleryButton}
       <button class="btn btn-ghost btn-sm" data-act="close" data-id="${a.id}">⏹ Tutup</button>
       <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑</button>
     </div>` : (isAdmin && closed ? `
     <div class="auction-card-actions">
+      ${galleryButton}
       <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑 Hapus</button>
-    </div>` : '');
+    </div>` : (galleryButton ? `<div class="auction-card-actions">${galleryButton}</div>` : ''));
   return `<div class="auction-card${closed ? ' closed' : ''}" data-id="${a.id}">
     ${img}
     <div class="auction-card-body">
@@ -111,6 +117,7 @@ function auctionCardHtml(a, closed, isAdmin){
       ${winner}
       ${timer}
       ${adminActions}
+      <div class="auction-gallery" id="auction-gallery-${a.id}" style="display:none"></div>
     </div>
   </div>`;
 }
@@ -124,7 +131,152 @@ function attachAuctionActionHandlers(scope){
     else if(act === 'edit') b.addEventListener('click', () => promptEditAuction(id));
     else if(act === 'close') b.addEventListener('click', () => closeAuction(id));
     else if(act === 'delete') b.addEventListener('click', () => deleteAuction(id));
+    else if(act === 'gallery') b.addEventListener('click', () => toggleAuctionGallery(id));
+    else if(act === 'add-photos') b.addEventListener('click', () => triggerAddPhotos(id));
   });
+}
+
+// Hidden file input we reuse for the "+ Foto" button. Created lazily on first use.
+let _auctionPhotoInput = null;
+let _auctionPhotoTargetId = null;
+function triggerAddPhotos(auctionId){
+  if(role !== 'admin') return;
+  if(!_auctionPhotoInput){
+    _auctionPhotoInput = document.createElement('input');
+    _auctionPhotoInput.type = 'file';
+    _auctionPhotoInput.accept = 'image/*';
+    _auctionPhotoInput.multiple = true;
+    _auctionPhotoInput.style.display = 'none';
+    document.body.appendChild(_auctionPhotoInput);
+    _auctionPhotoInput.addEventListener('change', async (e) => {
+      const targetId = _auctionPhotoTargetId;
+      _auctionPhotoTargetId = null;
+      const files = Array.from(e.target.files || []);
+      e.target.value = '';
+      if(!files.length || !targetId) return;
+      await uploadAuctionPhotos(targetId, files);
+    });
+  }
+  _auctionPhotoTargetId = auctionId;
+  _auctionPhotoInput.click();
+}
+
+const MAX_BATCH_BYTES = 7_500_000; // ~7.5 MB JSON body — fits comfortably in 10 MB express limit
+async function uploadAuctionPhotos(auctionId, files){
+  // Convert files to data-URLs, batched so the JSON body stays under the express limit.
+  let processed = 0, dropped = 0;
+  let batch = [], batchBytes = 0;
+  const total = files.length;
+  toast(`Mengunggah ${total} foto…`);
+  const flush = async () => {
+    if(!batch.length) return;
+    try {
+      const r = await fetch(`/api/auctions/${auctionId}/images`, {
+        method: 'POST',
+        headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
+        body: JSON.stringify({ images: batch })
+      });
+      if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal mengunggah'); return false; }
+      const data = await r.json();
+      processed += data.added || 0;
+      dropped += data.dropped || 0;
+      return true;
+    } catch { toast('Gagal mengunggah'); return false; }
+  };
+  for(const file of files){
+    if(file.size > 500_000){ dropped++; continue; }
+    const dataUrl = await new Promise(res => {
+      const reader = new FileReader();
+      reader.onload = () => res(reader.result);
+      reader.onerror = () => res(null);
+      reader.readAsDataURL(file);
+    });
+    if(!dataUrl) { dropped++; continue; }
+    if(batchBytes + dataUrl.length > MAX_BATCH_BYTES && batch.length){
+      const ok = await flush();
+      if(!ok) return;
+      batch = []; batchBytes = 0;
+    }
+    batch.push(dataUrl);
+    batchBytes += dataUrl.length;
+  }
+  await flush();
+  toast(`✓ ${processed} foto diunggah${dropped ? ` (${dropped} terlalu besar / gagal)` : ''}`);
+  // Update local state so the count refreshes on next render
+  const a = auctionsActive.find(x => x.id === auctionId) || auctionsHistory.find(x => x.id === auctionId);
+  if(a) a.image_count = (a.image_count || 0) + processed;
+  // Refresh open gallery if any
+  if(_openGalleries.has(auctionId)){
+    _openGalleries.delete(auctionId);
+    await toggleAuctionGallery(auctionId);
+  }
+  renderAuctionLists();
+}
+
+const _openGalleries = new Set();
+async function toggleAuctionGallery(auctionId){
+  const wrap = document.getElementById('auction-gallery-' + auctionId);
+  if(!wrap) return;
+  if(_openGalleries.has(auctionId)){
+    _openGalleries.delete(auctionId);
+    wrap.style.display = 'none';
+    wrap.innerHTML = '';
+    return;
+  }
+  _openGalleries.add(auctionId);
+  wrap.style.display = '';
+  wrap.innerHTML = '<div class="empty-msg">Memuat foto…</div>';
+  try {
+    const r = await fetch(`/api/auctions/${auctionId}/images`);
+    if(!r.ok){ wrap.innerHTML = '<div class="empty-msg">Gagal memuat</div>'; return; }
+    const imgs = await r.json();
+    if(!imgs.length){ wrap.innerHTML = '<div class="empty-msg">Belum ada foto</div>'; return; }
+    const isAdmin = role === 'admin';
+    wrap.innerHTML = imgs.map(im => `
+      <div class="auction-gallery-tile" data-img-id="${im.id}">
+        <img src="${escapeHtml(im.image_url)}" alt="" loading="lazy">
+        ${isAdmin ? `<button class="auction-gallery-del" data-img-id="${im.id}" title="Hapus">×</button>` : ''}
+      </div>
+    `).join('');
+    if(isAdmin){
+      wrap.querySelectorAll('.auction-gallery-del').forEach(b => b.addEventListener('click', async () => {
+        const imgId = +b.dataset.imgId;
+        if(!confirm('Hapus foto ini?')) return;
+        try {
+          const dr = await fetch(`/api/auctions/images/${imgId}`, { method:'DELETE', headers:{'x-admin-token':adminToken} });
+          if(!dr.ok){ toast('Gagal menghapus'); return; }
+          // Remove from DOM
+          const tile = wrap.querySelector(`.auction-gallery-tile[data-img-id="${imgId}"]`);
+          if(tile) tile.remove();
+          const a = auctionsActive.find(x => x.id === auctionId) || auctionsHistory.find(x => x.id === auctionId);
+          if(a) a.image_count = Math.max(0, (a.image_count || 0) - 1);
+          renderAuctionLists();
+        } catch { toast('Gagal menghapus'); }
+      }));
+      // Click image to open in lightbox
+      wrap.querySelectorAll('.auction-gallery-tile img').forEach(im => {
+        im.addEventListener('click', () => openLightbox(im.src));
+      });
+    } else {
+      // Viewers can still click to enlarge
+      wrap.querySelectorAll('.auction-gallery-tile img').forEach(im => {
+        im.addEventListener('click', () => openLightbox(im.src));
+      });
+    }
+  } catch { wrap.innerHTML = '<div class="empty-msg">Gagal memuat</div>'; }
+}
+
+function openLightbox(src){
+  let lb = document.getElementById('auction-lightbox');
+  if(!lb){
+    lb = document.createElement('div');
+    lb.id = 'auction-lightbox';
+    lb.innerHTML = '<img alt=""><button class="lb-close">×</button>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', e => { if(e.target === lb || e.target.classList.contains('lb-close')) lb.style.display = 'none'; });
+  }
+  lb.querySelector('img').src = src;
+  lb.style.display = 'flex';
 }
 
 function startAuctionCountdown(){

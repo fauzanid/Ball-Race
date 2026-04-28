@@ -8,7 +8,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
-app.use(express.json({ limit: '5mb' }));
+// 10 MB cap so multi-image batches (~12 photos at 500 KB each) fit in
+// a single POST /api/auctions/:id/images request.
+app.use(express.json({ limit: '10mb' }));
 // Don't cache HTML — users should always see fresh UI after a deploy
 app.use(express.static('public', {
   setHeaders(res, filepath) {
@@ -121,6 +123,41 @@ async function initDB() {
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_closed_ends ON auctions (closed, ends_at)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_created ON auctions (created_at DESC)`);
+    // Gallery images for an auction. One row per image so add/remove of a
+    // single photo doesn't rewrite the whole auction row.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS auction_images (
+        id SERIAL PRIMARY KEY,
+        auction_id INT NOT NULL REFERENCES auctions(id) ON DELETE CASCADE,
+        image_url TEXT NOT NULL,
+        sort_order INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_auction_images_auction ON auction_images (auction_id, sort_order)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS prediction_matches (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        label VARCHAR(200) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'open', -- 'open' | 'closed' | 'finished'
+        final_home INT,
+        final_away INT
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_pred_matches_created ON prediction_matches (created_at DESC)`);
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS prediction_entries (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        match_id INT NOT NULL REFERENCES prediction_matches(id) ON DELETE CASCADE,
+        name VARCHAR(80) NOT NULL,
+        phone VARCHAR(40) NOT NULL,
+        predicted_home INT NOT NULL,
+        predicted_away INT NOT NULL
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_pred_entries_match ON prediction_entries (match_id, created_at DESC)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -443,6 +480,7 @@ function rowToAuction(r) {
     title: r.title,
     description: r.description,
     image_url: r.image_url,
+    image_count: r.image_count != null ? Number(r.image_count) : 0,
     starting_price: Number(r.starting_price),
     min_increment: Number(r.min_increment || 0),
     current_bid: r.current_bid != null ? Number(r.current_bid) : null,
@@ -456,11 +494,21 @@ function rowToAuction(r) {
 app.get('/api/auctions', async (req, res) => {
   if (!dbReady) return res.json({ active: [], history: [] });
   try {
+    // Join image counts but never fetch the full gallery here — at 100-200
+    // photos per auction the JSON would balloon to hundreds of MB.
     const active = await pool.query(
-      `SELECT * FROM auctions WHERE closed = FALSE ORDER BY ends_at ASC`
+      `SELECT a.*, COALESCE(i.cnt, 0) AS image_count
+         FROM auctions a
+         LEFT JOIN (SELECT auction_id, COUNT(*) AS cnt FROM auction_images GROUP BY auction_id) i
+           ON i.auction_id = a.id
+         WHERE a.closed = FALSE ORDER BY a.ends_at ASC`
     );
     const history = await pool.query(
-      `SELECT * FROM auctions WHERE closed = TRUE ORDER BY closed_at DESC LIMIT 30`
+      `SELECT a.*, COALESCE(i.cnt, 0) AS image_count
+         FROM auctions a
+         LEFT JOIN (SELECT auction_id, COUNT(*) AS cnt FROM auction_images GROUP BY auction_id) i
+           ON i.auction_id = a.id
+         WHERE a.closed = TRUE ORDER BY a.closed_at DESC LIMIT 30`
     );
     res.json({
       active: active.rows.map(rowToAuction),
@@ -469,6 +517,77 @@ app.get('/api/auctions', async (req, res) => {
   } catch (err) {
     console.error('GET /api/auctions:', err.message);
     res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
+// Fetch the full gallery for one auction. Loaded on demand because each
+// row contains a base64 data-URL.
+app.get('/api/auctions/:id/images', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const id = +req.params.id;
+    const { rows } = await pool.query(
+      `SELECT id, image_url, sort_order, created_at FROM auction_images
+         WHERE auction_id = $1 ORDER BY sort_order ASC, id ASC`,
+      [id]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+const MAX_IMAGE_BYTES = 700_000; // ~500 KB binary → ~700 KB base64
+const MAX_IMAGES_PER_AUCTION = 250;
+
+app.post('/api/auctions/:id/images', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const incoming = Array.isArray(req.body?.images) ? req.body.images : [];
+    if (!incoming.length) return res.status(400).json({ error: 'No images' });
+    // Cap individual image + total count
+    for (const img of incoming) {
+      if (typeof img !== 'string' || !img) return res.status(400).json({ error: 'Bad image' });
+      if (img.length > MAX_IMAGE_BYTES) return res.status(413).json({ error: 'Gambar terlalu besar (maks 500 KB)' });
+    }
+    const { rows: cnt } = await pool.query('SELECT COUNT(*)::INT AS c FROM auction_images WHERE auction_id = $1', [id]);
+    const remaining = MAX_IMAGES_PER_AUCTION - (cnt[0]?.c || 0);
+    if (remaining <= 0) return res.status(413).json({ error: `Maksimal ${MAX_IMAGES_PER_AUCTION} foto per lelang` });
+    const toInsert = incoming.slice(0, remaining);
+    // Bulk insert in one query
+    const values = [];
+    const params = [];
+    let p = 1;
+    const startSort = cnt[0]?.c || 0;
+    toInsert.forEach((img, i) => {
+      values.push(`($${p++}, $${p++}, $${p++})`);
+      params.push(id, img, startSort + i);
+    });
+    const { rows } = await pool.query(
+      `INSERT INTO auction_images (auction_id, image_url, sort_order)
+         VALUES ${values.join(', ')}
+         RETURNING id, image_url, sort_order, created_at`,
+      params
+    );
+    io.emit('auction-images-added', { auction_id: id, count: rows.length });
+    res.json({ added: rows.length, dropped: incoming.length - toInsert.length, images: rows });
+  } catch (err) {
+    console.error('POST images:', err.message);
+    res.status(500).json({ error: 'Gagal mengunggah' });
+  }
+});
+
+app.delete('/api/auctions/images/:imgId', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const imgId = +req.params.imgId;
+    const { rows } = await pool.query('DELETE FROM auction_images WHERE id = $1 RETURNING auction_id', [imgId]);
+    const auctionId = rows[0]?.auction_id;
+    if (auctionId) io.emit('auction-image-deleted', { auction_id: auctionId, image_id: imgId });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
   }
 });
 
@@ -597,6 +716,149 @@ app.delete('/api/auctions', requireAdmin, async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to clear' });
+  }
+});
+
+// ===== SCORE PREDICTIONS =====
+
+async function loadMatchWithStats(id) {
+  const { rows } = await pool.query(
+    `SELECT m.*, COUNT(e.id)::INT AS entry_count
+       FROM prediction_matches m
+       LEFT JOIN prediction_entries e ON e.match_id = m.id
+       WHERE m.id = $1
+       GROUP BY m.id`,
+    [id]
+  );
+  return rows[0] || null;
+}
+
+app.get('/api/predictions/matches', async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const { rows } = await pool.query(
+      `SELECT m.*, COUNT(e.id)::INT AS entry_count
+         FROM prediction_matches m
+         LEFT JOIN prediction_entries e ON e.match_id = m.id
+         GROUP BY m.id
+         ORDER BY m.created_at DESC
+         LIMIT 100`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/predictions/matches:', err.message);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.get('/api/predictions/matches/:id', async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const match = await loadMatchWithStats(id);
+    if (!match) return res.status(404).json({ error: 'Not found' });
+    const { rows: entries } = await pool.query(
+      `SELECT id, match_id, name, phone, predicted_home, predicted_away, created_at
+         FROM prediction_entries WHERE match_id = $1 ORDER BY created_at ASC`,
+      [id]
+    );
+    res.json({ match, entries });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.post('/api/predictions/matches', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const label = String(req.body.label || '').trim();
+    if (!label) return res.status(400).json({ error: 'Label wajib diisi' });
+    const { rows } = await pool.query(
+      `INSERT INTO prediction_matches (label) VALUES ($1) RETURNING *`,
+      [label]
+    );
+    const match = { ...rows[0], entry_count: 0 };
+    io.emit('prediction-match-created', match);
+    res.json(match);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const { label, status, final_home, final_away } = req.body;
+    const sets = [];
+    const params = [];
+    let i = 1;
+    if (label != null)        { sets.push(`label = $${i++}`);        params.push(String(label).trim()); }
+    if (status != null)       { sets.push(`status = $${i++}`);       params.push(String(status));       }
+    if (final_home != null)   { sets.push(`final_home = $${i++}`);   params.push(+final_home);          }
+    if (final_away != null)   { sets.push(`final_away = $${i++}`);   params.push(+final_away);          }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    params.push(id);
+    await pool.query(`UPDATE prediction_matches SET ${sets.join(', ')} WHERE id = $${i}`, params);
+    const match = await loadMatchWithStats(id);
+    io.emit('prediction-match-updated', match);
+    res.json(match);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    await pool.query('DELETE FROM prediction_matches WHERE id = $1', [id]);
+    io.emit('prediction-match-deleted', { id });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.post('/api/predictions/matches/:id/entries', async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const name = String(req.body.name || '').trim();
+    const phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
+    const ph = +req.body.predicted_home;
+    const pa = +req.body.predicted_away;
+    if (!name) return res.status(400).json({ error: 'Nama wajib diisi' });
+    if (!phone || phone.length < 4) return res.status(400).json({ error: 'Nomor HP tidak valid' });
+    if (!Number.isFinite(ph) || ph < 0 || ph > 99) return res.status(400).json({ error: 'Skor tidak valid' });
+    if (!Number.isFinite(pa) || pa < 0 || pa > 99) return res.status(400).json({ error: 'Skor tidak valid' });
+    const m = await loadMatchWithStats(id);
+    if (!m) return res.status(404).json({ error: 'Match tidak ditemukan' });
+    if (m.status !== 'open') return res.status(400).json({ error: 'Prediksi sudah ditutup' });
+    const { rows } = await pool.query(
+      `INSERT INTO prediction_entries (match_id, name, phone, predicted_home, predicted_away)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [id, name, phone, ph, pa]
+    );
+    const entry = rows[0];
+    io.emit('prediction-entry-added', entry);
+    res.json(entry);
+  } catch (err) {
+    console.error('POST prediction:', err.message);
+    res.status(500).json({ error: 'Gagal menyimpan' });
+  }
+});
+
+app.delete('/api/predictions/entries/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const { rows } = await pool.query('DELETE FROM prediction_entries WHERE id = $1 RETURNING match_id', [id]);
+    const matchId = rows[0]?.match_id;
+    io.emit('prediction-entry-deleted', { id, match_id: matchId });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
   }
 });
 
