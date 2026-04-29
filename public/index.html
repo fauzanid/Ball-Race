@@ -250,6 +250,40 @@ header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:
 .track-wrap{flex:1;padding:20px 24px 10px;display:flex;gap:16px;min-height:0}
 .track-wrap>*{min-width:0}
 .pitch-wrap{flex:1;min-width:0;position:relative;background:linear-gradient(180deg,#0a1f0f,#15411f);border:1px solid rgba(124,255,0,.2);border-radius:var(--r-lg);overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.4);min-height:340px}
+.pitch-wrap.viewer-mode #race-canvas,
+.pitch-wrap.viewer-mode .name-tags,
+.pitch-wrap.viewer-mode .cam-controls{display:none !important}
+.pitch-wrap.viewer-mode #broadcast-strip{display:flex !important}
+.broadcast-strip{position:absolute;inset:0;display:flex;flex-direction:column;padding:18px 16px;gap:10px;background:linear-gradient(180deg,rgba(10,16,30,.92),rgba(20,28,50,.94));backdrop-filter:blur(6px);overflow-y:auto}
+.broadcast-hd{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;font-family:var(--font-cond);letter-spacing:.1em;text-transform:uppercase}
+.broadcast-kicker{font-size:11px;font-weight:700;color:#ff4500}
+.broadcast-meta{font-size:11px;color:var(--ink-300);font-family:var(--font-mono)}
+.broadcast-rows{display:flex;flex-direction:column;gap:6px;flex:1;min-height:0}
+.broadcast-row{display:grid;grid-template-columns:28px 28px 1fr 60px;align-items:center;gap:8px;padding:8px 10px;background:color-mix(in srgb, var(--team) 10%, rgba(255,255,255,.04));border-left:3px solid var(--team);border-radius:6px;transition:transform .25s ease,background .25s ease}
+.broadcast-mid{display:flex;flex-direction:column;gap:4px;min-width:0}
+.broadcast-row.finished{background:color-mix(in srgb, var(--team) 18%, rgba(255,255,255,.06))}
+.broadcast-row.finished .broadcast-name::after{content:" 🏁";font-size:.85em}
+.broadcast-row.sprinting{box-shadow:0 0 14px color-mix(in srgb, var(--team) 50%, transparent)}
+.broadcast-row.tired{opacity:.78}
+.broadcast-rank{font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--ink-50);text-align:center}
+.broadcast-rank.r1{color:#ffd740}
+.broadcast-rank.r2{color:#cdd5e0}
+.broadcast-rank.r3{color:#cd8050}
+.broadcast-num{font-family:'Archivo Black',sans-serif;font-size:11px;color:#fff;background:var(--team);border-radius:4px;padding:2px 0;text-align:center}
+.broadcast-name{font-family:var(--font-cond);font-weight:700;font-size:14px;letter-spacing:.02em;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.broadcast-bar{position:relative;height:12px;background:rgba(0,0,0,.4);border-radius:6px;overflow:hidden}
+.broadcast-fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,color-mix(in srgb, var(--team) 70%, transparent),var(--team));border-radius:7px;transition:width .25s ease-out;box-shadow:0 0 12px color-mix(in srgb, var(--team) 60%, transparent)}
+.broadcast-row.sprinting .broadcast-fill{animation:broadcast-pulse 1s ease-in-out infinite}
+@keyframes broadcast-pulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
+.broadcast-pct{font-family:var(--font-mono);font-size:12px;color:var(--ink-50);text-align:right;font-variant-numeric:tabular-nums}
+.broadcast-row.finished .broadcast-pct::before{content:"⏱ ";color:#4cdfb6}
+@media(max-width:520px){
+  .broadcast-row{grid-template-columns:22px 22px 1fr 50px;gap:6px;padding:5px 6px}
+  .broadcast-name{font-size:12px}
+  .broadcast-bar{height:11px}
+  .broadcast-pct{font-size:11px}
+}
+body[data-theme="light"] .broadcast-strip{background:linear-gradient(180deg,rgba(245,245,250,.96),rgba(220,225,235,.96))}
 .name-tags{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
 .name-tag{position:absolute;left:0;top:0;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.62);border:1px solid rgba(255,255,255,.18);border-bottom:2px solid var(--tag-c, #ff4500);border-radius:5px;padding:2px 8px;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.55);transform:translate(-50%, -100%);will-change:transform,opacity}
 .name-tag::before{content:'';position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--tag-c, #ff4500)}
@@ -1005,6 +1039,16 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="pitch-wrap" id="pitch-wrap">
         <canvas id="race-canvas"></canvas>
         <div class="name-tags" id="name-tags"></div>
+        <!-- ESPN-style broadcast strip — shown to viewers in place of the
+             3D race canvas. Renders straight from the broadcast feed
+             (positions, phases, finished) so it's guaranteed in-sync. -->
+        <div class="broadcast-strip" id="broadcast-strip" style="display:none">
+          <div class="broadcast-hd">
+            <span class="broadcast-kicker">📺 SIARAN LANGSUNG</span>
+            <span class="broadcast-meta" id="broadcast-meta"></span>
+          </div>
+          <div class="broadcast-rows" id="broadcast-rows"></div>
+        </div>
         <div class="countdown-overlay" id="countdown-overlay" style="display:none"></div>
         <div class="cam-controls" id="cam-controls">
           <button class="cam-btn active" data-cam="drone" title="Drone">🛸</button>
@@ -2226,18 +2270,13 @@ function viewerLoop(ts){
     racers.forEach((r,i)=>{
       const prevPos = r.position;
       r.position = viewerCurPos[i];
-      // Derive stride animation from positional velocity
-      const vel = Math.max(0, (r.position - prevPos) / Math.max(dt, 0.001));
-      // vel is in units/sec. A full-speed run is roughly 1/duration per sec.
-      // Scale to a stride rate around 3-5 Hz at normal pace.
-      const strideRate = Math.min(6, vel * 40 + 0.6);
-      r.strideFrame = (r.strideFrame || 0) + strideRate * dt;
       // Phase + finished come from admin's authoritative state when available;
       // fall back to a velocity heuristic only if the admin's broadcast hasn't
       // included them yet (e.g. legacy server / reconnect race condition).
       if(viewerTargetPhases && viewerTargetPhases[i]){
         r.phase = viewerTargetPhases[i];
       } else {
+        const vel = Math.max(0, (r.position - prevPos) / Math.max(dt, 0.001));
         const avgVel = 1 / Math.max(settings.duration || 20, 5);
         if(vel > avgVel * 1.6) r.phase = 'sprinting';
         else if(vel < avgVel * 0.45 && r.position > 0.02 && !r.finished) r.phase = 'tired';
@@ -2248,13 +2287,65 @@ function viewerLoop(ts){
         r.finishTime = performance.now() - raceStartRealTime;
       }
     });
-    drawRace();
+    // Viewers see the broadcast strip (driven straight by admin's frame
+    // payload) instead of the 3D scene — guaranteed consistent and a lot
+    // lighter on phones. Replay mode keeps the 3D since it's authored.
+    renderBroadcastStrip();
     updateScoreboard();
   }
   if(viewerRacing && raceStartRealTime){
     updateRaceClock(performance.now() - raceStartRealTime);
   }
   if(viewerRacing) requestAnimationFrame(viewerLoop);
+}
+
+// Build the live broadcast strip from the current `racers` snapshot.
+// Idempotent — recreates the rows on every call so animations are driven
+// purely by the CSS transition on width.
+function renderBroadcastStrip(){
+  const rowsEl = $('broadcast-rows');
+  if(!rowsEl) return;
+  const sorted = racers.map((r, i) => ({ r, i })).sort((a, b) => {
+    if(a.r.finished && b.r.finished) return a.r.finishTime - b.r.finishTime;
+    if(a.r.finished) return -1;
+    if(b.r.finished) return 1;
+    return b.r.position - a.r.position;
+  });
+  rowsEl.innerHTML = sorted.map((o, idx) => {
+    const r = o.r;
+    const teamColor = TEAM_COLORS[r.colorIdx % TEAM_COLORS.length];
+    const pct = Math.max(0, Math.min(100, Math.round(r.position * 100)));
+    const display = r.finished ? formatTime(r.finishTime / 1000) : pct + '%';
+    const phaseClass = r.finished ? 'finished'
+      : r.phase === 'sprinting' ? 'sprinting'
+      : r.phase === 'tired' ? 'tired' : '';
+    const rankClass = idx === 0 ? 'r1' : idx === 1 ? 'r2' : idx === 2 ? 'r3' : '';
+    const num = String(o.i + 1).padStart(2, '0');
+    return `<div class="broadcast-row ${phaseClass}" style="--team:${teamColor}">
+      <span class="broadcast-rank ${rankClass}">${idx + 1}</span>
+      <span class="broadcast-num">${num}</span>
+      <div class="broadcast-mid">
+        <div class="broadcast-name">${escapeHtml(r.name)}</div>
+        <div class="broadcast-bar"><div class="broadcast-fill" style="width:${pct}%"></div></div>
+      </div>
+      <span class="broadcast-pct">${display}</span>
+    </div>`;
+  }).join('');
+  const meta = $('broadcast-meta');
+  if(meta){
+    const finishedCount = racers.filter(r => r.finished).length;
+    meta.textContent = `${racers.length} pemain · ${finishedCount} finis`;
+  }
+}
+
+// Toggle viewer-mode on the race screen so the canvas/cam-controls hide
+// and the broadcast strip takes over for live viewers. Replay mode and
+// admins keep the 3D renderer.
+function applyViewerRaceMode(){
+  const wrap = $('pitch-wrap');
+  if(!wrap) return;
+  const useStrip = role === 'viewer' && !replayMode;
+  wrap.classList.toggle('viewer-mode', useStrip);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2266,6 +2357,7 @@ function setRole(r){
   $('admin-badge').style.display = isAdmin ? '' : 'none';
   $('admin-btn').textContent = isAdmin ? '🔓' : '🔒';
   $('admin-btn').title = isAdmin ? 'Logout' : 'Admin Login';
+  if(typeof applyViewerRaceMode === 'function') applyViewerRaceMode();
   $('role-strip').classList.toggle('active', isAdmin);
   $('admin-setup').style.display = isAdmin ? '' : 'none';
   $('viewer-setup').style.display = isAdmin ? 'none' : '';
@@ -2727,6 +2819,7 @@ function stopLobbyAnim(){
 function enterRaceLobby(){
   exitReplay();
   showScreen($race); $tabBar.classList.add('hidden');
+  applyViewerRaceMode();
   $('kick-off-row').style.display = 'none';
   $('replay-bar').classList.remove('active');
   // If race-duration changed since the scene was built, the track length
@@ -5743,8 +5836,9 @@ function enterReplay(seekMs){
   if(!recording.length) return;
   stopConfetti(); showScreen($race); $tabBar.classList.add('hidden');
   $('kick-off-row').style.display = 'none';
-  resizeCanvas();
   replayMode = true; replayFrame = 0; replayPlaying = seekMs==null;
+  applyViewerRaceMode();
+  resizeCanvas();
   replaySpeed = 1; replayLastTime = 0; replayAccum = 0;
   // Precompute the moment each racer crosses the finish line so the
   // scoreboard can show real finish times during replay. Prefer the
@@ -5794,6 +5888,7 @@ function exitReplay(){
   replayMode = false; replayPlaying = false; cancelAnimationFrame(replayAnim);
   replayAnim = null; $('replay-bar').classList.remove('active');
   replayCurrentRaceId = null;
+  applyViewerRaceMode();
   updateReplayTopbar();
 }
 function applyFrame(idx){
