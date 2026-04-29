@@ -5,6 +5,7 @@ const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
 const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const multer = require('multer');
@@ -16,6 +17,26 @@ const app = express();
 // for the inline-HTML bundle and JSON API responses. Configured with the
 // default threshold (1 KB) so small replies skip compression overhead.
 app.use(compression());
+
+// Trust the first proxy header (Railway / Cloudflare) so rate-limit keys
+// off the real client IP instead of the load balancer.
+app.set('trust proxy', 1);
+
+// ===== Rate limiters =====
+// Tight limiter for admin login — 5 attempts/min/IP makes brute-forcing the
+// password infeasible. The default 401 still lets legitimate retries through.
+const loginLimiter = rateLimit({
+  windowMs: 60_000, max: 5,
+  standardHeaders: 'draft-7', legacyHeaders: false,
+  message: { error: 'Terlalu banyak percobaan login. Coba lagi 1 menit lagi.' },
+});
+// Public submit endpoints — generous for normal users, tight enough that
+// a single IP can't flood the DB.
+const submitLimiter = rateLimit({
+  windowMs: 60_000, max: 15,
+  standardHeaders: 'draft-7', legacyHeaders: false,
+  message: { error: 'Terlalu banyak request. Coba lagi sebentar lagi.' },
+});
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 
@@ -270,7 +291,32 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.post('/api/admin/login', (req, res) => {
+// Optional admin check — returns true if the request carries a valid admin
+// token, false otherwise. Used to decide whether to mask sensitive fields
+// in public-readable responses (e.g. predictor phone numbers).
+function isAdminReq(req) {
+  const token = req.headers['x-admin-token'] || '';
+  return validTokens.has(token);
+}
+
+// Server-side phone mask: 0812****5678. Keeps first 3 + last 3 digits so the
+// admin can still recognize repeat predictors but viewers can't scrape PII.
+function maskPhone(p) {
+  if (!p || typeof p !== 'string') return '';
+  if (p.length < 6) return p;
+  return p.slice(0, 3) + '****' + p.slice(-3);
+}
+
+// Whitelist for image URLs we'll accept from admin uploads. Blocks
+// `javascript:`, `vbscript:`, `file:` and anything else that would be
+// XSS-active when rendered as <img src=>. Strict to https + data:image/
+// since those are the only schemes our pipeline actually produces.
+function isValidImageUrl(s) {
+  if (typeof s !== 'string' || !s) return false;
+  return /^https:\/\/[^\s]/i.test(s) || /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);/i.test(s);
+}
+
+app.post('/api/admin/login', loginLimiter, (req, res) => {
   const { password } = req.body || {};
   if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
   const token = crypto.randomBytes(32).toString('hex');
@@ -511,6 +557,7 @@ app.post('/api/lucky-cards', requireAdmin, async (req, res) => {
     if (!label) return res.status(400).json({ error: 'Label required' });
     if (label.length > 120) return res.status(400).json({ error: 'Label too long' });
     if (image_url && image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+    if (image_url && !isValidImageUrl(image_url)) return res.status(400).json({ error: 'Invalid image URL' });
     const { rows } = await pool.query(
       `INSERT INTO lucky_cards (label, image_url) VALUES ($1, $2)
        RETURNING id, created_at, label, image_url`,
@@ -565,13 +612,14 @@ app.get('/api/lucky-draws', async (req, res) => {
 });
 
 // Public: anyone can draw
-app.post('/api/lucky-draws', async (req, res) => {
+app.post('/api/lucky-draws', submitLimiter, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const card_label = String(req.body?.card_label || '').trim();
     const image_url = String(req.body?.image_url || '').trim() || null;
     const drawn_by = String(req.body?.drawn_by || '').trim().slice(0, 60) || null;
     if (!card_label) return res.status(400).json({ error: 'Card required' });
+    if (image_url && !isValidImageUrl(image_url)) return res.status(400).json({ error: 'Invalid image URL' });
     const { rows } = await pool.query(
       `INSERT INTO lucky_draws (card_label, image_url, drawn_by)
        VALUES ($1, $2, $3) RETURNING id, created_at, card_label, image_url, drawn_by`,
@@ -670,10 +718,11 @@ app.post('/api/auctions/:id/images', requireAdmin, async (req, res) => {
     const id = +req.params.id;
     const incoming = Array.isArray(req.body?.images) ? req.body.images : [];
     if (!incoming.length) return res.status(400).json({ error: 'No images' });
-    // Cap individual image + total count
+    // Cap individual image + total count + validate URL scheme
     for (const img of incoming) {
       if (typeof img !== 'string' || !img) return res.status(400).json({ error: 'Bad image' });
       if (img.length > MAX_IMAGE_BYTES) return res.status(413).json({ error: 'Gambar terlalu besar (maks 500 KB)' });
+      if (!isValidImageUrl(img)) return res.status(400).json({ error: 'Invalid image URL' });
     }
     const { rows: cnt } = await pool.query('SELECT COUNT(*)::INT AS c FROM auction_images WHERE auction_id = $1', [id]);
     const remaining = MAX_IMAGES_PER_AUCTION - (cnt[0]?.c || 0);
@@ -727,6 +776,7 @@ app.post('/api/auctions', requireAdmin, async (req, res) => {
     const duration_seconds = Math.max(60, Math.min(7 * 24 * 3600, Number(req.body?.duration_seconds) || 3600));
     if (!title) return res.status(400).json({ error: 'Title required' });
     if (image_url && image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+    if (image_url && !isValidImageUrl(image_url)) return res.status(400).json({ error: 'Invalid image URL' });
     const ends_at = new Date(Date.now() + duration_seconds * 1000);
     const { rows } = await pool.query(
       `INSERT INTO auctions (title, description, image_url, starting_price, min_increment, ends_at)
@@ -765,11 +815,20 @@ app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
       fields.push(`description = $${i++}`);
       values.push(String(req.body.description || '').trim() || null);
     }
+    let oldImageUrl = null;
+    let newImageUrl = null;
     if (req.body?.image_url !== undefined) {
       const img = String(req.body.image_url || '').trim();
       if (img.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+      if (img && !isValidImageUrl(img)) return res.status(400).json({ error: 'Invalid image URL' });
+      // Capture the existing image so we can clean it from R2 once the
+      // new value is saved. Skipping the lookup if the field isn't being
+      // changed avoids an unnecessary query.
+      const cur = await pool.query('SELECT image_url FROM auctions WHERE id = $1', [id]);
+      oldImageUrl = cur.rows[0]?.image_url || null;
+      newImageUrl = img || null;
       fields.push(`image_url = $${i++}`);
-      values.push(img || null);
+      values.push(newImageUrl);
     }
     if (req.body?.starting_price !== undefined) {
       fields.push(`starting_price = $${i++}`);
@@ -791,6 +850,9 @@ app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
       values
     );
     if (!rows.length) return res.status(404).json({ error: 'Auction not found or closed' });
+    // Successfully updated — now clean up the orphaned R2 object if the
+    // image actually changed.
+    if (oldImageUrl && oldImageUrl !== newImageUrl) deleteR2Object(oldImageUrl);
     const row = rowToAuction(rows[0]);
     io.emit('auction-updated', row);
     res.json(row);
@@ -903,7 +965,10 @@ app.get('/api/predictions/matches/:id', async (req, res) => {
          FROM prediction_entries WHERE match_id = $1 ORDER BY created_at ASC`,
       [id]
     );
-    res.json({ match, entries });
+    // Public callers get a masked phone; admin sees the full number.
+    const admin = isAdminReq(req);
+    const safe = entries.map(e => admin ? e : { ...e, phone: maskPhone(e.phone) });
+    res.json({ match, entries: safe });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
   }
@@ -933,6 +998,9 @@ app.post('/api/predictions/matches', requireAdmin, async (req, res) => {
     if (prize_image && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
       return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
     }
+    if (prize_image && !isValidImageUrl(prize_image)) {
+      return res.status(400).json({ error: 'Invalid prize image URL' });
+    }
     const { rows } = await pool.query(
       `INSERT INTO prediction_matches (label, prize_label, prize_image, opens_at, closes_at) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [label, prize_label, prize_image, opens_at, closes_at]
@@ -953,6 +1021,9 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
     const { label, status, final_home, final_away, prize_label, prize_image, opens_at, closes_at } = req.body;
     if (prize_image && typeof prize_image === 'string' && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
       return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
+    }
+    if (prize_image && typeof prize_image === 'string' && prize_image && !isValidImageUrl(prize_image)) {
+      return res.status(400).json({ error: 'Invalid prize image URL' });
     }
     const sets = [];
     const params = [];
@@ -1006,7 +1077,7 @@ app.delete('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
   }
 });
 
-app.post('/api/predictions/matches/:id/entries', async (req, res) => {
+app.post('/api/predictions/matches/:id/entries', submitLimiter, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const id = +req.params.id;
