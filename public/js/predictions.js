@@ -272,13 +272,15 @@ function editMatchPrize(matchId){
     document.body.appendChild(_predictPrizeEditInput);
   }
   _predictPrizeEditInput.value = '';
-  _predictPrizeEditInput.onchange = () => {
+  _predictPrizeEditInput.onchange = async () => {
     const file = _predictPrizeEditInput.files?.[0];
     if(!file){ saveText(undefined); return; }
-    if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); return; }
-    const reader = new FileReader();
-    reader.onload = () => saveText(reader.result);
-    reader.readAsDataURL(file);
+    if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); return; }
+    toast('Mengunggah…');
+    try {
+      const [url] = await uploadImageFiles([file], 'predict');
+      saveText(url);
+    } catch(err){ toast(err.message || 'Upload gagal'); }
   };
   _predictPrizeEditInput.click();
 }
@@ -443,19 +445,29 @@ $('predict-label-input')?.addEventListener('keydown', e => {
   if(e.key === 'Enter') $('predict-create-btn').click();
 });
 
-// Prize image picker for the create form
-$('predict-prize-file-input')?.addEventListener('change', e => {
+// Prize image picker for the create form — uploads to R2 immediately
+$('predict-prize-file-input')?.addEventListener('change', async e => {
   const file = e.target.files[0];
   if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value = ''; return; }
+  if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
   const reader = new FileReader();
   reader.onload = () => {
-    _predictPendingPrize = reader.result;
-    $('predict-prize-preview-img').src = _predictPendingPrize;
-    $('predict-prize-preview-name').textContent = file.name;
+    $('predict-prize-preview-img').src = reader.result;
+    $('predict-prize-preview-name').textContent = file.name + ' (mengunggah…)';
     $('predict-prize-preview-row').style.display = '';
   };
   reader.readAsDataURL(file);
+  try {
+    const [url] = await uploadImageFiles([file], 'predict');
+    _predictPendingPrize = url;
+    $('predict-prize-preview-img').src = url;
+    $('predict-prize-preview-name').textContent = file.name;
+  } catch(err){
+    toast(err.message || 'Upload gagal');
+    _predictPendingPrize = '';
+    $('predict-prize-preview-row').style.display = 'none';
+    e.target.value = '';
+  }
 });
 $('predict-prize-clear')?.addEventListener('click', () => {
   _predictPendingPrize = '';

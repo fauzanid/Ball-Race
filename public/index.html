@@ -644,7 +644,7 @@ body[data-theme="light"] .auction-card-title{color:#1a1a16}
 body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
 body[data-theme="light"] .auction-card-price{color:#1a1a16}
 body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
-.tool-wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.tool-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 .tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
 .tool-title .accent{color:var(--accent)}
 
@@ -1705,6 +1705,27 @@ const nextId = () => 'r-'+(idCounter++);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800);}
 function showScreen(el){allScreens.forEach(s=>s.classList.remove('active'));el.classList.add('active');}
 
+// Shared image uploader. Sends one or more files to /api/upload (multipart),
+// server converts to WebP + uploads to R2, returns { results: [{ url, … }] }.
+// `folder` becomes the R2 key prefix (e.g. "lucky" → lucky/<ts>-<hash>.webp).
+async function uploadImageFiles(files, folder = 'uploads'){
+  if(!files || !files.length) return [];
+  const fd = new FormData();
+  for(const f of files) fd.append('files', f);
+  fd.append('folder', folder);
+  const r = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'x-admin-token': adminToken },
+    body: fd,
+  });
+  if(!r.ok){
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error || 'Upload gagal');
+  }
+  const data = await r.json();
+  return (data.results || []).map(r => r.url);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // BALL RENDERING — Canvas port of SVG skin system
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2512,7 +2533,11 @@ window.addEventListener('popstate', e => {
 });
 
 // Seed initial history entry so the very first back press has a state to pop to.
-// If the URL already targets a tool tab via hash, navigate there.
+// If the URL already targets a tool tab via hash, navigate there. The click
+// itself is deferred to window.load so the extracted feature scripts
+// (wheel.js / lucky.js / auction.js / predictions.js / shipments.js) have
+// finished executing — otherwise the tab's loader function is undefined at
+// click time and the screen renders empty.
 (function initHistory(){
   const hashTab = location.hash.slice(1);
   // Race always requires an explicit tile tap — never resume it from a URL hash
@@ -2522,8 +2547,12 @@ window.addEventListener('popstate', e => {
   }
   if(VALID_TABS.includes(hashTab) && hashTab !== 'home'){
     history.replaceState({tab: 'home'}, '', location.pathname + location.search);
-    const btn = document.querySelector(`#tab-bar .tab[data-tab="${hashTab}"]`);
-    if(btn) btn.click();
+    const navigateToTab = () => {
+      const btn = document.querySelector(`#tab-bar .tab[data-tab="${hashTab}"]`);
+      if(btn) btn.click();
+    };
+    if(document.readyState === 'complete') navigateToTab();
+    else window.addEventListener('load', navigateToTab, { once: true });
   } else {
     history.replaceState({tab: 'home'}, '', location.pathname + location.search + (location.hash || ''));
   }
@@ -3308,6 +3337,13 @@ function loadRunnerGLTF(){
       '\n  yOffset:', _runnerGLTF.yOffset.toFixed(3),
       '\n  measured:', _runnerGLTF._lastBox);
     console.log('Tip: tune live with:  tuneRunner(scale, yOffset)');
+    // If the 3D scene is already running (e.g. a replay started before the
+    // GLB finished downloading on a slow connection), the existing balls
+    // are procedural fallbacks. Swap them for the rigged model now so
+    // mobile viewers don't get stuck looking at stick figures.
+    if(typeof race3D !== 'undefined' && race3D.ready && race3D.ballMeshes && race3D.ballMeshes.length){
+      try { rebuildRacerBalls3D(); } catch(e){ console.warn('post-load rebuild failed', e); }
+    }
   };
 
   // Try common case variants for Mixamo download names so it works on

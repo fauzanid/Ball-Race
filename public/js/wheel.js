@@ -534,33 +534,33 @@ function renderWheelImageGrid(){
 }
 
 // Image-mode upload — accepts multiple files, each becomes a pure-image entry.
-$('wheel-img-only-input')?.addEventListener('change', e => {
+// Files go through /api/upload first (server WebP-converts to R2), then the
+// returned URLs become wheel entries.
+$('wheel-img-only-input')?.addEventListener('change', async e => {
   if(role !== 'admin') return;
   const files = Array.from(e.target.files || []);
   if(!files.length) return;
-  let added = 0;
-  let pending = files.length;
-  files.forEach(file => {
-    if(file.size > 1024 * 1024){ toast(`${file.name}: terlalu besar (maks 1MB)`); pending--; if(!pending) finalize(); return; }
-    const reader = new FileReader();
-    reader.onload = () => {
-      // Image-only entry: empty label so the wheel renders the image
-      // prominently without text overlap.
-      wheelNames.push({ label: '', image: reader.result });
-      added++;
-      pending--;
-      if(!pending) finalize();
-    };
-    reader.onerror = () => { pending--; if(!pending) finalize(); };
-    reader.readAsDataURL(file);
-  });
-  function finalize(){
-    e.target.value = '';
-    if(added){
-      resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
-      toast(`${added} gambar ditambah`);
-    }
+  e.target.value = '';
+  const valid = files.filter(f => f.size <= 10 * 1024 * 1024);
+  const dropped = files.length - valid.length;
+  if(!valid.length){
+    toast(dropped ? `${dropped} file terlalu besar (maks 10MB)` : 'Tidak ada file');
+    return;
   }
+  toast(`Mengunggah ${valid.length} gambar…`);
+  let urls = [];
+  try {
+    // Chunk uploads (6 at a time) to keep request size + time bounded
+    const CHUNK = 6;
+    for(let i = 0; i < valid.length; i += CHUNK){
+      const got = await uploadImageFiles(valid.slice(i, i + CHUNK), 'wheel');
+      urls = urls.concat(got);
+    }
+  } catch(err){ toast(err.message || 'Upload gagal'); return; }
+  // Image-only entries: empty label so the wheel renders the image prominently
+  for(const url of urls) wheelNames.push({ label: '', image: url });
+  resetWheelState(); renderWheelChips(); renderWheelImageGrid(); drawWheel();
+  toast(`✓ ${urls.length} gambar ditambah${dropped ? ` (${dropped} terlalu besar)` : ''}`);
 });
 $('wheel-image-shuffle')?.addEventListener('click', () => {
   if(role!=='admin' || wheelSpinning) return;

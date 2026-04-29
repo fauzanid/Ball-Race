@@ -169,19 +169,30 @@ async function openLuckyBox(){
   }, 1700);
 }
 
-$('lucky-card-file-input')?.addEventListener('change', e => {
+$('lucky-card-file-input')?.addEventListener('change', async e => {
   const file = e.target.files[0];
   if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
+  if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value=''; return; }
+  // Show local preview immediately, then upload in the background
   const reader = new FileReader();
   reader.onload = () => {
-    pendingLuckyImage = reader.result;
-    $('lucky-form-preview-img').src = pendingLuckyImage;
-    $('lucky-form-preview-name').textContent = file.name;
+    $('lucky-form-preview-img').src = reader.result;
+    $('lucky-form-preview-name').textContent = file.name + ' (mengunggah…)';
     $('lucky-form-preview').style.display = '';
     $('lucky-card-url-input').value = '';
   };
   reader.readAsDataURL(file);
+  try {
+    const [url] = await uploadImageFiles([file], 'lucky');
+    pendingLuckyImage = url;
+    $('lucky-form-preview-img').src = url;
+    $('lucky-form-preview-name').textContent = file.name;
+  } catch(err){
+    toast(err.message || 'Upload gagal');
+    pendingLuckyImage = '';
+    $('lucky-form-preview').style.display = 'none';
+    e.target.value = '';
+  }
 });
 $('lucky-form-clear-img')?.addEventListener('click', () => {
   pendingLuckyImage = '';

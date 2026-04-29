@@ -3,10 +3,74 @@ const http = require('http');
 const crypto = require('crypto');
 const { Server } = require('socket.io');
 const { Pool } = require('pg');
+const multer = require('multer');
+const sharp = require('sharp');
+const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
+
+// ===== R2 (Cloudflare object storage) =====
+// Set these in Railway env vars:
+//   R2_ENDPOINT          e.g. https://<accountid>.r2.cloudflarestorage.com
+//   R2_ACCESS_KEY_ID
+//   R2_SECRET_ACCESS_KEY
+//   R2_BUCKET            e.g. ball-race
+//   R2_PUBLIC_URL        e.g. https://media.karboluxe.com  (no trailing slash)
+const R2_ENDPOINT  = process.env.R2_ENDPOINT  || '';
+const R2_BUCKET    = process.env.R2_BUCKET    || '';
+const R2_PUBLIC    = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+const r2Configured = !!(R2_ENDPOINT && R2_BUCKET && R2_PUBLIC && process.env.R2_ACCESS_KEY_ID && process.env.R2_SECRET_ACCESS_KEY);
+const r2 = r2Configured ? new S3Client({
+  region: 'auto',
+  endpoint: R2_ENDPOINT,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+  },
+}) : null;
+if (!r2Configured) console.log('R2 not configured — uploads will fall back to base64.');
+
+// ===== Image upload pipeline =====
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10 MB raw — sharp compresses on the way in
+    files: 25,
+  },
+});
+
+async function processImageToWebp(buffer) {
+  // EXIF auto-rotate, fit-1600, strip metadata, WebP q80. Output is
+  // typically 200-500 KB regardless of input size.
+  return sharp(buffer)
+    .rotate()
+    .resize({ width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+}
+
+async function uploadToR2(key, buffer, contentType = 'image/webp') {
+  await r2.send(new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    Body: buffer,
+    ContentType: contentType,
+    CacheControl: 'public, max-age=31536000, immutable',
+  }));
+  return `${R2_PUBLIC}/${key}`;
+}
+
+async function deleteR2Object(url) {
+  if (!r2 || !url || !url.startsWith(R2_PUBLIC + '/')) return;
+  const key = url.slice(R2_PUBLIC.length + 1);
+  try {
+    await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+  } catch (err) {
+    console.warn('R2 delete failed', key, err.message);
+  }
+}
 
 // 10 MB cap so multi-image batches (~12 photos at 500 KB each) fit in
 // a single POST /api/auctions/:id/images request.
@@ -200,6 +264,30 @@ app.post('/api/admin/logout', (req, res) => {
 app.post('/api/admin/verify', (req, res) => {
   const token = req.headers['x-admin-token'] || '';
   res.json({ valid: validTokens.has(token) });
+});
+
+// ===== IMAGE UPLOAD =====
+// Accepts one or more files under field name "files" (multipart/form-data).
+// Optional `folder` form field controls the R2 key prefix (default: "uploads").
+// Returns { results: [{ url, bytes, width, height }] }.
+app.post('/api/upload', requireAdmin, upload.array('files', 25), async (req, res) => {
+  if (!r2) return res.status(503).json({ error: 'R2 belum dikonfigurasi di server' });
+  if (!req.files || !req.files.length) return res.status(400).json({ error: 'No files' });
+  const folder = String(req.body.folder || 'uploads').replace(/[^a-z0-9_\-/]/gi, '');
+  try {
+    const results = await Promise.all(req.files.map(async (file) => {
+      const webp = await processImageToWebp(file.buffer);
+      const meta = await sharp(webp).metadata();
+      const hash = crypto.randomBytes(8).toString('hex');
+      const key = `${folder}/${Date.now()}-${hash}.webp`;
+      const url = await uploadToR2(key, webp, 'image/webp');
+      return { url, bytes: webp.length, width: meta.width, height: meta.height };
+    }));
+    res.json({ results });
+  } catch (err) {
+    console.error('upload:', err.message);
+    res.status(500).json({ error: 'Gagal mengunggah' });
+  }
 });
 
 // ===== RACES API =====
@@ -416,7 +504,8 @@ app.post('/api/lucky-cards', requireAdmin, async (req, res) => {
 app.delete('/api/lucky-cards/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
-    await pool.query('DELETE FROM lucky_cards WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query('DELETE FROM lucky_cards WHERE id = $1 RETURNING image_url', [req.params.id]);
+    if (rows[0]?.image_url) deleteR2Object(rows[0].image_url);
     io.emit('lucky-cards-updated');
     res.json({ ok: true });
   } catch (err) {
@@ -427,7 +516,8 @@ app.delete('/api/lucky-cards/:id', requireAdmin, async (req, res) => {
 app.delete('/api/lucky-cards', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
-    await pool.query('DELETE FROM lucky_cards');
+    const { rows } = await pool.query('DELETE FROM lucky_cards RETURNING image_url');
+    rows.forEach(r => { if (r.image_url) deleteR2Object(r.image_url); });
     io.emit('lucky-cards-updated');
     res.json({ ok: true });
   } catch (err) {
@@ -593,8 +683,9 @@ app.delete('/api/auctions/images/:imgId', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const imgId = +req.params.imgId;
-    const { rows } = await pool.query('DELETE FROM auction_images WHERE id = $1 RETURNING auction_id', [imgId]);
+    const { rows } = await pool.query('DELETE FROM auction_images WHERE id = $1 RETURNING auction_id, image_url', [imgId]);
     const auctionId = rows[0]?.auction_id;
+    if (rows[0]?.image_url) deleteR2Object(rows[0].image_url);
     if (auctionId) io.emit('auction-image-deleted', { auction_id: auctionId, image_id: imgId });
     res.json({ ok: true });
   } catch (err) {
@@ -706,7 +797,12 @@ app.delete('/api/auctions/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const id = parseInt(req.params.id);
-    await pool.query('DELETE FROM auctions WHERE id = $1', [id]);
+    // Collect every image URL (primary + gallery) before the cascade fires
+    const main = await pool.query('SELECT image_url FROM auctions WHERE id = $1', [id]);
+    const gal = await pool.query('SELECT image_url FROM auction_images WHERE auction_id = $1', [id]);
+    await pool.query('DELETE FROM auctions WHERE id = $1', [id]); // ON DELETE CASCADE handles auction_images
+    if (main.rows[0]?.image_url) deleteR2Object(main.rows[0].image_url);
+    gal.rows.forEach(r => { if (r.image_url) deleteR2Object(r.image_url); });
     io.emit('auction-deleted', { id });
     res.json({ ok: true });
   } catch (err) {
@@ -718,11 +814,22 @@ app.delete('/api/auctions', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const scope = req.query.scope || 'history';
+    // Snapshot URLs before delete so we can clean R2
+    const targetSql = scope === 'all'
+      ? 'SELECT image_url FROM auctions'
+      : 'SELECT image_url FROM auctions WHERE closed = TRUE';
+    const galSql = scope === 'all'
+      ? 'SELECT image_url FROM auction_images'
+      : 'SELECT ai.image_url FROM auction_images ai JOIN auctions a ON a.id = ai.auction_id WHERE a.closed = TRUE';
+    const main = await pool.query(targetSql);
+    const gal = await pool.query(galSql);
     if (scope === 'all') {
       await pool.query('DELETE FROM auctions');
     } else {
       await pool.query('DELETE FROM auctions WHERE closed = TRUE');
     }
+    main.rows.forEach(r => { if (r.image_url) deleteR2Object(r.image_url); });
+    gal.rows.forEach(r => { if (r.image_url) deleteR2Object(r.image_url); });
     io.emit('auctions-cleared', { scope });
     res.json({ ok: true });
   } catch (err) {
@@ -832,7 +939,12 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
     if (final_home != null)   { sets.push(`final_home = $${i++}`);   params.push(+final_home);          }
     if (final_away != null)   { sets.push(`final_away = $${i++}`);   params.push(+final_away);          }
     if (prize_label != null)  { sets.push(`prize_label = $${i++}`);  params.push(String(prize_label).trim() || null); }
+    let oldPrizeImage = null;
     if (prize_image !== undefined) {
+      // Look up current prize_image so we can clean it from R2 once the
+      // new value is saved (only if this is actually a change).
+      const cur = await pool.query('SELECT prize_image FROM prediction_matches WHERE id = $1', [id]);
+      oldPrizeImage = cur.rows[0]?.prize_image || null;
       sets.push(`prize_image = $${i++}`);
       params.push(prize_image ? String(prize_image) : null);
     }
@@ -847,6 +959,8 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     params.push(id);
     await pool.query(`UPDATE prediction_matches SET ${sets.join(', ')} WHERE id = $${i}`, params);
+    // Clean up the previous prize image from R2 once the new one is saved
+    if (oldPrizeImage && oldPrizeImage !== (prize_image || null)) deleteR2Object(oldPrizeImage);
     const match = await loadMatchWithStats(id);
     io.emit('prediction-match-updated', match);
     res.json(match);
@@ -860,7 +974,8 @@ app.delete('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const id = +req.params.id;
-    await pool.query('DELETE FROM prediction_matches WHERE id = $1', [id]);
+    const { rows } = await pool.query('DELETE FROM prediction_matches WHERE id = $1 RETURNING prize_image', [id]);
+    if (rows[0]?.prize_image) deleteR2Object(rows[0].prize_image);
     io.emit('prediction-match-deleted', { id });
     res.json({ ok: true });
   } catch (err) {

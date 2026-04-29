@@ -161,51 +161,48 @@ function triggerAddPhotos(auctionId){
   _auctionPhotoInput.click();
 }
 
-const MAX_BATCH_BYTES = 7_500_000; // ~7.5 MB JSON body — fits comfortably in 10 MB express limit
+// Upload N photos for one auction. Files go through /api/upload first
+// (server converts to WebP + stores in R2, returns URLs), then the URLs
+// are POSTed to /api/auctions/:id/images in batches of 20.
 async function uploadAuctionPhotos(auctionId, files){
-  // Convert files to data-URLs, batched so the JSON body stays under the express limit.
-  let processed = 0, dropped = 0;
-  let batch = [], batchBytes = 0;
-  const total = files.length;
+  const valid = files.filter(f => f.size <= 10 * 1024 * 1024);
+  const dropped = files.length - valid.length;
+  const total = valid.length;
+  if(!total){
+    toast(dropped ? `${dropped} file terlalu besar (maks 10MB)` : 'Tidak ada foto');
+    return;
+  }
   toast(`Mengunggah ${total} foto…`);
-  const flush = async () => {
-    if(!batch.length) return;
+  // Upload to R2 in chunks of 6 to keep request size small + parallelism reasonable
+  const CHUNK = 6;
+  let urls = [];
+  for(let i = 0; i < valid.length; i += CHUNK){
+    const chunk = valid.slice(i, i + CHUNK);
+    try {
+      const got = await uploadImageFiles(chunk, `auctions/${auctionId}`);
+      urls = urls.concat(got);
+    } catch(err){
+      toast(err.message || 'Upload gagal'); return;
+    }
+  }
+  // Now register the URLs against the auction in batches
+  let processed = 0;
+  for(let i = 0; i < urls.length; i += 20){
+    const batch = urls.slice(i, i + 20);
     try {
       const r = await fetch(`/api/auctions/${auctionId}/images`, {
         method: 'POST',
         headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
         body: JSON.stringify({ images: batch })
       });
-      if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal mengunggah'); return false; }
+      if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
       const data = await r.json();
       processed += data.added || 0;
-      dropped += data.dropped || 0;
-      return true;
-    } catch { toast('Gagal mengunggah'); return false; }
-  };
-  for(const file of files){
-    if(file.size > 500_000){ dropped++; continue; }
-    const dataUrl = await new Promise(res => {
-      const reader = new FileReader();
-      reader.onload = () => res(reader.result);
-      reader.onerror = () => res(null);
-      reader.readAsDataURL(file);
-    });
-    if(!dataUrl) { dropped++; continue; }
-    if(batchBytes + dataUrl.length > MAX_BATCH_BYTES && batch.length){
-      const ok = await flush();
-      if(!ok) return;
-      batch = []; batchBytes = 0;
-    }
-    batch.push(dataUrl);
-    batchBytes += dataUrl.length;
+    } catch { toast('Gagal menyimpan'); return; }
   }
-  await flush();
-  toast(`✓ ${processed} foto diunggah${dropped ? ` (${dropped} terlalu besar / gagal)` : ''}`);
-  // Update local state so the count refreshes on next render
+  toast(`✓ ${processed} foto diunggah${dropped ? ` (${dropped} terlalu besar)` : ''}`);
   const a = auctionsActive.find(x => x.id === auctionId) || auctionsHistory.find(x => x.id === auctionId);
   if(a) a.image_count = (a.image_count || 0) + processed;
-  // Refresh open gallery if any
   if(_openGalleries.has(auctionId)){
     _openGalleries.delete(auctionId);
     await toggleAuctionGallery(auctionId);
@@ -422,19 +419,30 @@ $('auction-toggle-form-btn')?.addEventListener('click', () => {
 });
 $('auction-create-btn')?.addEventListener('click', createAuction);
 $('auction-clear-history-btn')?.addEventListener('click', clearAuctionHistory);
-$('auction-image-file-input')?.addEventListener('change', e => {
+$('auction-image-file-input')?.addEventListener('change', async e => {
   const file = e.target.files[0];
   if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
+  if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value=''; return; }
+  // Local preview while uploading to R2
   const reader = new FileReader();
   reader.onload = () => {
-    pendingAuctionImage = reader.result;
-    $('auction-form-preview-img').src = pendingAuctionImage;
-    $('auction-form-preview-name').textContent = file.name;
+    $('auction-form-preview-img').src = reader.result;
+    $('auction-form-preview-name').textContent = file.name + ' (mengunggah…)';
     $('auction-form-preview').style.display = '';
     $('auction-image-url-input').value = '';
   };
   reader.readAsDataURL(file);
+  try {
+    const [url] = await uploadImageFiles([file], 'auctions');
+    pendingAuctionImage = url;
+    $('auction-form-preview-img').src = url;
+    $('auction-form-preview-name').textContent = file.name;
+  } catch(err){
+    toast(err.message || 'Upload gagal');
+    pendingAuctionImage = '';
+    $('auction-form-preview').style.display = 'none';
+    e.target.value = '';
+  }
 });
 $('auction-form-clear-img')?.addEventListener('click', () => {
   pendingAuctionImage = '';
