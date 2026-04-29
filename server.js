@@ -1,6 +1,10 @@
+// Load .env for local dev (Railway sets env vars natively, so this is a no-op
+// in production unless a .env file is checked in — which it isn't, see .gitignore).
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const crypto = require('crypto');
+const compression = require('compression');
 const { Server } = require('socket.io');
 const { Pool } = require('pg');
 const multer = require('multer');
@@ -8,6 +12,10 @@ const sharp = require('sharp');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
 const app = express();
+// Gzip/deflate every text response — typically 70-80% smaller on the wire
+// for the inline-HTML bundle and JSON API responses. Configured with the
+// default threshold (1 KB) so small replies skip compression overhead.
+app.use(compression());
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*' } });
 

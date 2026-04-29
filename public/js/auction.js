@@ -29,6 +29,14 @@ function fmtCountdown(ms){
 }
 
 async function loadAuctions(){
+  // Skeleton placeholders during the initial fetch so the screen doesn't
+  // pop from "empty" → real data.
+  if(!auctionsActive.length && !auctionsHistory.length){
+    const skeleton = '<div class="skeleton-list">' +
+      '<div class="skeleton-row tall"></div>'.repeat(2) + '</div>';
+    const a = $('auction-active-list'); if(a) a.innerHTML = skeleton;
+    const h = $('auction-history-list'); if(h) h.innerHTML = skeleton;
+  }
   try {
     const r = await fetch('/api/auctions');
     if(!r.ok) throw 0;

@@ -46,10 +46,19 @@ Built with Node.js, Express, and Socket.IO.
 git clone https://github.com/fauzanid/Ball-Race.git
 cd Ball-Race
 npm install
+cp .env.example .env             # then edit ADMIN_PASSWORD if you like
+docker run -d --name ballrace-pg -p 5433:5432 \
+  -e POSTGRES_PASSWORD=dev \
+  -v ballrace_pg_data:/var/lib/postgresql/data \
+  postgres:16                    # one-time, persistent across restarts
 npm start
 ```
 
-Open `http://localhost:3000` in your browser.
+Open `http://localhost:3001`. The server boots with `Database ready` once Postgres is up; without the container the server still runs but DB-backed tabs (auctions, lucky cards, predictions, history, shipments) will return 503.
+
+Subsequent runs: `docker start ballrace-pg && npm start` — the container persists data via the named volume.
+
+To stop the local DB: `docker stop ballrace-pg` (data stays on the volume).
 
 ### Deploy to Railway
 

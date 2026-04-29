@@ -12,11 +12,15 @@ let luckyOpening = false;
 let pendingLuckyImage = '';
 
 async function loadLuckyCards(){
+  const el = $('lucky-card-list');
+  if(el && !luckyCards.length) el.innerHTML = '<div class="skeleton-list"><div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div></div>';
   try { const r = await fetch('/api/lucky-cards'); luckyCards = r.ok ? await r.json() : []; }
   catch { luckyCards = []; }
   renderLuckyCards();
 }
 async function loadLuckyDraws(){
+  const el = $('lucky-draws-list');
+  if(el && !luckyDraws.length) el.innerHTML = '<div class="skeleton-list"><div class="skeleton-row"></div><div class="skeleton-row"></div></div>';
   try { const r = await fetch('/api/lucky-draws?limit=30'); luckyDraws = r.ok ? await r.json() : []; }
   catch { luckyDraws = []; }
   renderLuckyDraws();

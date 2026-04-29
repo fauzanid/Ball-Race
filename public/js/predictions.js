@@ -15,18 +15,30 @@ let predictLastPhone = '';
 let _predictPendingPrize = '';
 
 async function loadPredictMatches(){
+  // Skeleton placeholders so the screen doesn't flash empty during the fetch.
+  const list = $('predict-list');
+  if(list && !predictMatches.length){
+    list.innerHTML = '<div class="skeleton-list">' +
+      '<div class="skeleton-row tall"></div>'.repeat(3) + '</div>';
+  }
   try {
     const r = await fetch('/api/predictions/matches');
     predictMatches = r.ok ? await r.json() : [];
   } catch { predictMatches = []; }
   renderPredictList();
-  // Pre-load entries for any open match so the "already taken" hint
-  // is populated before users start typing.
-  predictMatches
-    .filter(m => m.status === 'open' && (m.entry_count || 0) > 0 && !predictMatchDetails.has(m.id))
-    .forEach(m => {
-      loadPredictMatchDetail(m.id).then(() => renderPredictList());
-    });
+  // Pre-load entries so the entries section can render in its expanded state:
+  //  - open matches  → so the "already taken" hint shows before users type
+  //  - closed/finished matches → so viewers see who predicted what without
+  //    having to click anything (the moment people care most)
+  const needsDetail = predictMatches.filter(m =>
+    !predictMatchDetails.has(m.id) && (
+      (m.status === 'open' && (m.entry_count || 0) > 0) ||
+      m.status === 'closed' || m.status === 'finished'
+    )
+  );
+  if(needsDetail.length){
+    Promise.all(needsDetail.map(m => loadPredictMatchDetail(m.id))).then(() => renderPredictList());
+  }
 }
 
 async function loadPredictMatchDetail(id){
@@ -39,11 +51,22 @@ async function loadPredictMatchDetail(id){
   } catch { return null; }
 }
 
+// Split a "Team A vs Team B" label into its two halves so the card can show
+// each side above its own score input. Falls back to ['Tim A', 'Tim B'] when
+// the label doesn't match the expected pattern so the layout still works.
+function splitMatchup(label){
+  if(!label) return null;
+  const m = label.match(/^(.{1,80}?)\s+(?:vs|VS|Vs|v\.?|×|x)\s+(.{1,80})$/);
+  if(!m) return null;
+  return { home: m[1].trim(), away: m[2].trim() };
+}
+
 function predictCardHtml(m, entries, isAdmin){
   const status = m.status || 'open';
   const statusLabel = status === 'finished' ? 'Selesai' : status === 'closed' ? 'Ditutup' : 'Terbuka';
-  const final = (m.final_home != null && m.final_away != null)
-    ? `<div class="predict-final">${m.final_home} – ${m.final_away}</div>` : '';
+  const matchup = splitMatchup(m.label);
+  const homeTeam = matchup ? matchup.home : 'Home';
+  const awayTeam = matchup ? matchup.away : 'Away';
 
   // Prize banner — visible to everyone so users know what they're playing for
   let prize = '';
@@ -88,87 +111,110 @@ function predictCardHtml(m, entries, isAdmin){
     windowInfo = `<div class="predict-window-info">🔒 Ditutup pada <b>${formatPredictTime(closesAt)}</b></div>`;
   }
 
+  // Final-score banner for finished matches — big and gold
+  const final = (m.final_home != null && m.final_away != null)
+    ? `<div class="predict-final-card">
+        <div class="predict-final-team home">${escapeHtml(homeTeam)}</div>
+        <div class="predict-final-score">
+          <span>${m.final_home}</span><span class="predict-final-dash">–</span><span>${m.final_away}</span>
+        </div>
+        <div class="predict-final-team away">${escapeHtml(awayTeam)}</div>
+        <div class="predict-final-kicker">SKOR AKHIR</div>
+      </div>` : '';
+
   let form = '';
   if(inWindow){
     // Show which scores are already claimed so users pick a unique one
     const taken = (entries || []).map(e => `${e.predicted_home}-${e.predicted_away}`);
     const takenHint = taken.length
-      ? `<div class="predict-taken col-span-2">Skor sudah dipilih: ${taken.map(s => `<span>${escapeHtml(s)}</span>`).join(' ')}</div>`
+      ? `<div class="predict-taken">Skor sudah dipilih: ${taken.map(s => `<span>${escapeHtml(s)}</span>`).join(' ')}</div>`
       : '';
     form = `<div class="predict-form" data-form="${m.id}">
-      <input class="col-span-2" data-f="name" placeholder="Nama Anda" maxlength="80">
-      <input class="col-span-2" data-f="phone" placeholder="Nomor HP" inputmode="tel" maxlength="20" value="${escapeHtml(predictLastPhone)}">
-      <div class="col-span-2 predict-score-row">
-        <input data-f="home" type="number" min="0" max="99" placeholder="0">
-        <span class="predict-score-sep">–</span>
-        <input data-f="away" type="number" min="0" max="99" placeholder="0">
+      <div class="predict-matchup">
+        <div class="predict-matchup-side">
+          <div class="predict-matchup-team">${escapeHtml(homeTeam)}</div>
+          <input data-f="home" type="number" min="0" max="99" placeholder="0" inputmode="numeric">
+        </div>
+        <div class="predict-matchup-vs">VS</div>
+        <div class="predict-matchup-side">
+          <div class="predict-matchup-team">${escapeHtml(awayTeam)}</div>
+          <input data-f="away" type="number" min="0" max="99" placeholder="0" inputmode="numeric">
+        </div>
       </div>
       ${takenHint}
-      <button class="btn btn-primary btn-sm col-span-2" data-act="submit" data-id="${m.id}">⚡ Kirim Prediksi</button>
+      <div class="predict-id-row">
+        <label class="predict-id-field"><span>👤</span><input data-f="name" placeholder="Nama" maxlength="80"></label>
+        <label class="predict-id-field"><span>📱</span><input data-f="phone" placeholder="Nomor HP" inputmode="tel" maxlength="20" value="${escapeHtml(predictLastPhone)}"></label>
+      </div>
+      <button class="btn btn-primary predict-submit-btn" data-act="submit" data-id="${m.id}">⚡ Kirim Prediksi</button>
     </div>`;
   } else if(beforeOpen){
-    form = `<div class="empty-msg">Tunggu sebentar — submisi belum dibuka.</div>`;
+    form = `<div class="predict-form-locked">⏳ Tunggu sebentar — submisi belum dibuka.</div>`;
   } else if(afterClose){
-    form = `<div class="empty-msg">Submisi sudah ditutup. Tunggu skor akhir.</div>`;
+    form = `<div class="predict-form-locked">🔒 Submisi sudah ditutup. Tunggu skor akhir.</div>`;
   }
 
+  // Entries section — collapsible, with header chevron and count badge
+  const entryCount = entries ? entries.length : (m.entry_count || 0);
+  const isOpen = !!entries; // entries cache means user opened it
   let entriesHtml = '';
-  if(entries && entries.length){
-    const isFinished = status === 'finished';
-    const fh = m.final_home, fa = m.final_away;
-    // Highlight exact-score predictions on finished matches
-    const sorted = entries.slice().sort((a,b) => {
-      if(isFinished){
-        const aExact = a.predicted_home === fh && a.predicted_away === fa ? 0 : 1;
-        const bExact = b.predicted_home === fh && b.predicted_away === fa ? 0 : 1;
-        if(aExact !== bExact) return aExact - bExact;
-      }
-      return new Date(a.created_at) - new Date(b.created_at);
-    });
-    entriesHtml = `<div class="predict-entries">
-      <div class="predict-entries-hd">${entries.length} prediksi${isFinished ? ' (yang tepat di atas)' : ''}</div>
-      ${sorted.map(e => {
+  if(entryCount > 0 || status === 'finished'){
+    let body = '';
+    if(entries){
+      const isFinished = status === 'finished';
+      const fh = m.final_home, fa = m.final_away;
+      const sorted = entries.slice().sort((a,b) => {
+        if(isFinished){
+          const aExact = a.predicted_home === fh && a.predicted_away === fa ? 0 : 1;
+          const bExact = b.predicted_home === fh && b.predicted_away === fa ? 0 : 1;
+          if(aExact !== bExact) return aExact - bExact;
+        }
+        return new Date(a.created_at) - new Date(b.created_at);
+      });
+      body = sorted.map(e => {
         const exact = isFinished && e.predicted_home === fh && e.predicted_away === fa;
         const adminDel = isAdmin ? `<button class="predict-entry-del" data-act="del-entry" data-id="${e.id}" title="Hapus">×</button>` : '';
         return `<div class="predict-entry${exact ? ' exact' : ''}">
-          ${exact ? '🏆 ' : ''}<span class="predict-entry-name">${escapeHtml(e.name)}</span>
+          ${exact ? '<span class="predict-entry-trophy">🏆</span>' : '<span class="predict-entry-trophy"></span>'}
+          <span class="predict-entry-name">${escapeHtml(e.name)}</span>
           <span class="predict-entry-score">${e.predicted_home} – ${e.predicted_away}</span>
           <span class="predict-entry-phone">${escapeHtml(maskPhone(e.phone))}</span>
           ${adminDel}
         </div>`;
-      }).join('')}
+      }).join('');
+    }
+    entriesHtml = `<div class="predict-entries${isOpen ? ' open' : ''}">
+      <button class="predict-entries-toggle" data-act="show-entries" data-id="${m.id}">
+        <span class="predict-entries-count">${entryCount}</span>
+        <span class="predict-entries-label">${status === 'finished' ? 'prediksi (pemenang di atas)' : 'prediksi'}</span>
+        <span class="predict-entries-chev">${isOpen ? '▾' : '▸'}</span>
+      </button>
+      ${entries ? `<div class="predict-entries-body">${body}</div>` : ''}
     </div>`;
-  } else {
-    entriesHtml = `<div class="predict-entries"><div class="predict-entries-hd">${m.entry_count || 0} prediksi</div></div>`;
   }
 
+  // Admin row — the only admin-visible block, separated by a divider so it
+  // doesn't crowd the user-facing parts of the card.
   let adminActions = '';
   if(isAdmin){
     const editPrize = `<button class="btn btn-ghost btn-sm" data-act="edit-prize" data-id="${m.id}">🎁 ${m.prize_image || m.prize_label ? 'Ubah Hadiah' : '+ Hadiah'}</button>`;
+    let primary = '';
     if(status === 'open'){
-      adminActions = `<div class="add-row" style="margin-top:8px">
-        <button class="btn btn-ghost btn-sm" data-act="close" data-id="${m.id}">⏸ Tutup Prediksi</button>
-        ${editPrize}
-        <button class="btn btn-ghost btn-sm" data-act="show-entries" data-id="${m.id}">👀 Lihat (${m.entry_count || 0})</button>
-        <button class="btn btn-ghost btn-sm" data-act="del-match" data-id="${m.id}" style="color:#ff5577">🗑</button>
-      </div>`;
+      primary = `<button class="btn btn-ghost btn-sm" data-act="close" data-id="${m.id}">⏸ Tutup Submisi</button>`;
     } else if(status === 'closed'){
-      adminActions = `<div class="add-row" style="margin-top:8px">
-        <input data-f="fh" type="number" min="0" max="99" placeholder="Skor home" style="max-width:120px">
+      primary = `<div class="predict-finish-row">
+        <input data-f="fh" type="number" min="0" max="99" placeholder="Home" inputmode="numeric">
         <span class="predict-score-sep">–</span>
-        <input data-f="fa" type="number" min="0" max="99" placeholder="Skor away" style="max-width:120px">
-        <button class="btn btn-primary btn-sm" data-act="finish" data-id="${m.id}">🏁 Set Skor Akhir</button>
-        ${editPrize}
-        <button class="btn btn-ghost btn-sm" data-act="show-entries" data-id="${m.id}">👀 Lihat (${m.entry_count || 0})</button>
-        <button class="btn btn-ghost btn-sm" data-act="del-match" data-id="${m.id}" style="color:#ff5577">🗑</button>
-      </div>`;
-    } else {
-      adminActions = `<div class="add-row" style="margin-top:8px">
-        ${editPrize}
-        <button class="btn btn-ghost btn-sm" data-act="show-entries" data-id="${m.id}">👀 Lihat (${m.entry_count || 0})</button>
-        <button class="btn btn-ghost btn-sm" data-act="del-match" data-id="${m.id}" style="color:#ff5577">🗑 Hapus</button>
+        <input data-f="fa" type="number" min="0" max="99" placeholder="Away" inputmode="numeric">
+        <button class="btn btn-primary btn-sm" data-act="finish" data-id="${m.id}">🏁 Set Skor</button>
       </div>`;
     }
+    adminActions = `<div class="predict-admin-row">
+      ${primary}
+      <div class="predict-admin-spacer"></div>
+      ${editPrize}
+      <button class="btn btn-ghost btn-sm" data-act="del-match" data-id="${m.id}" style="color:#ff5577">🗑</button>
+    </div>`;
   }
 
   return `<div class="predict-card ${status}" data-id="${m.id}">
@@ -176,9 +222,9 @@ function predictCardHtml(m, entries, isAdmin){
       <span class="predict-card-title">${escapeHtml(m.label)}</span>
       <span class="predict-status ${status}">${statusLabel}</span>
     </div>
-    ${prize}
     ${windowInfo}
     ${final}
+    ${prize}
     ${form}
     ${adminActions}
     ${entriesHtml}
