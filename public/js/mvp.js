@@ -8,6 +8,7 @@
 let mvpEntries = [];
 let mvpAvailableMonths = [];
 let mvpSelectedMonth = currentMonthString();
+let mvpPrize = null; // { month, prize_label, prize_image }
 
 function currentMonthString(){
   const d = new Date();
@@ -48,10 +49,18 @@ async function loadMvpEntries(){
   }
   // Load months alongside entries — first call populates the dropdown
   if(!mvpAvailableMonths.length) await loadMvpMonths();
-  try {
-    const r = await fetch('/api/mvp?month=' + encodeURIComponent(mvpSelectedMonth));
-    mvpEntries = r.ok ? await r.json() : [];
-  } catch { mvpEntries = []; }
+  // Fire entries + prize requests in parallel
+  const month = mvpSelectedMonth;
+  await Promise.all([
+    fetch('/api/mvp?month=' + encodeURIComponent(month))
+      .then(r => r.ok ? r.json() : [])
+      .then(d => { mvpEntries = d; })
+      .catch(() => { mvpEntries = []; }),
+    fetch('/api/mvp/prize?month=' + encodeURIComponent(month))
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { mvpPrize = d; })
+      .catch(() => { mvpPrize = null; }),
+  ]);
   // Update subtitle so the user always knows which month they're viewing
   const sub = $('mvp-subtitle');
   if(sub){
@@ -60,7 +69,52 @@ async function loadMvpEntries(){
       ? `Klasemen pemain ${formatMonthLabel(mvpSelectedMonth)} (bulan ini).`
       : `Klasemen pemain ${formatMonthLabel(mvpSelectedMonth)}.`;
   }
+  renderMvpPrize();
   renderMvpTable();
+}
+
+function renderMvpPrize(){
+  const el = $('mvp-prize-banner');
+  if(!el) return;
+  const hasPrize = mvpPrize && (mvpPrize.prize_image || mvpPrize.prize_label);
+  if(!hasPrize){
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = '';
+  const kicker = `🏆 Hadiah ${formatMonthLabel(mvpPrize.month || mvpSelectedMonth)}`;
+  if(mvpPrize.prize_image){
+    el.className = 'mvp-prize';
+    el.innerHTML = `
+      <img src="${escapeHtml(mvpPrize.prize_image)}" alt="" data-act="zoom">
+      <div class="mvp-prize-info">
+        <div class="mvp-prize-kicker">${kicker}</div>
+        <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label || 'Hadiah eksklusif')}</div>
+      </div>`;
+    el.querySelector('img[data-act="zoom"]')?.addEventListener('click', () => openMvpLightbox(mvpPrize.prize_image));
+  } else {
+    el.className = 'mvp-prize no-image';
+    el.innerHTML = `
+      <div class="mvp-prize-info">
+        <div class="mvp-prize-kicker">${kicker}</div>
+        <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label)}</div>
+      </div>`;
+  }
+}
+
+function openMvpLightbox(src){
+  if(!src) return;
+  let lb = document.getElementById('mvp-lightbox');
+  if(!lb){
+    lb = document.createElement('div');
+    lb.id = 'mvp-lightbox';
+    lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:1500;padding:20px;cursor:zoom-out';
+    lb.innerHTML = '<img alt="" style="max-width:100%;max-height:100%;border-radius:10px;border:3px solid #ffd740;box-shadow:0 0 60px rgba(255,215,64,.4)">';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', () => { lb.style.display = 'none'; });
+  }
+  lb.querySelector('img').src = src;
+  lb.style.display = 'flex';
 }
 
 function renderMvpTable(){
@@ -211,6 +265,102 @@ $('mvp-month-select')?.addEventListener('change', e => {
   loadMvpEntries();
 });
 
+// Admin: prize editor panel. Pure inline UI — no native prompt/confirm.
+// State: { label, image_url } reflecting the unsaved form values.
+let mvpPrizeDraft = { label: '', image_url: '' };
+
+function openMvpPrizeEditor(){
+  if(role !== 'admin') return;
+  // Seed the draft from the current saved prize for this month
+  mvpPrizeDraft = {
+    label: mvpPrize?.prize_label || '',
+    image_url: mvpPrize?.prize_image || '',
+  };
+  $('mvp-prize-editor-month').textContent = formatMonthLabel(mvpSelectedMonth);
+  $('mvp-prize-label-input').value = mvpPrizeDraft.label;
+  renderMvpPrizeEditorPreview();
+  $('mvp-prize-editor').style.display = '';
+  $('mvp-prize-toggle-btn').style.display = 'none';
+  setTimeout(() => $('mvp-prize-label-input').focus(), 50);
+}
+function closeMvpPrizeEditor(){
+  $('mvp-prize-editor').style.display = 'none';
+  $('mvp-prize-toggle-btn').style.display = '';
+  // Reset the file input so the same file can be re-picked next time
+  if($('mvp-prize-file')) $('mvp-prize-file').value = '';
+}
+function renderMvpPrizeEditorPreview(){
+  const wrap = $('mvp-prize-editor-preview');
+  const removeBtn = $('mvp-prize-remove-img');
+  if(!wrap) return;
+  if(mvpPrizeDraft.image_url){
+    wrap.innerHTML = `<img src="${escapeHtml(mvpPrizeDraft.image_url)}" alt="">`;
+    if(removeBtn) removeBtn.style.display = '';
+  } else {
+    wrap.innerHTML = '<div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>';
+    if(removeBtn) removeBtn.style.display = 'none';
+  }
+}
+
+$('mvp-prize-toggle-btn')?.addEventListener('click', openMvpPrizeEditor);
+$('mvp-prize-editor-close')?.addEventListener('click', closeMvpPrizeEditor);
+$('mvp-prize-cancel')?.addEventListener('click', closeMvpPrizeEditor);
+
+$('mvp-prize-file')?.addEventListener('change', async (e) => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
+  // Show local preview immediately while uploading in background
+  const reader = new FileReader();
+  reader.onload = () => {
+    mvpPrizeDraft.image_url = reader.result; // temporary base64 for preview
+    renderMvpPrizeEditorPreview();
+  };
+  reader.readAsDataURL(file);
+  toast('Mengunggah gambar…');
+  try {
+    const [url] = await uploadImageFiles([file], 'mvp');
+    mvpPrizeDraft.image_url = url;
+    renderMvpPrizeEditorPreview();
+    toast('✓ Gambar diunggah');
+  } catch(err){
+    toast(err.message || 'Upload gagal');
+    // Revert preview to the saved value
+    mvpPrizeDraft.image_url = mvpPrize?.prize_image || '';
+    renderMvpPrizeEditorPreview();
+  }
+});
+
+$('mvp-prize-remove-img')?.addEventListener('click', () => {
+  mvpPrizeDraft.image_url = '';
+  if($('mvp-prize-file')) $('mvp-prize-file').value = '';
+  renderMvpPrizeEditorPreview();
+});
+
+$('mvp-prize-save')?.addEventListener('click', async () => {
+  if(role !== 'admin') return;
+  const label = $('mvp-prize-label-input').value.trim();
+  const body = {
+    month: mvpSelectedMonth,
+    prize_label: label,
+    prize_image: mvpPrizeDraft.image_url || null,
+  };
+  // Block save if a base64 preview slipped through (upload should have replaced it)
+  if(body.prize_image && body.prize_image.startsWith('data:')){
+    toast('Tunggu upload selesai…'); return;
+  }
+  try {
+    const r = await fetch('/api/mvp/prize', {
+      method:'PUT',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify(body)
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
+    toast('✓ Hadiah disimpan');
+    closeMvpPrizeEditor();
+  } catch { toast('Gagal menyimpan'); }
+});
+
 // Live updates: server now broadcasts which month changed. Refetch only
 // when the change touched the month we're viewing OR the dropdown needs
 // to gain a brand-new month entry.
@@ -218,10 +368,18 @@ if(typeof socket !== 'undefined' && socket){
   socket.on('mvp-updated', (payload) => {
     const changedMonth = payload && payload.month;
     if(currentTab === 'mvp'){
-      // Reload the months list (a new month may have appeared) and current entries
       loadMvpMonths().then(() => {
         if(!changedMonth || changedMonth === mvpSelectedMonth) loadMvpEntries();
       });
+    }
+  });
+  socket.on('mvp-prize-updated', (payload) => {
+    if(currentTab === 'mvp' && payload?.month === mvpSelectedMonth){
+      // Just the prize changed — refetch and re-render that part only
+      fetch('/api/mvp/prize?month=' + encodeURIComponent(mvpSelectedMonth))
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { mvpPrize = d; renderMvpPrize(); })
+        .catch(() => {});
     }
   });
 }

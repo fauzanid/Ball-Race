@@ -545,6 +545,34 @@ body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-c
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
 /* ═══ MVP OF THE MONTH ═══ */
 .mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
+.mvp-prize{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(255,215,64,.14),rgba(255,140,40,.06));border:1px solid rgba(255,215,64,.35);border-radius:var(--r-md)}
+.mvp-prize img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid rgba(255,215,64,.45);cursor:zoom-in;flex-shrink:0;transition:transform .2s}
+.mvp-prize img:hover{transform:scale(1.05)}
+.mvp-prize-info{flex:1;min-width:0}
+.mvp-prize-kicker{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#ffd740;margin-bottom:4px}
+.mvp-prize-label{font-family:var(--font-cond);font-weight:700;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvp-prize.no-image{justify-content:center;text-align:center}
+.mvp-prize.no-image .mvp-prize-info{flex:initial}
+.mvp-prize.no-image .mvp-prize-label{font-size:18px;white-space:normal}
+body[data-theme="light"] .mvp-prize{background:linear-gradient(135deg,rgba(255,215,64,.18),rgba(255,140,40,.08));border-color:rgba(255,170,0,.4)}
+/* Prize edit panel — expands inline under the admin toggle button */
+.mvp-prize-editor{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(255,215,64,.05);border:1px solid rgba(255,215,64,.3);border-radius:var(--r-md);animation:mvp-prize-slide .2s ease-out}
+@keyframes mvp-prize-slide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.mvp-prize-editor-hd{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mvp-prize-editor-title{font-family:var(--font-cond);font-weight:700;font-size:13px;letter-spacing:.04em;color:#ffd740;text-transform:uppercase}
+.mvp-prize-editor input[type="text"],
+.mvp-prize-editor input:not([type]){background:rgba(10,10,8,.6);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 12px;color:var(--ink-50);font-size:14px;outline:none;font-family:inherit;transition:border-color .15s}
+.mvp-prize-editor input:focus{border-color:#ffd740}
+.mvp-prize-editor-image-row{display:flex;gap:12px;align-items:stretch}
+.mvp-prize-editor-preview{width:96px;height:96px;flex-shrink:0;border-radius:10px;border:2px dashed rgba(255,215,64,.25);overflow:hidden;background:rgba(10,10,8,.5);display:flex;align-items:center;justify-content:center}
+.mvp-prize-editor-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.mvp-prize-editor-empty{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-400);text-align:center;padding:10px}
+.mvp-prize-editor-actions{flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.mvp-prize-editor-actions .lucky-upload-label{justify-content:center}
+.mvp-prize-editor-footer{display:flex;justify-content:flex-end;gap:8px;padding-top:6px;border-top:1px solid rgba(255,215,64,.15)}
+body[data-theme="light"] .mvp-prize-editor{background:rgba(255,215,64,.10);border-color:rgba(255,170,0,.35)}
+body[data-theme="light"] .mvp-prize-editor input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .mvp-prize-editor-preview{background:rgba(0,0,0,.02)}
 .mvp-month-picker{display:flex;flex-direction:column;gap:4px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:10px 14px}
 .mvp-month-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400)}
 .mvp-month-control{position:relative;display:flex;align-items:center}
@@ -1634,12 +1662,42 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
       </div>
 
-      <!-- Admin add row -->
+      <!-- Prize banner — visible to everyone, edit button for admin -->
+      <div class="mvp-prize" id="mvp-prize-banner" style="display:none"></div>
+
+      <!-- Admin add row + prize button -->
       <div class="mvp-admin-only" style="display:none">
         <div class="add-row">
           <input id="mvp-name-input" placeholder="Nama pemain" maxlength="80">
           <input id="mvp-pts-input" type="number" min="0" max="9999" placeholder="Poin" value="0" style="max-width:100px">
           <button class="btn btn-primary btn-sm" id="mvp-add-btn">+ Tambah</button>
+        </div>
+        <div class="add-row">
+          <button class="btn btn-ghost btn-sm" id="mvp-prize-toggle-btn">🏆 Atur Hadiah Bulan Ini</button>
+        </div>
+        <!-- Prize edit panel — expands inline when admin toggles it -->
+        <div class="mvp-prize-editor" id="mvp-prize-editor" style="display:none">
+          <div class="mvp-prize-editor-hd">
+            <span class="mvp-prize-editor-title">🏆 Hadiah <span id="mvp-prize-editor-month"></span></span>
+            <button class="btn btn-ghost btn-xs" id="mvp-prize-editor-close" type="button">✕</button>
+          </div>
+          <input id="mvp-prize-label-input" placeholder="Label hadiah (mis. Voucher Rp 500K)" maxlength="200">
+          <div class="mvp-prize-editor-image-row">
+            <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview">
+              <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+            </div>
+            <div class="mvp-prize-editor-actions">
+              <label class="lucky-upload-label" title="Pilih gambar">
+                📸 Pilih Gambar
+                <input type="file" id="mvp-prize-file" accept="image/*" style="display:none">
+              </label>
+              <button class="btn btn-ghost btn-xs" id="mvp-prize-remove-img" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+            </div>
+          </div>
+          <div class="mvp-prize-editor-footer">
+            <button class="btn btn-ghost btn-sm" id="mvp-prize-cancel" type="button">Batal</button>
+            <button class="btn btn-primary btn-sm" id="mvp-prize-save" type="button">💾 Simpan Hadiah</button>
+          </div>
         </div>
       </div>
 

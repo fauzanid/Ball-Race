@@ -277,6 +277,16 @@ async function initDB() {
     await pool.query(`ALTER TABLE mvp_entries ADD COLUMN IF NOT EXISTS month VARCHAR(7)`);
     await pool.query(`UPDATE mvp_entries SET month = TO_CHAR(created_at, 'YYYY-MM') WHERE month IS NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_mvp_month_points ON mvp_entries (month, points DESC)`);
+    // One prize per month — admin can attach a label + image visible to
+    // everyone as motivation.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS mvp_prizes (
+        month VARCHAR(7) PRIMARY KEY,
+        prize_label VARCHAR(200),
+        prize_image TEXT,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -1249,6 +1259,71 @@ app.delete('/api/mvp', requireAdmin, async (req, res) => {
       await pool.query('DELETE FROM mvp_entries');
     }
     io.emit('mvp-updated', { month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// ===== MVP PRIZE PER MONTH =====
+app.get('/api/mvp/prize', async (req, res) => {
+  if (!dbReady) return res.json({ month: currentMonth(), prize_label: null, prize_image: null });
+  try {
+    const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
+    const { rows } = await pool.query(
+      `SELECT month, prize_label, prize_image, updated_at FROM mvp_prizes WHERE month = $1`,
+      [month]
+    );
+    res.json(rows[0] || { month, prize_label: null, prize_image: null });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.put('/api/mvp/prize', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const month = isValidMonth(req.body.month) ? req.body.month : currentMonth();
+    const prize_label = String(req.body.prize_label || '').trim() || null;
+    const prize_image = req.body.prize_image ? String(req.body.prize_image) : null;
+    if (prize_image && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
+      return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
+    }
+    if (prize_image && !isValidImageUrl(prize_image)) {
+      return res.status(400).json({ error: 'Invalid image URL' });
+    }
+    // Look up the existing image so we can clean it from R2 once the
+    // new value is committed (matching the prediction prize pattern).
+    const cur = await pool.query(`SELECT prize_image FROM mvp_prizes WHERE month = $1`, [month]);
+    const oldImage = cur.rows[0]?.prize_image || null;
+    await pool.query(
+      `INSERT INTO mvp_prizes (month, prize_label, prize_image, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (month) DO UPDATE SET
+           prize_label = EXCLUDED.prize_label,
+           prize_image = EXCLUDED.prize_image,
+           updated_at = NOW()`,
+      [month, prize_label, prize_image]
+    );
+    if (oldImage && oldImage !== prize_image) deleteR2Object(oldImage);
+    io.emit('mvp-prize-updated', { month });
+    res.json({ ok: true, month, prize_label, prize_image });
+  } catch (err) {
+    console.error('PUT /api/mvp/prize:', err.message);
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const month = isValidMonth(req.query.month) ? req.query.month : null;
+    if (!month) return res.status(400).json({ error: 'month required' });
+    const { rows } = await pool.query(
+      `DELETE FROM mvp_prizes WHERE month = $1 RETURNING prize_image`, [month]
+    );
+    if (rows[0]?.prize_image) deleteR2Object(rows[0].prize_image);
+    io.emit('mvp-prize-updated', { month });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
