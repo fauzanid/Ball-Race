@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ball Race '26</title>
+<title>Karboluxe</title>
 <meta name="theme-color" content="#ff4500">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,17 +71,20 @@ input,textarea,select{font-family:inherit;color:inherit}
 .role-strip-btn:hover{background:#222}
 
 /* Header */
-header{padding:10px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(5,5,4,.9);backdrop-filter:blur(10px);z-index:10;flex-shrink:0}
-.logo{display:inline-flex;align-items:center;line-height:0;text-decoration:none;cursor:pointer;transition:opacity .15s,transform .15s}
+header{padding:12px 18px;display:flex;align-items:center;gap:10px;min-height:60px;border-bottom:1px solid rgba(255,255,255,.08);background:rgba(5,5,4,.9);backdrop-filter:blur(10px);z-index:10;flex-shrink:0}
+.logo{display:inline-flex;align-items:center;line-height:0;text-decoration:none;cursor:pointer;transition:opacity .15s,transform .15s;flex-shrink:0}
 .logo:hover{opacity:.78}
 .logo:active{transform:scale(.97)}
-.logo img{height:52px;width:auto;display:block}
-@media(max-width:520px){.logo img{height:38px}}
-.header-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-.icon-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--ink-200);width:34px;height:34px;border-radius:6px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.logo img{height:36px;width:auto;display:block}
+@media(max-width:520px){
+  header{padding:10px 14px;min-height:56px;gap:8px}
+  .logo img{height:30px}
+}
+.header-right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.icon-btn{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:var(--ink-200);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .icon-btn:hover{background:rgba(255,255,255,.08);color:var(--ink-50);border-color:rgba(255,255,255,.2)}
 .icon-btn.active{border-color:var(--accent);color:var(--accent)}
-.admin-badge-head{display:inline-block;padding:4px 10px;background:var(--accent-2);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:10px;letter-spacing:.1em;border-radius:3px}
+.admin-badge-head{display:inline-flex;align-items:center;padding:5px 10px;height:26px;background:var(--accent-2);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:10px;letter-spacing:.1em;border-radius:4px;margin-right:2px}
 
 /* Tab bar */
 #tab-bar{display:flex;background:rgba(10,10,8,.7);border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0;overflow-x:auto}
@@ -540,6 +543,57 @@ body[data-theme="light"] .lucky-row-label{color:#1a1a16}
 body[data-theme="light"] .lucky-draw-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.18);color:#6b6a62}
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
+/* ═══ MVP OF THE MONTH ═══ */
+.mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
+.mvp-month-picker{display:flex;flex-direction:column;gap:4px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:10px 14px}
+.mvp-month-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400)}
+.mvp-month-control{position:relative;display:flex;align-items:center}
+.mvp-month-control select{appearance:none;-webkit-appearance:none;background:transparent;border:none;outline:none;color:var(--ink-50);font-family:var(--font-cond);font-weight:700;font-size:18px;letter-spacing:.04em;padding:0 24px 0 0;cursor:pointer;width:100%}
+.mvp-month-control select option{background:#0e0e0c;color:var(--ink-50)}
+.mvp-month-chev{position:absolute;right:0;color:var(--accent);font-size:14px;pointer-events:none}
+body[data-theme="light"] .mvp-month-picker{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .mvp-month-control select option{background:#ffffff;color:#1a1a16}
+.mvp-table{display:flex;flex-direction:column;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden}
+.mvp-thead{display:grid;grid-template-columns:48px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
+.mvp-thead .mvp-pts{text-align:right;color:var(--ink-50)}
+.mvp-row{display:grid;grid-template-columns:48px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+.mvp-row:last-child{border-bottom:none}
+.mvp-row:hover{background:rgba(255,255,255,.02)}
+.mvp-rank{font-family:var(--font-cond);font-weight:700;font-size:15px;color:var(--ink-200);text-align:left}
+.mvp-rank.r1{color:#ffd740}
+.mvp-rank.r2{color:#cdd5e0}
+.mvp-rank.r3{color:#cd8050}
+.mvp-name{font-family:var(--font-cond);font-weight:600;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.mvp-medal{font-size:18px;flex-shrink:0}
+.mvp-pts{font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--ink-50);text-align:right;font-variant-numeric:tabular-nums}
+.mvp-row.r1{background:linear-gradient(90deg,rgba(255,215,64,.10),transparent)}
+.mvp-row.r1 .mvp-pts{color:#ffd740}
+.mvp-row.r2{background:linear-gradient(90deg,rgba(205,213,224,.06),transparent)}
+.mvp-row.r3{background:linear-gradient(90deg,rgba(205,128,80,.06),transparent)}
+.mvp-actions{display:flex;gap:4px;align-items:center;justify-content:flex-end;flex-wrap:nowrap}
+.mvp-actions .mvp-quick{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--ink-50);font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.04em;padding:4px 8px;border-radius:6px;cursor:pointer;line-height:1;transition:background .15s,border-color .15s}
+.mvp-actions .mvp-quick:hover{background:rgba(255,69,0,.18);border-color:var(--accent)}
+.mvp-actions .mvp-quick.minus{color:#ff8a8a}
+.mvp-actions .mvp-quick.minus:hover{background:rgba(255,85,119,.18);border-color:#ff5577}
+.mvp-actions .mvp-edit,.mvp-actions .mvp-del{background:none;border:none;cursor:pointer;font-size:14px;padding:4px;color:var(--ink-200);opacity:.7;transition:opacity .15s,color .15s}
+.mvp-actions .mvp-edit:hover{opacity:1;color:var(--ink-50)}
+.mvp-actions .mvp-del:hover{opacity:1;color:#ff5577}
+.mvp-row.has-admin{grid-template-columns:48px 1fr auto}
+@media(max-width:520px){
+  .mvp-thead{padding:12px;grid-template-columns:36px 1fr 60px}
+  .mvp-row{padding:12px;grid-template-columns:36px 1fr 60px}
+  .mvp-row.has-admin{grid-template-columns:36px 1fr auto}
+  .mvp-name{font-size:14px}
+  .mvp-pts{font-size:16px}
+  .mvp-actions .mvp-quick{padding:3px 6px;font-size:10px}
+}
+body[data-theme="light"] .mvp-table{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .mvp-thead{background:rgba(0,0,0,.03);border-bottom-color:rgba(0,0,0,.08);color:#4a4a45}
+body[data-theme="light"] .mvp-row{border-bottom-color:rgba(0,0,0,.05)}
+body[data-theme="light"] .mvp-row:hover{background:rgba(0,0,0,.02)}
+body[data-theme="light"] .mvp-actions .mvp-quick{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1)}
+body[data-theme="light"] .mvp-actions .mvp-quick:hover{background:rgba(255,69,0,.1)}
+
 /* ═══ AUCTION ═══ */
 .auction-section-hd{display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px}
 .predict-section-hd{display:flex;justify-content:space-between;align-items:center;margin:0 0 6px}
@@ -644,15 +698,23 @@ body[data-theme="light"] .predict-taken span{background:rgba(0,0,0,.05);color:#6
 .predict-finish-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .predict-finish-row input{width:70px;text-align:center;font-family:'Archivo Black',sans-serif;font-size:14px;padding:6px 8px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--ink-50);outline:none}
 .predict-finish-row input:focus{border-color:var(--accent)}
-body[data-theme="light"] .predict-card{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .predict-card{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+body[data-theme="light"] .predict-card.finished{border-color:rgba(255,180,0,.45);background:linear-gradient(180deg,rgba(255,215,64,.08),#ffffff)}
 body[data-theme="light"] .predict-form{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
 body[data-theme="light"] .predict-form input,
 body[data-theme="light"] .predict-finish-row input,
 body[data-theme="light"] .predict-matchup-side input{background:#ffffff;border-color:rgba(0,0,0,.1);color:#1a1a16}
 body[data-theme="light"] .predict-id-field{background:#ffffff;border-color:rgba(0,0,0,.1)}
 body[data-theme="light"] .predict-id-field input{color:#1a1a16}
+body[data-theme="light"] .predict-form-locked{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.1);color:#6b6a62}
+body[data-theme="light"] .predict-window-info{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .predict-window-info b{color:#1a1a16}
 body[data-theme="light"] .predict-entry{background:rgba(0,0,0,.03)}
-body[data-theme="light"] .predict-entries-count{background:rgba(0,0,0,.06);color:#1a1a16}
+body[data-theme="light"] .predict-entry-score{background:rgba(0,0,0,.06)}
+body[data-theme="light"] .predict-entries-count{background:rgba(0,0,0,.08);color:#1a1a16}
+body[data-theme="light"] .predict-admin-row{border-top-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .predict-entries{border-top-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .predict-matchup-vs{color:rgba(0,0,0,.35)}
 .auction-create-form{background:rgba(10,10,8,.5);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:14px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .auction-create-form input,.auction-create-form textarea{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;color:var(--ink-50);font-family:var(--font-cond);font-weight:600;letter-spacing:.04em;outline:none}
 .auction-create-form input:focus,.auction-create-form textarea:focus{border-color:var(--accent)}
@@ -705,14 +767,15 @@ body[data-theme="light"] .auction-card-title{color:#1a1a16}
 body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
 body[data-theme="light"] .auction-card-price{color:#1a1a16}
 body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
-.tool-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.tool-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:20px 0 32px;display:flex;flex-direction:column;gap:14px}
+@media(max-width:520px){.tool-wrap{padding:16px 14px 28px}}
 /* Skeleton loaders — gentle shimmer placeholder while a fetch is in flight */
 .skeleton-list{display:flex;flex-direction:column;gap:10px}
 .skeleton-row{height:60px;border-radius:var(--r-md);background:linear-gradient(90deg,rgba(255,255,255,.04) 0%,rgba(255,255,255,.10) 50%,rgba(255,255,255,.04) 100%);background-size:200% 100%;animation:skeleton-shimmer 1.2s ease-in-out infinite}
 .skeleton-row.tall{height:120px}
 @keyframes skeleton-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 body[data-theme="light"] .skeleton-row{background:linear-gradient(90deg,rgba(0,0,0,.04) 0%,rgba(0,0,0,.10) 50%,rgba(0,0,0,.04) 100%);background-size:200% 100%}
-.tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(32px,5vw,56px);text-transform:uppercase;margin:0 0 4px;line-height:.9}
+.tool-title{font-family:var(--font-display);font-style:italic;font-size:clamp(28px,4.5vw,48px);text-transform:uppercase;margin:0 0 6px;line-height:1;letter-spacing:.01em}
 .tool-title .accent{color:var(--accent)}
 
 .name-chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px;background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);min-height:52px}
@@ -803,7 +866,57 @@ body[data-theme="light"] .skeleton-row{background:linear-gradient(90deg,rgba(0,0
 /* ═══ LIGHT THEME ═══
    Race pitch + scoreboard + commentary chyron + podium are kept dark
    on both themes for broadcast contrast. Only the "app chrome" flips. */
-body[data-theme="light"]{background:#f2efe6;color:#1a1a16}
+body[data-theme="light"]{
+  /* Foreground inks flip so any --ink-50/100/200 text becomes dark on light.
+     --ink-900 is intentionally NOT flipped — it doubles as "dark text on
+     accent buttons" (toast, btn-primary, role-strip), which must stay dark
+     in both themes. */
+  --ink-0:#000;
+  --ink-50:#1a1a16;
+  --ink-100:#2a2a25;
+  --ink-200:#4a4a45;
+  --ink-400:#6b6a62;
+  --ink-600:#c9c6bc;
+  --ink-800:#e8e6df;
+  background:#f5f1e6;color:#1a1a16
+}
+/* Btn-ghost / btn-dark / .input — flip the rgba(255,255,255,X) borders
+   that vanish on light bg, plus their hover states. */
+body[data-theme="light"] .btn-ghost{color:#1a1a16;border-color:rgba(0,0,0,.18)}
+body[data-theme="light"] .btn-ghost:hover{border-color:#1a1a16;background:rgba(0,0,0,.04)}
+body[data-theme="light"] .btn-dark{background:#ffffff;color:#1a1a16;border-color:rgba(0,0,0,.12)}
+body[data-theme="light"] .input{background:#ffffff;border-color:rgba(0,0,0,.14);color:#1a1a16}
+body[data-theme="light"] .input:focus{border-color:var(--accent);background:#ffffff}
+body[data-theme="light"] .toast{box-shadow:0 6px 24px rgba(0,0,0,.18)}
+body[data-theme="light"] .modal{background:linear-gradient(180deg,#ffffff,#f5f1e6);border-color:rgba(0,0,0,.1);box-shadow:0 20px 60px rgba(0,0,0,.18)}
+body[data-theme="light"] .modal input{background:#ffffff;border-color:rgba(0,0,0,.14);color:#1a1a16}
+body[data-theme="light"] .modal-backdrop{background:rgba(0,0,0,.45)}
+body[data-theme="light"] .empty-msg{color:#6b6a62}
+
+/* === Light-mode coverage for Auction / Wheel / History === */
+body[data-theme="light"] .auction-card{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .auction-card-desc{color:#4a4a45}
+body[data-theme="light"] .auction-card-bidder{color:#6b6a62}
+body[data-theme="light"] .auction-create-form{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .auction-create-form input,body[data-theme="light"] .auction-create-form textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .auction-form-preview{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .auction-gallery{border-color:rgba(0,0,0,.08);background:rgba(0,0,0,.02)}
+body[data-theme="light"] .auction-gallery-tile{background:#ffffff;border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .chip{background:#ffffff;border:1px solid rgba(0,0,0,.08);color:#1a1a16}
+body[data-theme="light"] .wheel-hist-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .wheel-hist-summary:hover{background:rgba(0,0,0,.02)}
+body[data-theme="light"] .wheel-hist-meta{color:#6b6a62}
+body[data-theme="light"] .wheel-hist-chip{background:rgba(0,0,0,.04);color:#1a1a16}
+body[data-theme="light"] #wheel-image-grid .img-tile{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .history-item{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .history-date,body[data-theme="light"] .history-meta{color:#6b6a62}
+body[data-theme="light"] .history-players{color:#1a1a16}
+body[data-theme="light"] .icon-btn{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.1)}
+body[data-theme="light"] .icon-btn:hover{background:rgba(0,0,0,.06);border-color:rgba(0,0,0,.18)}
+body[data-theme="light"] .racer-chip-rm{background:rgba(0,0,0,.06);color:#6b6a62}
+body[data-theme="light"] ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15) !important}
+body[data-theme="light"] ::-webkit-scrollbar-track{background:rgba(0,0,0,.04) !important}
 body[data-theme="light"] .bg-stadium{
   background:
     radial-gradient(ellipse 120% 80% at 50% 0%,rgba(255,69,0,.1),transparent 60%),
@@ -925,6 +1038,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <button class="tab" data-tab="lucky">🎁 Kotak</button>
     <button class="tab" data-tab="auction">🔨 Lelang</button>
     <button class="tab" data-tab="predict">🔮 Prediksi</button>
+    <button class="tab" data-tab="mvp">🏅 POTM</button>
     <button class="tab" data-tab="track">📦 Track</button>
     <button class="tab" data-tab="history">📋 Riwayat</button>
   </nav>
@@ -958,6 +1072,11 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#4cdfb6,#1c8a72);--tile-glow:rgba(76,223,182,.45)">🔮</div>
           <div class="home-tile-title">Prediksi</div>
           <div class="home-tile-sub">Tebak skor</div>
+        </button>
+        <button class="home-tile" data-target="mvp">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ffd740,#c79628);--tile-glow:rgba(255,215,64,.45)">🏅</div>
+          <div class="home-tile-title">Player</div>
+          <div class="home-tile-sub">Player of the Month</div>
         </button>
         <button class="home-tile" data-target="track">
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#3aa8ff,#1a5fc8);--tile-glow:rgba(58,168,255,.45)">📦</div>
@@ -1500,6 +1619,40 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     </div>
   </div>
 
+  <!-- MVP OF THE MONTH -->
+  <div id="mvp-screen" class="screen">
+    <div class="tool-wrap">
+      <h2 class="tool-title">Player <span class="accent">of the Month</span></h2>
+      <p class="mvp-subtitle" id="mvp-subtitle">Klasemen pemain bulan ini.</p>
+
+      <!-- Month selector — viewers can browse past months -->
+      <div class="mvp-month-picker">
+        <span class="mvp-month-label">Bulan</span>
+        <div class="mvp-month-control">
+          <select id="mvp-month-select"></select>
+          <span class="mvp-month-chev">▾</span>
+        </div>
+      </div>
+
+      <!-- Admin add row -->
+      <div class="mvp-admin-only" style="display:none">
+        <div class="add-row">
+          <input id="mvp-name-input" placeholder="Nama pemain" maxlength="80">
+          <input id="mvp-pts-input" type="number" min="0" max="9999" placeholder="Poin" value="0" style="max-width:100px">
+          <button class="btn btn-primary btn-sm" id="mvp-add-btn">+ Tambah</button>
+        </div>
+      </div>
+
+      <!-- Standings table -->
+      <div class="mvp-table" id="mvp-table"></div>
+
+      <!-- Admin clear current month -->
+      <div class="mvp-admin-only" style="display:none;text-align:center;margin-top:8px">
+        <button class="btn btn-ghost btn-xs" id="mvp-clear-btn">🗑 Kosongkan bulan ini</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Admin Kick-Off bar (shown on admin setup) -->
   <div class="kick-off-row" id="kick-off-row" style="display:none">
     <div class="kick-off-inner">
@@ -1760,12 +1913,12 @@ let _lastStateSync = null;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 // Race canvas now uses WebGL (Three.js); the 2D wheel canvas keeps its 2D ctx.
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr];
+const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr,$mvpScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -2463,6 +2616,8 @@ function setRole(r){
   if(typeof renderAuctionLists === 'function') renderAuctionLists();
   document.querySelectorAll('.predict-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   if(typeof renderPredictList === 'function') renderPredictList();
+  document.querySelectorAll('.mvp-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  if(typeof renderMvpTable === 'function') renderMvpTable();
   if(typeof renderWheelChips === 'function') renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
@@ -2499,7 +2654,7 @@ $('login-submit').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
-const VALID_TABS = ['home','race','wheel','lucky','auction','predict','track','history'];
+const VALID_TABS = ['home','race','wheel','lucky','auction','predict','mvp','track','history'];
 let _suppressHistoryPush = false;
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -2515,6 +2670,7 @@ document.querySelectorAll('.tab').forEach(t => {
     else if(currentTab==='lucky'){ showScreen($luckyScr); resetLuckyStage(); loadLuckyCards(); loadLuckyDraws(); }
     else if(currentTab==='auction'){ showScreen($auctionScr); loadAuctions(); }
     else if(currentTab==='predict'){ showScreen($predictScr); if(typeof loadPredictMatches === 'function') loadPredictMatches(); }
+    else if(currentTab==='mvp'){ showScreen($mvpScr); if(typeof loadMvpEntries === 'function') loadMvpEntries(); }
     else if(currentTab==='track'){ showScreen($trackScr); if(role==='admin') loadTrackAdminList(); }
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
     if(!_suppressHistoryPush && history.state?.tab !== currentTab){
@@ -6268,5 +6424,6 @@ setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); 
 <script src="./js/lucky.js"></script>
 <script src="./js/auction.js"></script>
 <script src="./js/predictions.js"></script>
+<script src="./js/mvp.js"></script>
 </body>
 </html>

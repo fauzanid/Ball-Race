@@ -241,6 +241,21 @@ async function initDB() {
     // Each (home,away) combination can only be predicted once per match —
     // first user to submit that exact score "claims" it.
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_pred_score ON prediction_entries (match_id, predicted_home, predicted_away)`);
+    // MVP of the Month — standings tagged by month so viewers can browse
+    // past months. Month is stored as 'YYYY-MM' so it sorts as text.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS mvp_entries (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        name VARCHAR(80) NOT NULL,
+        points INT NOT NULL DEFAULT 0
+      )
+    `);
+    // Additive migration for existing installs
+    await pool.query(`ALTER TABLE mvp_entries ADD COLUMN IF NOT EXISTS month VARCHAR(7)`);
+    await pool.query(`UPDATE mvp_entries SET month = TO_CHAR(created_at, 'YYYY-MM') WHERE month IS NULL`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_mvp_month_points ON mvp_entries (month, points DESC)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -1048,6 +1063,121 @@ app.delete('/api/predictions/entries/:id', requireAdmin, async (req, res) => {
     const { rows } = await pool.query('DELETE FROM prediction_entries WHERE id = $1 RETURNING match_id', [id]);
     const matchId = rows[0]?.match_id;
     io.emit('prediction-entry-deleted', { id, match_id: matchId });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+// ===== MVP OF THE MONTH =====
+function currentMonth() {
+  // YYYY-MM in server local time. Use UTC if you'd rather avoid DST jumps.
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+function isValidMonth(s) {
+  return typeof s === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(s);
+}
+
+// Distinct months that have at least one entry, plus the current month
+// (so admins can always start a new month even when it's empty).
+app.get('/api/mvp/months', async (req, res) => {
+  if (!dbReady) return res.json([currentMonth()]);
+  try {
+    const { rows } = await pool.query(
+      `SELECT DISTINCT month FROM mvp_entries WHERE month IS NOT NULL ORDER BY month DESC`
+    );
+    const months = rows.map(r => r.month);
+    const cur = currentMonth();
+    if (!months.includes(cur)) months.unshift(cur);
+    res.json(months);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.get('/api/mvp', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
+    const { rows } = await pool.query(
+      `SELECT id, name, points, month, created_at, updated_at FROM mvp_entries
+         WHERE month = $1
+         ORDER BY points DESC, name ASC`,
+      [month]
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.post('/api/mvp', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const name = String(req.body.name || '').trim();
+    const points = Number.isFinite(+req.body.points) ? Math.max(0, +req.body.points) : 0;
+    const month = isValidMonth(req.body.month) ? req.body.month : currentMonth();
+    if (!name) return res.status(400).json({ error: 'Nama wajib diisi' });
+    const { rows } = await pool.query(
+      `INSERT INTO mvp_entries (name, points, month) VALUES ($1, $2, $3) RETURNING *`,
+      [name, points, month]
+    );
+    io.emit('mvp-updated', { month });
+    res.json(rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.patch('/api/mvp/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const { name, points, delta } = req.body;
+    const sets = [];
+    const params = [];
+    let i = 1;
+    if (name != null) { sets.push(`name = $${i++}`); params.push(String(name).trim()); }
+    if (points != null && Number.isFinite(+points)) { sets.push(`points = $${i++}`); params.push(Math.max(0, +points)); }
+    if (delta != null && Number.isFinite(+delta)) { sets.push(`points = GREATEST(0, points + $${i++})`); params.push(+delta); }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push(`updated_at = NOW()`);
+    params.push(id);
+    const { rows } = await pool.query(
+      `UPDATE mvp_entries SET ${sets.join(', ')} WHERE id = $${i} RETURNING month`, params
+    );
+    io.emit('mvp-updated', { month: rows[0]?.month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/mvp/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const { rows } = await pool.query(
+      'DELETE FROM mvp_entries WHERE id = $1 RETURNING month', [+req.params.id]
+    );
+    io.emit('mvp-updated', { month: rows[0]?.month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/mvp', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    // ?month=YYYY-MM clears just that month; no param clears everything.
+    const month = isValidMonth(req.query.month) ? req.query.month : null;
+    if (month) {
+      await pool.query('DELETE FROM mvp_entries WHERE month = $1', [month]);
+    } else {
+      await pool.query('DELETE FROM mvp_entries');
+    }
+    io.emit('mvp-updated', { month });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
