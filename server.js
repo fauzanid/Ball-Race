@@ -145,7 +145,15 @@ async function initDB() {
         final_away INT
       )
     `);
+    // Additive migrations for prize fields (safe to re-run)
+    await pool.query(`ALTER TABLE prediction_matches ADD COLUMN IF NOT EXISTS prize_label VARCHAR(200)`);
+    await pool.query(`ALTER TABLE prediction_matches ADD COLUMN IF NOT EXISTS prize_image TEXT`);
+    // Submission window — opens_at gates the start, closes_at gates the
+    // cutoff. Both nullable: leaving them null means "no time gate".
+    await pool.query(`ALTER TABLE prediction_matches ADD COLUMN IF NOT EXISTS opens_at TIMESTAMPTZ`);
+    await pool.query(`ALTER TABLE prediction_matches ADD COLUMN IF NOT EXISTS closes_at TIMESTAMPTZ`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_pred_matches_created ON prediction_matches (created_at DESC)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_pred_matches_closes ON prediction_matches (closes_at) WHERE status = 'open' AND closes_at IS NOT NULL`);
     await pool.query(`
       CREATE TABLE IF NOT EXISTS prediction_entries (
         id SERIAL PRIMARY KEY,
@@ -158,6 +166,9 @@ async function initDB() {
       )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_pred_entries_match ON prediction_entries (match_id, created_at DESC)`);
+    // Each (home,away) combination can only be predicted once per match —
+    // first user to submit that exact score "claims" it.
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_pred_score ON prediction_entries (match_id, predicted_home, predicted_away)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -768,19 +779,39 @@ app.get('/api/predictions/matches/:id', async (req, res) => {
   }
 });
 
+const MAX_PRIZE_IMAGE_BYTES = 1_400_000; // ~1 MB binary → ~1.4 MB base64
+
+function parseTime(v) {
+  if (v == null || v === '') return null;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return null;
+  return d;
+}
+
 app.post('/api/predictions/matches', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const label = String(req.body.label || '').trim();
     if (!label) return res.status(400).json({ error: 'Label wajib diisi' });
+    const prize_label = String(req.body.prize_label || '').trim() || null;
+    const prize_image = req.body.prize_image ? String(req.body.prize_image) : null;
+    const opens_at = parseTime(req.body.opens_at);
+    const closes_at = parseTime(req.body.closes_at);
+    if (opens_at && closes_at && opens_at >= closes_at) {
+      return res.status(400).json({ error: 'Jam buka harus sebelum jam tutup' });
+    }
+    if (prize_image && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
+      return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
+    }
     const { rows } = await pool.query(
-      `INSERT INTO prediction_matches (label) VALUES ($1) RETURNING *`,
-      [label]
+      `INSERT INTO prediction_matches (label, prize_label, prize_image, opens_at, closes_at) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [label, prize_label, prize_image, opens_at, closes_at]
     );
     const match = { ...rows[0], entry_count: 0 };
     io.emit('prediction-match-created', match);
     res.json(match);
   } catch (err) {
+    console.error('POST predictions:', err.message);
     res.status(500).json({ error: 'Failed' });
   }
 });
@@ -789,7 +820,10 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const id = +req.params.id;
-    const { label, status, final_home, final_away } = req.body;
+    const { label, status, final_home, final_away, prize_label, prize_image, opens_at, closes_at } = req.body;
+    if (prize_image && typeof prize_image === 'string' && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
+      return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
+    }
     const sets = [];
     const params = [];
     let i = 1;
@@ -797,6 +831,19 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
     if (status != null)       { sets.push(`status = $${i++}`);       params.push(String(status));       }
     if (final_home != null)   { sets.push(`final_home = $${i++}`);   params.push(+final_home);          }
     if (final_away != null)   { sets.push(`final_away = $${i++}`);   params.push(+final_away);          }
+    if (prize_label != null)  { sets.push(`prize_label = $${i++}`);  params.push(String(prize_label).trim() || null); }
+    if (prize_image !== undefined) {
+      sets.push(`prize_image = $${i++}`);
+      params.push(prize_image ? String(prize_image) : null);
+    }
+    if (opens_at !== undefined) {
+      sets.push(`opens_at = $${i++}`);
+      params.push(opens_at === '' || opens_at === null ? null : parseTime(opens_at));
+    }
+    if (closes_at !== undefined) {
+      sets.push(`closes_at = $${i++}`);
+      params.push(closes_at === '' || closes_at === null ? null : parseTime(closes_at));
+    }
     if (!sets.length) return res.status(400).json({ error: 'No fields' });
     params.push(id);
     await pool.query(`UPDATE prediction_matches SET ${sets.join(', ')} WHERE id = $${i}`, params);
@@ -804,6 +851,7 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
     io.emit('prediction-match-updated', match);
     res.json(match);
   } catch (err) {
+    console.error('PATCH predictions:', err.message);
     res.status(500).json({ error: 'Failed' });
   }
 });
@@ -835,12 +883,33 @@ app.post('/api/predictions/matches/:id/entries', async (req, res) => {
     const m = await loadMatchWithStats(id);
     if (!m) return res.status(404).json({ error: 'Match tidak ditemukan' });
     if (m.status !== 'open') return res.status(400).json({ error: 'Prediksi sudah ditutup' });
-    const { rows } = await pool.query(
-      `INSERT INTO prediction_entries (match_id, name, phone, predicted_home, predicted_away)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [id, name, phone, ph, pa]
-    );
-    const entry = rows[0];
+    // Time-window enforcement: opens_at and closes_at gate the submission
+    // window even if status is still 'open'. (auto-close cron flips status
+    // periodically, but this guard is the authoritative check at the
+    // moment of insert.)
+    const now = new Date();
+    if (m.opens_at && now < new Date(m.opens_at)) {
+      return res.status(400).json({ error: `Prediksi belum dibuka. Mulai jam ${new Date(m.opens_at).toLocaleString('id-ID')}` });
+    }
+    if (m.closes_at && now > new Date(m.closes_at)) {
+      return res.status(400).json({ error: 'Prediksi sudah ditutup (lewat batas waktu)' });
+    }
+    let entry;
+    try {
+      const { rows } = await pool.query(
+        `INSERT INTO prediction_entries (match_id, name, phone, predicted_home, predicted_away)
+         VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [id, name, phone, ph, pa]
+      );
+      entry = rows[0];
+    } catch (insertErr) {
+      // Postgres 23505 = unique_violation — the (match,home,away) score
+      // is already claimed by another user.
+      if (insertErr && insertErr.code === '23505') {
+        return res.status(409).json({ error: `Skor ${ph}-${pa} sudah dipilih orang lain. Coba skor lain.` });
+      }
+      throw insertErr;
+    }
     io.emit('prediction-entry-added', entry);
     res.json(entry);
   } catch (err) {
@@ -876,6 +945,25 @@ async function autoCloseAuctions() {
   }
 }
 setInterval(autoCloseAuctions, 5000);
+
+// Auto-close prediction matches whose closes_at has passed.
+async function autoClosePredictions() {
+  if (!dbReady) return;
+  try {
+    const { rows } = await pool.query(
+      `UPDATE prediction_matches SET status = 'closed'
+         WHERE status = 'open' AND closes_at IS NOT NULL AND closes_at <= NOW()
+         RETURNING *`
+    );
+    for (const r of rows) {
+      const match = await loadMatchWithStats(r.id);
+      io.emit('prediction-match-updated', match);
+    }
+  } catch (err) {
+    console.error('autoClosePredictions:', err.message);
+  }
+}
+setInterval(autoClosePredictions, 10000);
 
 // ===== LIVE RACE (single global state) =====
 const liveRace = {

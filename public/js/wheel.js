@@ -315,14 +315,25 @@ function wheelLoop(ts){
       const winnerImg = wheelEntryImage(winnerEntry);
       const res = $('wheel-result');
       const prefix = isReplayingSpin ? '↻ ' : '🎉 ';
-      // Image-only winner: render the picture inline; otherwise just text.
+      // Image-only winner: full-size image banner so it reads from across
+      // the room. Image+label: inline thumb. Text-only: plain text.
       if(winnerImg && !winner){
-        res.innerHTML = `${prefix}<img src="${escapeHtml(winnerImg)}" alt="" style="height:1.6em;vertical-align:middle;border-radius:6px;border:2px solid #ffd740;margin:0 .3em">!`;
+        res.innerHTML = `<div class="wheel-winner-image">
+          <img src="${escapeHtml(winnerImg)}" alt="" data-act="zoom-winner">
+          <div class="wheel-winner-label">${prefix}PEMENANG!</div>
+        </div>`;
+        // Auto-zoom to fullscreen lightbox for an extra-clear view —
+        // delayed so the announce animation completes first.
+        setTimeout(() => openWheelWinnerLightbox(winnerImg), 700);
       } else if(winnerImg && winner){
         res.innerHTML = `${prefix}<img src="${escapeHtml(winnerImg)}" alt="" style="height:1.4em;vertical-align:middle;border-radius:5px;margin-right:.3em">${escapeHtml(winner)}!`;
       } else {
         res.textContent = `${prefix}${winner}!`;
       }
+      // Click the inline winner image to enlarge it
+      res.querySelectorAll('img[data-act="zoom-winner"]').forEach(img => {
+        img.addEventListener('click', () => openWheelWinnerLightbox(img.src));
+      });
       res.classList.remove('announce'); void res.offsetWidth; res.classList.add('announce');
       const btn = $('wheel-spin-btn');
       btn.classList.remove('spinning');
@@ -453,41 +464,18 @@ async function clearWheelHistory(){
     wheelHistory = []; renderWheelHistory(); toast('Dihapus');
   } catch { toast('Gagal menghapus'); }
 }
-let _pendingWheelImage = '';
 $('wheel-add-btn').addEventListener('click', () => {
   if(role!=='admin') return;
   const v = $('wheel-name-input').value.trim();
-  if(!v && !_pendingWheelImage) return;
-  const entry = _pendingWheelImage ? { label: v || 'Item', image: _pendingWheelImage } : v;
-  wheelNames.push(entry);
+  if(!v) return;
+  wheelNames.push(v);
   $('wheel-name-input').value = '';
-  _pendingWheelImage = '';
-  $('wheel-img-input').value = '';
-  $('wheel-img-preview-row').style.display = 'none';
   resetWheelState();
   renderWheelChips();
   drawWheel();
   $('wheel-name-input').focus();
 });
 $('wheel-name-input').addEventListener('keydown', e => { if(e.key==='Enter') $('wheel-add-btn').click(); });
-$('wheel-img-input')?.addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  if(file.size > 1024 * 1024){ toast('Gambar terlalu besar (maks 1MB)'); e.target.value=''; return; }
-  const reader = new FileReader();
-  reader.onload = () => {
-    _pendingWheelImage = reader.result;
-    $('wheel-img-preview').src = _pendingWheelImage;
-    $('wheel-img-preview-name').textContent = file.name;
-    $('wheel-img-preview-row').style.display = '';
-  };
-  reader.readAsDataURL(file);
-});
-$('wheel-img-clear')?.addEventListener('click', () => {
-  _pendingWheelImage = '';
-  $('wheel-img-input').value = '';
-  $('wheel-img-preview-row').style.display = 'none';
-});
 $('wheel-use-players').addEventListener('click', () => { if(role!=='admin')return; wheelNames = players.map((p,i)=>p.name.trim()||'Pemain '+(i+1)); resetWheelState(); renderWheelChips(); drawWheel(); });
 $('wheel-shuffle-btn').addEventListener('click', () => {
   if(role!=='admin' || wheelSpinning) return;
@@ -610,3 +598,28 @@ $('wheel-num-apply').addEventListener('click', () => {
 });
 $('wheel-spin-btn').addEventListener('click', () => { if(role!=='admin')return; spinWheel(); });
 $('wheel-clear-hist-btn').addEventListener('click', clearWheelHistory);
+
+// Fullscreen lightbox for image-mode winners — click anywhere or press Esc to dismiss.
+function openWheelWinnerLightbox(src){
+  if(!src) return;
+  let lb = document.getElementById('wheel-winner-lightbox');
+  if(!lb){
+    lb = document.createElement('div');
+    lb.id = 'wheel-winner-lightbox';
+    lb.innerHTML = `
+      <div class="wwl-banner">🎉 PEMENANG!</div>
+      <img alt="">
+      <button class="wwl-close" aria-label="Tutup">×</button>
+    `;
+    document.body.appendChild(lb);
+    const close = () => { lb.classList.remove('open'); };
+    lb.addEventListener('click', e => {
+      if(e.target === lb || e.target.classList.contains('wwl-close')) close();
+    });
+    document.addEventListener('keydown', e => {
+      if(e.key === 'Escape' && lb.classList.contains('open')) close();
+    });
+  }
+  lb.querySelector('img').src = src;
+  lb.classList.add('open');
+}

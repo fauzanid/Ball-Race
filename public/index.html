@@ -518,6 +518,13 @@ body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgb
 .predict-status.closed{background:rgba(255,170,40,.18);color:#ffaa28}
 .predict-status.finished{background:rgba(255,215,64,.2);color:#ffd740}
 .predict-final{font-family:'Archivo Black',sans-serif;font-size:24px;letter-spacing:.04em;color:#ffd740;text-align:center;padding:8px 0}
+.predict-prize{display:flex;align-items:center;gap:10px;padding:10px;margin:8px 0;background:linear-gradient(135deg,rgba(255,215,64,.12),rgba(76,223,182,.06));border:1px solid rgba(255,215,64,.3);border-radius:var(--r-sm)}
+.predict-prize img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:2px solid rgba(255,215,64,.4);cursor:zoom-in;flex-shrink:0}
+.predict-prize-info{flex:1;min-width:0}
+.predict-prize-kicker{font-family:var(--font-cond);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#ffd740;margin-bottom:2px}
+.predict-prize-label{font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.predict-prize.no-image{justify-content:center}
+.predict-prize.no-image .predict-prize-label{font-size:16px;text-align:center;white-space:normal}
 .predict-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .predict-form input{padding:10px 12px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--ink-50);font-size:14px}
 .predict-form input:focus{outline:none;border-color:var(--accent)}
@@ -525,6 +532,21 @@ body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgb
 .predict-score-row{display:flex;align-items:center;gap:8px;justify-content:center}
 .predict-score-row input{width:64px;text-align:center;font-size:18px;font-family:'Archivo Black',sans-serif}
 .predict-score-sep{font-size:18px;color:var(--ink-300)}
+.predict-window-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin:8px 0}
+.predict-time-field{display:flex;flex-direction:column;gap:4px}
+.predict-time-field span{font-family:var(--font-cond);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-300)}
+.predict-time-field input{padding:8px 10px;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--ink-50);font-size:13px;font-family:inherit;color-scheme:dark}
+body[data-theme="light"] .predict-time-field input{background:#ffffff;border-color:rgba(0,0,0,.1);color:#1a1a16;color-scheme:light}
+.predict-window-hint{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-300);margin-bottom:6px}
+.predict-window-info{display:flex;flex-wrap:wrap;gap:10px;padding:8px 10px;margin:6px 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-sm);font-family:var(--font-cond);font-size:12px;letter-spacing:.04em}
+.predict-window-info b{font-family:'Archivo Black',sans-serif;font-size:13px;color:var(--ink-50);letter-spacing:.02em}
+.predict-window-info.locked{background:linear-gradient(135deg,rgba(255,170,40,.10),rgba(255,255,255,.02));border-color:rgba(255,170,40,.35)}
+.predict-window-info.locked b{color:#ffaa28}
+.predict-window-info.live{background:linear-gradient(135deg,rgba(76,223,182,.10),rgba(255,255,255,.02));border-color:rgba(76,223,182,.35)}
+.predict-window-info.live b{color:#4cdfb6}
+.predict-taken{font-family:var(--font-cond);font-size:11px;letter-spacing:.06em;color:var(--ink-300);text-transform:uppercase}
+.predict-taken span{display:inline-block;font-family:'Archivo Black',sans-serif;font-size:12px;letter-spacing:0;color:var(--ink-300);background:rgba(255,255,255,.06);padding:2px 8px;border-radius:99px;margin-right:4px;margin-top:4px;text-decoration:line-through}
+body[data-theme="light"] .predict-taken span{background:rgba(0,0,0,.05);color:#6b6a62}
 .predict-entries{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
 .predict-entries-hd{font-family:var(--font-cond);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-300);margin-bottom:6px}
 .predict-entry{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.03);margin-bottom:4px;font-size:13px}
@@ -620,6 +642,18 @@ body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:r
 @keyframes pointer-kick{0%{transform:translateX(-50%) rotate(0)}40%{transform:translateX(-50%) rotate(-10deg)}100%{transform:translateX(-50%) rotate(0)}}
 .wheel-result{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,4vw,34px);text-align:center;color:var(--accent-2);min-height:44px;text-transform:uppercase;text-shadow:0 0 24px rgba(255,215,0,.35);transition:transform .3s}
 .wheel-result.announce{animation:winner-pop .6s cubic-bezier(.3,1.4,.4,1)}
+.wheel-winner-image{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px}
+.wheel-winner-image img{width:min(280px,70vw);height:min(280px,70vw);object-fit:cover;border-radius:14px;border:4px solid #ffd740;box-shadow:0 0 60px rgba(255,215,64,.55),0 12px 30px rgba(0,0,0,.5);cursor:zoom-in;animation:winner-glow 2s ease-in-out infinite}
+.wheel-winner-label{font-family:var(--font-display);font-style:italic;font-size:clamp(20px,3.5vw,30px);color:#ffd740;text-shadow:0 0 18px rgba(255,215,64,.45);letter-spacing:.06em}
+@keyframes winner-glow{0%,100%{box-shadow:0 0 60px rgba(255,215,64,.55),0 12px 30px rgba(0,0,0,.5)}50%{box-shadow:0 0 90px rgba(255,215,64,.85),0 16px 40px rgba(0,0,0,.6)}}
+#wheel-winner-lightbox{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(80,50,0,.85),rgba(0,0,0,.95));display:none;flex-direction:column;align-items:center;justify-content:center;z-index:2000;padding:20px;cursor:zoom-out;backdrop-filter:blur(8px)}
+#wheel-winner-lightbox.open{display:flex;animation:wwl-fade .3s ease-out}
+#wheel-winner-lightbox .wwl-banner{font-family:var(--font-display);font-style:italic;font-size:clamp(28px,6vw,52px);color:#ffd740;letter-spacing:.06em;text-shadow:0 0 30px rgba(255,215,64,.7);margin-bottom:18px;animation:wwl-bounce .8s cubic-bezier(.3,1.4,.4,1)}
+#wheel-winner-lightbox img{max-width:min(80vw,600px);max-height:70vh;object-fit:contain;border-radius:18px;border:5px solid #ffd740;box-shadow:0 0 100px rgba(255,215,64,.7),0 25px 60px rgba(0,0,0,.7);animation:wwl-bounce .8s cubic-bezier(.3,1.4,.4,1)}
+#wheel-winner-lightbox .wwl-close{position:absolute;top:20px;right:20px;width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#wheel-winner-lightbox .wwl-close:hover{background:rgba(255,255,255,.28)}
+@keyframes wwl-fade{from{opacity:0}to{opacity:1}}
+@keyframes wwl-bounce{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
 @keyframes winner-pop{0%{transform:scale(.7);opacity:0}55%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
 #wheel-spin-btn{position:relative;transition:opacity .2s,background .2s}
 #wheel-spin-btn.spinning{background:#5a3410;color:#ffd740;cursor:not-allowed;box-shadow:0 4px 0 #3a2108}
@@ -1084,19 +1118,8 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <div class="name-chips wheel-mode-names" id="wheel-chips"></div>
       <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-add-row">
         <input id="wheel-name-input" placeholder="Tambah nama…" maxlength="40">
-        <label class="lucky-upload-label" title="Tambah gambar">
-          📷
-          <input type="file" id="wheel-img-input" accept="image/*" style="display:none">
-        </label>
         <button class="btn btn-ghost btn-sm" id="wheel-add-btn">+ Add</button>
         <button class="btn btn-ghost btn-sm" id="wheel-use-players">Pakai Pemain</button>
-      </div>
-      <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-img-preview-row" style="display:none">
-        <div class="lucky-form-preview" style="flex:1">
-          <img id="wheel-img-preview" src="" alt="">
-          <span class="lucky-form-preview-name" id="wheel-img-preview-name"></span>
-          <button class="btn btn-ghost btn-xs" id="wheel-img-clear" style="margin-left:auto">×</button>
-        </div>
       </div>
       <div class="add-row wheel-admin-only wheel-mode-names" id="wheel-actions-row">
         <button class="btn btn-ghost btn-sm" id="wheel-shuffle-btn">🔀 Acak Urutan</button>
@@ -1327,7 +1350,38 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
         <div class="add-row">
           <input id="predict-label-input" placeholder="Contoh: MU vs Liverpool" maxlength="200">
-          <button class="btn btn-primary btn-sm" id="predict-create-btn">+ Tambah</button>
+        </div>
+        <div class="predict-window-row">
+          <label class="predict-time-field">
+            <span>Submisi dibuka</span>
+            <input type="datetime-local" id="predict-opens-input">
+          </label>
+          <label class="predict-time-field">
+            <span>Submisi ditutup</span>
+            <input type="datetime-local" id="predict-closes-input">
+          </label>
+          <label class="predict-time-field">
+            <span>Kick-off (opsional)</span>
+            <input type="datetime-local" id="predict-kickoff-input">
+          </label>
+        </div>
+        <div class="predict-window-hint" id="predict-window-hint">Tip: isi jam kick-off, jam tutup terisi otomatis 1 jam sebelumnya.</div>
+        <div class="add-row">
+          <input id="predict-prize-label-input" placeholder="Hadiah (opsional, mis. Voucher Rp 100K)" maxlength="200">
+          <label class="lucky-upload-label" title="Upload gambar hadiah">
+            🏆 Foto Hadiah
+            <input type="file" id="predict-prize-file-input" accept="image/*" style="display:none">
+          </label>
+        </div>
+        <div class="add-row" id="predict-prize-preview-row" style="display:none">
+          <div class="lucky-form-preview" style="flex:1">
+            <img id="predict-prize-preview-img" src="" alt="">
+            <span class="lucky-form-preview-name" id="predict-prize-preview-name"></span>
+            <button class="btn btn-ghost btn-xs" id="predict-prize-clear" style="margin-left:auto">×</button>
+          </div>
+        </div>
+        <div class="add-row">
+          <button class="btn btn-primary btn-sm" id="predict-create-btn">+ Tambah Pertandingan</button>
         </div>
       </div>
 
