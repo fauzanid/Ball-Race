@@ -3182,9 +3182,8 @@ function loadRunnerGLTF(){
       tryAny(['/models/player_idle.glb', '/models/player_Idle.glb']),
       tryAny(['/models/player_run.glb', '/models/player_Run.glb']),
       tryAny(['/models/player_sprint.glb', '/models/player_Sprint.glb']),
-      tryAny(['/models/player_walk.glb', '/models/player_Walk.glb', '/models/player_tired.glb']),
-    ]).then(([idle, run, sprint, walk]) => {
-      const sceneSrc = (combined && combined.scene) ? combined : (run || idle || sprint || walk);
+    ]).then(([idle, run, sprint]) => {
+      const sceneSrc = (combined && combined.scene) ? combined : (run || idle || sprint);
       if(!sceneSrc){
         _runnerGLTF.failed = true;
         _runnerGLTF.loading = false;
@@ -3196,7 +3195,6 @@ function loadRunnerGLTF(){
         ...tag((idle     && idle.animations)     || [], 'idle'),
         ...tag((run      && run.animations)      || [], 'run'),
         ...tag((sprint   && sprint.animations)   || [], 'sprint'),
-        ...tag((walk     && walk.animations)     || [], 'walk'),
       ];
       finalize(sceneSrc.scene, allAnims);
     });
@@ -3354,19 +3352,16 @@ function makeRealisticRunner(teamColorHex, jerseyNumber){
     idleClip = allClips[0]; runClip = allClips[0];
   } else if(!idleClip){ idleClip = runClip; }
     else if(!runClip){ runClip = idleClip; }
-  // Optional extra clips by file tag — each gracefully degrades to runClip
+  // Optional extra clip — sprint gracefully degrades to runClip.
   let sprintClip = allClips.find(c => c._kind === 'sprint')
                 || findClipByName(['sprint','fastrun']);
-  let walkClip   = allClips.find(c => c._kind === 'walk')
-                || findClipByName(['walk','tired','limp']);
   // One-time per-runner log so we can verify the correct picks
   if(jerseyNumber === 1){
     const fmt = (c) => c ? `${c.name} (${c.duration.toFixed(2)}s)` : 'none';
     console.log('clip selection:',
       '\n  idle =', fmt(idleClip),
       '\n  run =', fmt(runClip),
-      '\n  sprint =', fmt(sprintClip),
-      '\n  walk =', fmt(walkClip));
+      '\n  sprint =', fmt(sprintClip));
   }
 
   const idleAction   = idleClip   ? mixer.clipAction(idleClip)   : null;
@@ -3374,18 +3369,15 @@ function makeRealisticRunner(teamColorHex, jerseyNumber){
   // single action and rely on timeScale to speed up when running.
   const sameAction   = idleClip && runClip && idleClip === runClip;
   const runAction    = !sameAction && runClip ? mixer.clipAction(runClip) : null;
-  // Optional extras — only created if the clip is distinct from idle/run.
+  // Optional extra — only created if the clip is distinct from idle/run.
   const sprintAction = sprintClip && sprintClip !== runClip && sprintClip !== idleClip
                        ? mixer.clipAction(sprintClip) : null;
-  const walkAction   = walkClip   && walkClip   !== runClip && walkClip   !== idleClip
-                       ? mixer.clipAction(walkClip)   : null;
   if(idleAction)  { idleAction.play();   idleAction.setEffectiveWeight(1); }
   if(runAction)   { runAction.play();    runAction.setEffectiveWeight(0); }
   if(sprintAction){ sprintAction.play(); sprintAction.setEffectiveWeight(0); }
-  if(walkAction)  { walkAction.play();   walkAction.setEffectiveWeight(0); }
 
   scene.userData = {
-    mixer, idleAction, runAction, sprintAction, walkAction,
+    mixer, idleAction, runAction, sprintAction,
     sameAction,
     isRealistic: true, lastZ: 0, lastRunWeight: 0,
     yOffset: yOff,
@@ -4270,12 +4262,19 @@ function initRace3D(){
       roughness: 0.55, metalness: 0.05,
     });
     const adGeo = new THREE.BoxGeometry(8, 1.4, 0.3);
-    for(let i = 0; i < 16; i++){
+    // Span the full track regardless of race duration — count is derived
+    // from TRACK_LEN so a 90s race (TRACK_LEN=450) gets ~50 boards instead
+    // of running out at z=129.
+    const adSpacing = 9;
+    const adStartZ = -6;
+    const adEndZ = TRACK_LEN + 6;
+    const adCount = Math.max(8, Math.ceil((adEndZ - adStartZ) / adSpacing));
+    for(let i = 0; i < adCount; i++){
       for(let side = 0; side < 2; side++){
         const sx = side === 0 ? -1 : 1;
         const useKarbo = ((i + side) % 2) === 0;
         const board = new THREE.Mesh(adGeo, useKarbo ? karboMat : ballRaceMat);
-        board.position.set(sx * (TRACK_HALF_WIDTH + 0.6), 0.7, i * 9 - 6);
+        board.position.set(sx * (TRACK_HALF_WIDTH + 0.6), 0.7, adStartZ + i * adSpacing);
         board.rotation.y = sx * Math.PI / 2;
         board.castShadow = true;
         board.receiveShadow = true;
@@ -4642,13 +4641,13 @@ function renderRace3D(){
         u.idleAction.timeScale = cur + (targetTS - cur) * 0.3;
       } else {
         // Multi-clip blending — pick which animation should be at weight 1.
-        const tgt = { idle: 0, run: 0, sprint: 0, walk: 0 };
+        // Tired racers slow their run animation instead of switching to walk
+        // so the leg cadence change is subtle, not a gait switch.
+        const tgt = { idle: 0, run: 0, sprint: 0 };
         if(r.finished || !moving){
           tgt.idle = 1;
         } else if(sprint){
           tgt[u.sprintAction ? 'sprint' : 'run'] = 1;
-        } else if(tired){
-          tgt[u.walkAction ? 'walk' : 'run'] = 1;
         } else {
           tgt.run = 1;
         }
@@ -4662,11 +4661,9 @@ function renderRace3D(){
         setW(u.idleAction,   tgt.idle);
         setW(u.runAction,    tgt.run);
         setW(u.sprintAction, tgt.sprint);
-        setW(u.walkAction,   tgt.walk);
-        // Sub-tune cadence per state
-        if(u.runAction)    u.runAction.timeScale    = 1.1;
+        // Sub-tune cadence per state — tired runs at 0.85× normal pace.
+        if(u.runAction)    u.runAction.timeScale    = tired ? 0.85 : 1.1;
         if(u.sprintAction) u.sprintAction.timeScale = 1.15;
-        if(u.walkAction)   u.walkAction.timeScale   = 1.0;
       }
       // Lift the realistic model so its feet sit at ground level (compensates
       // for whatever pivot the GLB ships with).
