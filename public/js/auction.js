@@ -1,20 +1,16 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// AUCTION
+// AUCTION — live Facebook auction announcements
 // ═══════════════════════════════════════════════════════════════════════════
 // Depends on: $, escapeHtml, toast, role, adminToken, currentTab.
 // Inline-script socket handlers reference auctionsActive, auctionsHistory,
-// renderAuctionLists, renderAuctionActive — those references resolve at
-// event-fire time, after this script has loaded.
+// renderAuctionLists — those references resolve at event-fire time, after
+// this script has loaded.
 
 let auctionsActive = [];
 let auctionsHistory = [];
 let pendingAuctionImage = '';
 let auctionCountdownTimer = null;
 
-function fmtRupiah(n){
-  if(n == null) return '–';
-  return 'Rp ' + Math.round(Number(n)).toLocaleString('id-ID');
-}
 function fmtCountdown(ms){
   if(ms <= 0) return '00:00';
   const total = Math.floor(ms / 1000);
@@ -29,8 +25,6 @@ function fmtCountdown(ms){
 }
 
 async function loadAuctions(){
-  // Skeleton placeholders during the initial fetch so the screen doesn't
-  // pop from "empty" → real data.
   if(!auctionsActive.length && !auctionsHistory.length){
     const skeleton = '<div class="skeleton-list">' +
       '<div class="skeleton-row tall"></div>'.repeat(2) + '</div>';
@@ -62,7 +56,7 @@ function renderAuctionActive(){
   }
   const isAdmin = role === 'admin';
   el.innerHTML = auctionsActive.map(a => auctionCardHtml(a, false, isAdmin)).join('');
-  if(isAdmin) attachAuctionActionHandlers(el);
+  attachAuctionHandlers(el, isAdmin);
 }
 
 function renderAuctionHistory(){
@@ -73,202 +67,82 @@ function renderAuctionHistory(){
   }
   const isAdmin = role === 'admin';
   el.innerHTML = auctionsHistory.map(a => auctionCardHtml(a, true, isAdmin)).join('');
-  if(isAdmin) attachAuctionActionHandlers(el);
+  attachAuctionHandlers(el, isAdmin);
 }
 
 function auctionCardHtml(a, closed, isAdmin){
-  const img = a.image_url
-    ? `<img class="auction-card-img" src="${escapeHtml(a.image_url)}" alt="">`
-    : `<div class="auction-card-img-empty">📦</div>`;
-  const desc = a.description ? `<div class="auction-card-desc">${escapeHtml(a.description)}</div>` : '';
-  const bid = a.current_bid != null
-    ? `<div class="auction-card-price-block"><span class="auction-card-price-label">Tawaran</span><span class="auction-card-price bid">${fmtRupiah(a.current_bid)}</span></div>`
+  // Poster — full-width hero image. Falls back to a placeholder for old
+  // rows that predate the poster-required validation.
+  const liveBadge = !closed ? `<div class="auction-card-live-badge">Live</div>` : '';
+  const countdown = closed
+    ? `<div class="auction-card-countdown">Selesai</div>`
+    : `<div class="auction-card-countdown" data-ends="${a.ends_at}">--:--</div>`;
+  const poster = a.image_url
+    ? `<div class="auction-card-poster">
+        ${liveBadge}
+        ${countdown}
+        <img src="${escapeHtml(a.image_url)}" alt="" data-act="zoom">
+      </div>`
+    : `<div class="auction-card-poster empty">
+        ${liveBadge}
+        ${countdown}
+        📦
+      </div>`;
+
+  // Facebook CTA — disabled for closed auctions or rows without a link.
+  let cta;
+  if(closed){
+    cta = `<div class="auction-fb-cta-disabled">Lelang Sudah Selesai</div>`;
+  } else if(a.facebook_url){
+    cta = `<a class="auction-fb-cta" href="${escapeHtml(a.facebook_url)}" target="_blank" rel="noopener noreferrer">
+      <span style="font-size:18px">📺</span> Tonton di Facebook Live
+    </a>`;
+  } else {
+    cta = `<div class="auction-fb-cta-disabled">Link Facebook belum ditambahkan</div>`;
+  }
+
+  const title = a.title && a.title !== 'Lelang Live'
+    ? `<h3 class="auction-card-title">${escapeHtml(a.title)}</h3>`
     : '';
-  const bidder = a.current_bidder ? `<div class="auction-card-bidder">oleh <strong>${escapeHtml(a.current_bidder)}</strong></div>` : '';
-  const winner = closed && a.current_bidder
-    ? `<div class="auction-card-winner">🏆 ${escapeHtml(a.current_bidder)} · ${fmtRupiah(a.current_bid)}</div>`
-    : (closed ? `<div class="auction-card-winner">Tidak ada penawar</div>` : '');
-  const timer = closed
-    ? `<div class="auction-card-timer">Selesai</div>`
-    : `<div class="auction-card-timer" data-ends="${a.ends_at}">--:--</div>`;
-  const galleryButton = a.image_count > 0
-    ? `<button class="btn btn-ghost btn-sm" data-act="gallery" data-id="${a.id}">🖼 Lihat Foto (${a.image_count})</button>`
-    : '';
-  const adminActions = (isAdmin && !closed) ? `
-    <div class="auction-card-actions">
-      <button class="btn btn-primary btn-sm" data-act="bid" data-id="${a.id}">💰 Update Tawaran</button>
-      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="300">+5m</button>
-      <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="900">+15m</button>
-      <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}">✎ Edit</button>
-      <button class="btn btn-ghost btn-sm" data-act="add-photos" data-id="${a.id}">📷 + Foto</button>
-      ${galleryButton}
-      <button class="btn btn-ghost btn-sm" data-act="close" data-id="${a.id}">⏹ Tutup</button>
-      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑</button>
-    </div>` : (isAdmin && closed ? `
-    <div class="auction-card-actions">
-      ${galleryButton}
-      <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑 Hapus</button>
-    </div>` : (galleryButton ? `<div class="auction-card-actions">${galleryButton}</div>` : ''));
+
+  // Admin actions — minimal: extend, edit, close, delete (or just delete for closed).
+  const adminActions = isAdmin ? (closed
+    ? `<div class="auction-card-actions">
+        <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑 Hapus</button>
+      </div>`
+    : `<div class="auction-card-actions">
+        <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${a.id}">✎ Edit</button>
+        <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="300">+5m</button>
+        <button class="btn btn-ghost btn-sm" data-act="extend" data-id="${a.id}" data-sec="900">+15m</button>
+        <button class="btn btn-ghost btn-sm" data-act="close" data-id="${a.id}">⏹ Tutup</button>
+        <button class="btn btn-ghost btn-sm" data-act="delete" data-id="${a.id}" style="color:#ff8888">🗑</button>
+      </div>`) : '';
+
   return `<div class="auction-card${closed ? ' closed' : ''}" data-id="${a.id}">
-    ${img}
+    ${poster}
     <div class="auction-card-body">
-      <h3 class="auction-card-title">${escapeHtml(a.title)}</h3>
-      ${desc}
-      <div class="auction-card-prices">
-        <div class="auction-card-price-block">
-          <span class="auction-card-price-label">Harga awal</span>
-          <span class="auction-card-price">${fmtRupiah(a.starting_price)}</span>
-        </div>
-        ${bid}
-      </div>
-      ${bidder}
-      ${winner}
-      ${timer}
+      ${title}
+      ${cta}
       ${adminActions}
-      <div class="auction-gallery" id="auction-gallery-${a.id}" style="display:none"></div>
     </div>
   </div>`;
 }
 
-function attachAuctionActionHandlers(scope){
+function attachAuctionHandlers(scope, isAdmin){
+  // Click poster → open lightbox so viewers can see the full poster.
+  scope.querySelectorAll('img[data-act="zoom"]').forEach(im => {
+    im.addEventListener('click', () => openLightbox(im.src));
+  });
+  if(!isAdmin) return;
   scope.querySelectorAll('[data-act]').forEach(b => {
+    if(b.tagName === 'IMG') return;
     const act = b.dataset.act;
     const id = +b.dataset.id;
-    if(act === 'bid') b.addEventListener('click', () => promptUpdateBid(id));
-    else if(act === 'extend') b.addEventListener('click', () => extendAuction(id, +b.dataset.sec));
-    else if(act === 'edit') b.addEventListener('click', () => promptEditAuction(id));
-    else if(act === 'close') b.addEventListener('click', () => closeAuction(id));
+    if(act === 'extend')      b.addEventListener('click', () => extendAuction(id, +b.dataset.sec));
+    else if(act === 'edit')   b.addEventListener('click', () => promptEditAuction(id));
+    else if(act === 'close')  b.addEventListener('click', () => closeAuction(id));
     else if(act === 'delete') b.addEventListener('click', () => deleteAuction(id));
-    else if(act === 'gallery') b.addEventListener('click', () => toggleAuctionGallery(id));
-    else if(act === 'add-photos') b.addEventListener('click', () => triggerAddPhotos(id));
   });
-}
-
-// Hidden file input we reuse for the "+ Foto" button. Created lazily on first use.
-let _auctionPhotoInput = null;
-let _auctionPhotoTargetId = null;
-function triggerAddPhotos(auctionId){
-  if(role !== 'admin') return;
-  if(!_auctionPhotoInput){
-    _auctionPhotoInput = document.createElement('input');
-    _auctionPhotoInput.type = 'file';
-    _auctionPhotoInput.accept = 'image/*';
-    _auctionPhotoInput.multiple = true;
-    _auctionPhotoInput.style.display = 'none';
-    document.body.appendChild(_auctionPhotoInput);
-    _auctionPhotoInput.addEventListener('change', async (e) => {
-      const targetId = _auctionPhotoTargetId;
-      _auctionPhotoTargetId = null;
-      const files = Array.from(e.target.files || []);
-      e.target.value = '';
-      if(!files.length || !targetId) return;
-      await uploadAuctionPhotos(targetId, files);
-    });
-  }
-  _auctionPhotoTargetId = auctionId;
-  _auctionPhotoInput.click();
-}
-
-// Upload N photos for one auction. Files go through /api/upload first
-// (server converts to WebP + stores in R2, returns URLs), then the URLs
-// are POSTed to /api/auctions/:id/images in batches of 20.
-async function uploadAuctionPhotos(auctionId, files){
-  const valid = files.filter(f => f.size <= 10 * 1024 * 1024);
-  const dropped = files.length - valid.length;
-  const total = valid.length;
-  if(!total){
-    toast(dropped ? `${dropped} file terlalu besar (maks 10MB)` : 'Tidak ada foto');
-    return;
-  }
-  toast(`Mengunggah ${total} foto…`);
-  // Upload to R2 in chunks of 6 to keep request size small + parallelism reasonable
-  const CHUNK = 6;
-  let urls = [];
-  for(let i = 0; i < valid.length; i += CHUNK){
-    const chunk = valid.slice(i, i + CHUNK);
-    try {
-      const got = await uploadImageFiles(chunk, `auctions/${auctionId}`);
-      urls = urls.concat(got);
-    } catch(err){
-      toast(err.message || 'Upload gagal'); return;
-    }
-  }
-  // Now register the URLs against the auction in batches
-  let processed = 0;
-  for(let i = 0; i < urls.length; i += 20){
-    const batch = urls.slice(i, i + 20);
-    try {
-      const r = await fetch(`/api/auctions/${auctionId}/images`, {
-        method: 'POST',
-        headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
-        body: JSON.stringify({ images: batch })
-      });
-      if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
-      const data = await r.json();
-      processed += data.added || 0;
-    } catch { toast('Gagal menyimpan'); return; }
-  }
-  toast(`✓ ${processed} foto diunggah${dropped ? ` (${dropped} terlalu besar)` : ''}`);
-  const a = auctionsActive.find(x => x.id === auctionId) || auctionsHistory.find(x => x.id === auctionId);
-  if(a) a.image_count = (a.image_count || 0) + processed;
-  if(_openGalleries.has(auctionId)){
-    _openGalleries.delete(auctionId);
-    await toggleAuctionGallery(auctionId);
-  }
-  renderAuctionLists();
-}
-
-const _openGalleries = new Set();
-async function toggleAuctionGallery(auctionId){
-  const wrap = document.getElementById('auction-gallery-' + auctionId);
-  if(!wrap) return;
-  if(_openGalleries.has(auctionId)){
-    _openGalleries.delete(auctionId);
-    wrap.style.display = 'none';
-    wrap.innerHTML = '';
-    return;
-  }
-  _openGalleries.add(auctionId);
-  wrap.style.display = '';
-  wrap.innerHTML = '<div class="empty-msg">Memuat foto…</div>';
-  try {
-    const r = await fetch(`/api/auctions/${auctionId}/images`);
-    if(!r.ok){ wrap.innerHTML = '<div class="empty-msg">Gagal memuat</div>'; return; }
-    const imgs = await r.json();
-    if(!imgs.length){ wrap.innerHTML = '<div class="empty-msg">Belum ada foto</div>'; return; }
-    const isAdmin = role === 'admin';
-    wrap.innerHTML = imgs.map(im => `
-      <div class="auction-gallery-tile" data-img-id="${im.id}">
-        <img src="${escapeHtml(im.image_url)}" alt="" loading="lazy">
-        ${isAdmin ? `<button class="auction-gallery-del" data-img-id="${im.id}" title="Hapus">×</button>` : ''}
-      </div>
-    `).join('');
-    if(isAdmin){
-      wrap.querySelectorAll('.auction-gallery-del').forEach(b => b.addEventListener('click', async () => {
-        const imgId = +b.dataset.imgId;
-        if(!confirm('Hapus foto ini?')) return;
-        try {
-          const dr = await fetch(`/api/auctions/images/${imgId}`, { method:'DELETE', headers:{'x-admin-token':adminToken} });
-          if(!dr.ok){ toast('Gagal menghapus'); return; }
-          // Remove from DOM
-          const tile = wrap.querySelector(`.auction-gallery-tile[data-img-id="${imgId}"]`);
-          if(tile) tile.remove();
-          const a = auctionsActive.find(x => x.id === auctionId) || auctionsHistory.find(x => x.id === auctionId);
-          if(a) a.image_count = Math.max(0, (a.image_count || 0) - 1);
-          renderAuctionLists();
-        } catch { toast('Gagal menghapus'); }
-      }));
-      // Click image to open in lightbox
-      wrap.querySelectorAll('.auction-gallery-tile img').forEach(im => {
-        im.addEventListener('click', () => openLightbox(im.src));
-      });
-    } else {
-      // Viewers can still click to enlarge
-      wrap.querySelectorAll('.auction-gallery-tile img').forEach(im => {
-        im.addEventListener('click', () => openLightbox(im.src));
-      });
-    }
-  } catch { wrap.innerHTML = '<div class="empty-msg">Gagal memuat</div>'; }
 }
 
 function openLightbox(src){
@@ -288,14 +162,12 @@ function startAuctionCountdown(){
   if(auctionCountdownTimer) return;
   auctionCountdownTimer = setInterval(() => {
     if(currentTab !== 'auction') return;
-    document.querySelectorAll('.auction-card-timer[data-ends]').forEach(el => {
+    document.querySelectorAll('.auction-card-countdown[data-ends]').forEach(el => {
       const ends = new Date(el.dataset.ends).getTime();
       const ms = ends - Date.now();
       el.textContent = fmtCountdown(ms);
       const card = el.closest('.auction-card');
-      if(card){
-        card.classList.toggle('ending', ms > 0 && ms < 60_000);
-      }
+      if(card) card.classList.toggle('ending', ms > 0 && ms < 60_000);
     });
   }, 1000);
 }
@@ -303,29 +175,25 @@ function startAuctionCountdown(){
 async function createAuction(){
   if(role !== 'admin') return;
   const title = $('auction-title-input').value.trim();
-  if(!title){ toast('Nama barang wajib diisi'); return; }
-  const description = $('auction-desc-input').value.trim();
-  const url = $('auction-image-url-input').value.trim();
-  const image_url = pendingAuctionImage || url || '';
-  const starting_price = Number($('auction-start-price-input').value) || 0;
-  const min_increment = Number($('auction-increment-input').value) || 0;
+  const facebook_url = $('auction-fb-url-input').value.trim();
+  const image_url = pendingAuctionImage;
   const hours = Number($('auction-dur-h-input').value) || 0;
   const minutes = Number($('auction-dur-m-input').value) || 0;
   const duration_seconds = hours * 3600 + minutes * 60;
+  if(!image_url){ toast('Upload poster lelang dulu'); return; }
+  if(!facebook_url){ toast('Link Facebook wajib diisi'); return; }
+  if(!/^https:\/\//i.test(facebook_url)){ toast('Link Facebook harus diawali https://'); return; }
   if(duration_seconds < 60){ toast('Durasi minimal 1 menit'); return; }
   try {
     const r = await fetch('/api/auctions', {
       method: 'POST',
       headers: { 'content-type':'application/json', 'x-admin-token': adminToken },
-      body: JSON.stringify({ title, description, image_url, starting_price, min_increment, duration_seconds })
+      body: JSON.stringify({ title, image_url, facebook_url, duration_seconds })
     });
     if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e.error || 'fail'); }
     // Will arrive via socket auction-created
     $('auction-title-input').value = '';
-    $('auction-desc-input').value = '';
-    $('auction-image-url-input').value = '';
-    $('auction-start-price-input').value = '0';
-    $('auction-increment-input').value = '0';
+    $('auction-fb-url-input').value = '';
     $('auction-dur-h-input').value = '1';
     $('auction-dur-m-input').value = '0';
     pendingAuctionImage = '';
@@ -333,31 +201,7 @@ async function createAuction(){
     $('auction-form-preview').style.display = 'none';
     $('auction-create-form').style.display = 'none';
     toast('Lelang dimulai');
-  } catch(e) { toast('Gagal membuat lelang'); }
-}
-
-async function promptUpdateBid(id){
-  if(role !== 'admin') return;
-  const a = auctionsActive.find(x => x.id === id); if(!a) return;
-  const minimum = Math.max(
-    a.current_bid != null ? a.current_bid + (a.min_increment || 0) : a.starting_price,
-    a.starting_price
-  );
-  const amountStr = prompt(`Tawaran baru untuk "${a.title}"\nMinimal: ${fmtRupiah(minimum)}`, String(Math.round(minimum)));
-  if(amountStr == null) return;
-  const amount = Number(String(amountStr).replace(/[^\d.-]/g, ''));
-  if(!amount || amount < a.starting_price){ toast('Tawaran tidak valid'); return; }
-  const bidder = prompt('Nama penawar', a.current_bidder || '');
-  if(bidder == null) return;
-  try {
-    const r = await fetch(`/api/auctions/${id}`, {
-      method:'PATCH',
-      headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ current_bid: amount, current_bidder: bidder.trim() })
-    });
-    if(!r.ok){ toast('Gagal update'); return; }
-    toast('Tawaran diperbarui');
-  } catch { toast('Gagal update'); }
+  } catch(e) { toast(e.message || 'Gagal membuat lelang'); }
 }
 
 async function extendAuction(id, seconds){
@@ -376,17 +220,19 @@ async function extendAuction(id, seconds){
 async function promptEditAuction(id){
   if(role !== 'admin') return;
   const a = auctionsActive.find(x => x.id === id); if(!a) return;
-  const title = prompt('Nama barang', a.title);
+  const title = prompt('Caption / nama lelang (kosongkan untuk default)', a.title === 'Lelang Live' ? '' : (a.title || ''));
   if(title == null) return;
-  const description = prompt('Deskripsi', a.description || '');
-  if(description == null) return;
+  const facebook_url = prompt('Link Facebook Live', a.facebook_url || '');
+  if(facebook_url == null) return;
+  const fb = facebook_url.trim();
+  if(fb && !/^https:\/\//i.test(fb)){ toast('Link harus diawali https://'); return; }
   try {
     const r = await fetch(`/api/auctions/${id}`, {
       method:'PATCH',
       headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify({ title: title.trim(), description: description.trim() })
+      body: JSON.stringify({ title: title.trim(), facebook_url: fb })
     });
-    if(!r.ok){ toast('Gagal update'); return; }
+    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal update'); return; }
     toast('Lelang diperbarui');
   } catch { toast('Gagal update'); }
 }
@@ -437,7 +283,6 @@ $('auction-image-file-input')?.addEventListener('change', async e => {
     $('auction-form-preview-img').src = reader.result;
     $('auction-form-preview-name').textContent = file.name + ' (mengunggah…)';
     $('auction-form-preview').style.display = '';
-    $('auction-image-url-input').value = '';
   };
   reader.readAsDataURL(file);
   try {

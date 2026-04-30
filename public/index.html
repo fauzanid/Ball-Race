@@ -767,53 +767,60 @@ body[data-theme="light"] .predict-matchup-vs{color:rgba(0,0,0,.35)}
 .auction-create-form input,.auction-create-form textarea{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 14px;color:var(--ink-50);font-family:var(--font-cond);font-weight:600;letter-spacing:.04em;outline:none}
 .auction-create-form input:focus,.auction-create-form textarea:focus{border-color:var(--accent)}
 .auction-create-form textarea{resize:vertical;min-height:54px;font-family:var(--font-cond)}
-#auction-image-url-input,#auction-edit-image-url-input{text-transform:none}
+#auction-fb-url-input{text-transform:none}
 .auction-form-preview{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:6px 10px}
 .auction-form-preview img{width:44px;height:44px;object-fit:cover;border-radius:6px}
-.auction-price-row,.auction-duration-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.auction-price-label{display:flex;flex-direction:column;gap:4px;flex:1 1 160px;min-width:140px}
-.auction-price-label>span{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-300)}
+.auction-duration-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .auction-duration-row input[type="number"]{width:80px;text-align:center}
 .auction-duration-label,.auction-duration-unit{font-family:var(--font-cond);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-300)}
-.auction-card{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--accent-2);border-radius:var(--r-md);padding:14px;margin-bottom:10px;display:grid;grid-template-columns:120px 1fr;gap:14px}
-.auction-card.closed{border-left-color:rgba(255,255,255,.15);opacity:.85}
-.auction-card.ending{border-left-color:#ff5500;animation:auction-pulse 1.4s ease-in-out infinite}
+.auction-card{background:rgba(10,10,8,.7);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px;display:flex;flex-direction:column}
+.auction-card.closed{opacity:.7}
+.auction-card.ending{border-color:rgba(255,69,0,.5);box-shadow:0 0 0 1px rgba(255,69,0,.4),0 0 32px rgba(255,69,0,.18);animation:auction-pulse 1.4s ease-in-out infinite}
+/* Poster wrapper — image fills the card top edge to edge */
+.auction-card-poster{position:relative;width:100%;background:rgba(255,255,255,.03);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.auction-card-poster img{width:100%;height:auto;max-height:480px;object-fit:cover;display:block;cursor:pointer;transition:transform .3s}
+.auction-card-poster img:hover{transform:scale(1.02)}
+.auction-card-poster.empty{aspect-ratio:16/9;font-size:64px;color:var(--ink-400);background:rgba(255,255,255,.04)}
+.auction-card.closed .auction-card-poster img{filter:grayscale(.5) brightness(.85)}
+/* Countdown overlay top-right of the poster */
+.auction-card-countdown{position:absolute;top:12px;right:12px;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.78);border:1px solid rgba(255,215,64,.45);color:#ffd740;font-family:var(--font-mono);font-weight:700;font-size:18px;letter-spacing:.04em;padding:8px 14px;border-radius:10px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 4px 16px rgba(0,0,0,.4);font-variant-numeric:tabular-nums}
+.auction-card-countdown::before{content:"⏱"}
+.auction-card.ending .auction-card-countdown{color:#ff5500;border-color:rgba(255,69,0,.7);background:rgba(20,0,0,.85);animation:countdown-pulse 1s ease-in-out infinite}
+.auction-card.closed .auction-card-countdown{color:var(--ink-300);border-color:rgba(255,255,255,.2);background:rgba(0,0,0,.7)}
+.auction-card.closed .auction-card-countdown::before{content:"✓"}
+@keyframes countdown-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+/* LIVE badge top-left when active */
+.auction-card-live-badge{position:absolute;top:12px;left:12px;display:flex;align-items:center;gap:6px;background:#dc1a1a;color:#fff;font-family:var(--font-cond);font-weight:800;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:6px 10px;border-radius:6px;box-shadow:0 4px 12px rgba(220,26,26,.4)}
+.auction-card-live-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:#fff;animation:live-blink 1.2s ease-in-out infinite}
+@keyframes live-blink{0%,100%{opacity:1}50%{opacity:.3}}
+.auction-card.closed .auction-card-live-badge{display:none}
 @keyframes auction-pulse{0%,100%{box-shadow:0 0 0 rgba(255,69,0,0)}50%{box-shadow:0 0 18px rgba(255,69,0,.55)}}
-.auction-card-img{width:120px;height:120px;border-radius:var(--r-md);object-fit:cover;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);align-self:start}
-.auction-card-img-empty{width:120px;height:120px;display:flex;align-items:center;justify-content:center;font-size:50px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);align-self:start;color:var(--ink-400)}
-.auction-card-body{display:flex;flex-direction:column;gap:6px;min-width:0}
-.auction-card-title{font-family:var(--font-display);font-style:italic;font-size:18px;letter-spacing:.02em;color:var(--ink-50);text-transform:uppercase;line-height:1.05;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.auction-card-desc{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.auction-card-prices{display:flex;gap:14px;flex-wrap:wrap;font-family:var(--font-cond)}
-.auction-card-price-block{display:flex;flex-direction:column}
-.auction-card-price-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-400)}
-.auction-card-price{font-family:var(--font-mono);font-weight:700;font-size:15px;color:var(--ink-50)}
-.auction-card-price.bid{color:var(--accent-2);text-shadow:0 0 12px rgba(255,215,64,.3)}
-.auction-card-bidder{font-family:var(--font-cond);font-size:12px;color:var(--ink-200);font-style:italic}
-.auction-card-bidder strong{color:var(--accent-2);font-style:normal;font-weight:700;text-transform:uppercase}
-.auction-card-timer{display:flex;align-items:center;gap:6px;font-family:var(--font-mono);font-weight:700;font-size:18px;color:var(--accent-2);background:rgba(255,69,0,.08);border:1px solid rgba(255,215,64,.25);padding:6px 12px;border-radius:6px;align-self:flex-start}
-.auction-card.closed .auction-card-timer{color:var(--ink-300);background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1)}
-.auction-card.ending .auction-card-timer{color:#ff5500;border-color:rgba(255,69,0,.5)}
-.auction-card-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.auction-card-body{display:flex;flex-direction:column;gap:10px;padding:16px;min-width:0}
+.auction-card-title{font-family:var(--font-display);font-style:italic;font-size:18px;letter-spacing:.02em;color:var(--ink-50);text-transform:uppercase;line-height:1.15;margin:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+/* Big "Watch on Facebook" CTA — primary call-to-action on the card */
+.auction-fb-cta{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 18px;background:#1877f2;border:none;border-radius:10px;color:#fff;font-family:var(--font-cond);font-weight:800;font-size:14px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:background .15s,transform .15s,box-shadow .15s;box-shadow:0 4px 14px rgba(24,119,242,.3)}
+.auction-fb-cta:hover{background:#1465d3;transform:translateY(-1px);box-shadow:0 6px 18px rgba(24,119,242,.45)}
+.auction-fb-cta:active{transform:translateY(0)}
+.auction-fb-cta-disabled{display:flex;align-items:center;justify-content:center;padding:12px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.15);border-radius:10px;color:var(--ink-400);font-family:var(--font-cond);font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.auction-card-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
 .auction-card-actions .btn{font-size:11px;padding:6px 10px}
-.auction-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-top:10px;padding:8px;border:1px solid rgba(255,255,255,.06);border-radius:var(--r-sm);max-height:340px;overflow-y:auto}
-.auction-gallery-tile{position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#0a0a08;border:1px solid rgba(255,255,255,.06)}
-.auction-gallery-tile img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
-.auction-gallery-del{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.75);color:#fff;font-size:14px;line-height:1;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
-.auction-gallery-del:hover{background:rgba(220,40,40,.9)}
+body[data-theme="light"] .auction-card-actions{border-top-color:rgba(0,0,0,.06)}
 #auction-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;cursor:zoom-out}
 #auction-lightbox img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 #auction-lightbox .lb-close{position:absolute;top:16px;right:16px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-body[data-theme="light"] .auction-gallery{border-color:rgba(0,0,0,.08)}
-body[data-theme="light"] .auction-gallery-tile{background:#f5f5f5;border-color:rgba(0,0,0,.06)}
-.auction-card-winner{font-family:var(--font-display);font-style:italic;color:var(--accent-2);font-size:14px;letter-spacing:.04em;text-transform:uppercase;margin-top:4px;text-shadow:0 0 16px rgba(255,215,64,.3)}
-@media(max-width:560px){.auction-card{grid-template-columns:84px 1fr}.auction-card-img,.auction-card-img-empty{width:84px;height:84px;font-size:36px}}
+@media(max-width:560px){
+  .auction-card-poster img{max-height:360px}
+  .auction-card-countdown{font-size:15px;padding:6px 10px;top:8px;right:8px}
+  .auction-card-live-badge{font-size:10px;padding:5px 8px;top:8px;left:8px}
+  .auction-card-title{font-size:16px}
+  .auction-fb-cta{font-size:13px;padding:12px 14px;letter-spacing:.06em}
+}
 body[data-theme="light"] .auction-create-form{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .auction-create-form input,body[data-theme="light"] .auction-create-form textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
 body[data-theme="light"] .auction-card{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .auction-card-title{color:#1a1a16}
-body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
-body[data-theme="light"] .auction-card-price{color:#1a1a16}
+body[data-theme="light"] .auction-card-poster{background:rgba(0,0,0,.03)}
+body[data-theme="light"] .auction-card-countdown{background:rgba(255,255,255,.92);color:#cc7700;border-color:rgba(255,170,0,.5);box-shadow:0 4px 14px rgba(0,0,0,.12)}
 body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
 .tool-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:20px 0 32px;display:flex;flex-direction:column;gap:14px}
 @media(max-width:520px){.tool-wrap{padding:16px 14px 28px}}
@@ -943,14 +950,9 @@ body[data-theme="light"] .empty-msg{color:#6b6a62}
 
 /* === Light-mode coverage for Auction / Wheel / History === */
 body[data-theme="light"] .auction-card{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 4px rgba(0,0,0,.04)}
-body[data-theme="light"] .auction-card-img,body[data-theme="light"] .auction-card-img-empty{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
-body[data-theme="light"] .auction-card-desc{color:#4a4a45}
-body[data-theme="light"] .auction-card-bidder{color:#6b6a62}
 body[data-theme="light"] .auction-create-form{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .auction-create-form input,body[data-theme="light"] .auction-create-form textarea{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
 body[data-theme="light"] .auction-form-preview{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.08)}
-body[data-theme="light"] .auction-gallery{border-color:rgba(0,0,0,.08);background:rgba(0,0,0,.02)}
-body[data-theme="light"] .auction-gallery-tile{background:#ffffff;border-color:rgba(0,0,0,.06)}
 body[data-theme="light"] .chip{background:#ffffff;border:1px solid rgba(0,0,0,.08);color:#1a1a16}
 body[data-theme="light"] .wheel-hist-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .wheel-hist-summary:hover{background:rgba(0,0,0,.02)}
@@ -1566,29 +1568,16 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <button class="btn btn-ghost btn-xs" id="auction-toggle-form-btn">+ Tambah</button>
         </div>
         <div class="auction-create-form" id="auction-create-form" style="display:none">
-          <input id="auction-title-input" placeholder="Nama barang *" maxlength="200">
-          <textarea id="auction-desc-input" placeholder="Deskripsi (opsional)" maxlength="800" rows="2"></textarea>
-          <div class="add-row">
-            <input id="auction-image-url-input" placeholder="URL gambar (opsional)">
-            <label class="lucky-upload-label">
-              📷 Upload
-              <input type="file" id="auction-image-file-input" accept="image/*" style="display:none">
-            </label>
-          </div>
+          <input id="auction-title-input" placeholder="Caption / nama lelang (opsional)" maxlength="200">
+          <input id="auction-fb-url-input" placeholder="Link Facebook Live * (https://...)" maxlength="500" inputmode="url">
+          <label class="lucky-upload-label" id="auction-poster-label" style="justify-content:center">
+            📷 Upload Poster *
+            <input type="file" id="auction-image-file-input" accept="image/*" style="display:none">
+          </label>
           <div class="auction-form-preview" id="auction-form-preview" style="display:none">
             <img id="auction-form-preview-img" src="" alt="">
             <span class="lucky-form-preview-name" id="auction-form-preview-name"></span>
             <button class="btn btn-ghost btn-xs" id="auction-form-clear-img" style="margin-left:auto">×</button>
-          </div>
-          <div class="auction-price-row">
-            <label class="auction-price-label">
-              <span>Harga awal (Rp)</span>
-              <input type="number" id="auction-start-price-input" min="0" step="1000" value="0">
-            </label>
-            <label class="auction-price-label">
-              <span>Kelipatan minimum</span>
-              <input type="number" id="auction-increment-input" min="0" step="1000" value="0">
-            </label>
           </div>
           <div class="auction-duration-row">
             <span class="auction-duration-label">Durasi</span>
@@ -2560,16 +2549,6 @@ function setupSocketListeners(){
   socket.on('auctions-cleared', ({scope}) => {
     if(scope === 'all'){ auctionsActive = []; auctionsHistory = []; }
     else auctionsHistory = [];
-    if(currentTab === 'auction') renderAuctionLists();
-  });
-  socket.on('auction-images-added', ({ auction_id, count }) => {
-    const a = auctionsActive.find(x => x.id === auction_id) || auctionsHistory.find(x => x.id === auction_id);
-    if(a) a.image_count = (a.image_count || 0) + count;
-    if(currentTab === 'auction') renderAuctionLists();
-  });
-  socket.on('auction-image-deleted', ({ auction_id }) => {
-    const a = auctionsActive.find(x => x.id === auction_id) || auctionsHistory.find(x => x.id === auction_id);
-    if(a) a.image_count = Math.max(0, (a.image_count || 0) - 1);
     if(currentTab === 'auction') renderAuctionLists();
   });
 }

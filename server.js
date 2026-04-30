@@ -216,6 +216,8 @@ async function initDB() {
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_closed_ends ON auctions (closed, ends_at)`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_auctions_created ON auctions (created_at DESC)`);
+    // Live auctions are held on Facebook Live — link viewers to the stream.
+    await pool.query(`ALTER TABLE auctions ADD COLUMN IF NOT EXISTS facebook_url TEXT`);
     // Gallery images for an auction. One row per image so add/remove of a
     // single photo doesn't rewrite the whole auction row.
     await pool.query(`
@@ -324,6 +326,14 @@ function maskPhone(p) {
 function isValidImageUrl(s) {
   if (typeof s !== 'string' || !s) return false;
   return /^https:\/\/[^\s]/i.test(s) || /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);/i.test(s);
+}
+
+// Permissive https-url check for outbound links (Facebook Live, etc.).
+// Blocks javascript:/data:/file: and other XSS-active schemes when this
+// value is later rendered as <a href>.
+function isValidHttpsUrl(s) {
+  if (typeof s !== 'string' || !s) return false;
+  try { return new URL(s).protocol === 'https:'; } catch { return false; }
 }
 
 app.post('/api/admin/login', loginLimiter, (req, res) => {
@@ -660,13 +670,8 @@ function rowToAuction(r) {
     id: r.id,
     created_at: r.created_at,
     title: r.title,
-    description: r.description,
     image_url: r.image_url,
-    image_count: r.image_count != null ? Number(r.image_count) : 0,
-    starting_price: Number(r.starting_price),
-    min_increment: Number(r.min_increment || 0),
-    current_bid: r.current_bid != null ? Number(r.current_bid) : null,
-    current_bidder: r.current_bidder,
+    facebook_url: r.facebook_url || null,
     ends_at: r.ends_at,
     closed: !!r.closed,
     closed_at: r.closed_at,
@@ -779,19 +784,18 @@ app.post('/api/auctions', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const title = String(req.body?.title || '').trim();
-    const description = String(req.body?.description || '').trim() || null;
     const image_url = String(req.body?.image_url || '').trim() || null;
-    const starting_price = Number(req.body?.starting_price) || 0;
-    const min_increment = Number(req.body?.min_increment) || 0;
+    const facebook_url = String(req.body?.facebook_url || '').trim() || null;
     const duration_seconds = Math.max(60, Math.min(7 * 24 * 3600, Number(req.body?.duration_seconds) || 3600));
-    if (!title) return res.status(400).json({ error: 'Title required' });
-    if (image_url && image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
-    if (image_url && !isValidImageUrl(image_url)) return res.status(400).json({ error: 'Invalid image URL' });
+    if (!image_url) return res.status(400).json({ error: 'Poster wajib diunggah' });
+    if (image_url.length > 4_000_000) return res.status(413).json({ error: 'Image too large' });
+    if (!isValidImageUrl(image_url)) return res.status(400).json({ error: 'Invalid image URL' });
+    if (facebook_url && !isValidHttpsUrl(facebook_url)) return res.status(400).json({ error: 'Link Facebook harus diawali https://' });
     const ends_at = new Date(Date.now() + duration_seconds * 1000);
     const { rows } = await pool.query(
-      `INSERT INTO auctions (title, description, image_url, starting_price, min_increment, ends_at)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [title, description, image_url, starting_price, min_increment, ends_at]
+      `INSERT INTO auctions (title, image_url, facebook_url, ends_at)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [title || 'Lelang Live', image_url, facebook_url, ends_at]
     );
     const row = rowToAuction(rows[0]);
     io.emit('auction-created', row);
@@ -809,21 +813,15 @@ app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
     const fields = [];
     const values = [];
     let i = 1;
-    if (req.body?.current_bid !== undefined) {
-      fields.push(`current_bid = $${i++}`);
-      values.push(Number(req.body.current_bid) || 0);
-    }
-    if (req.body?.current_bidder !== undefined) {
-      fields.push(`current_bidder = $${i++}`);
-      values.push(String(req.body.current_bidder || '').trim().slice(0, 120) || null);
-    }
     if (req.body?.title !== undefined) {
       fields.push(`title = $${i++}`);
-      values.push(String(req.body.title).trim().slice(0, 200));
+      values.push(String(req.body.title).trim().slice(0, 200) || 'Lelang Live');
     }
-    if (req.body?.description !== undefined) {
-      fields.push(`description = $${i++}`);
-      values.push(String(req.body.description || '').trim() || null);
+    if (req.body?.facebook_url !== undefined) {
+      const fb = String(req.body.facebook_url || '').trim() || null;
+      if (fb && !isValidHttpsUrl(fb)) return res.status(400).json({ error: 'Link Facebook harus diawali https://' });
+      fields.push(`facebook_url = $${i++}`);
+      values.push(fb);
     }
     let oldImageUrl = null;
     let newImageUrl = null;
@@ -839,14 +837,6 @@ app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
       newImageUrl = img || null;
       fields.push(`image_url = $${i++}`);
       values.push(newImageUrl);
-    }
-    if (req.body?.starting_price !== undefined) {
-      fields.push(`starting_price = $${i++}`);
-      values.push(Number(req.body.starting_price) || 0);
-    }
-    if (req.body?.min_increment !== undefined) {
-      fields.push(`min_increment = $${i++}`);
-      values.push(Number(req.body.min_increment) || 0);
     }
     if (req.body?.extend_seconds !== undefined) {
       const ext = Math.min(24 * 3600, Math.max(0, Number(req.body.extend_seconds) || 0));
