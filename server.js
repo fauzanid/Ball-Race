@@ -1211,61 +1211,9 @@ app.post('/api/mvp', requireAdmin, async (req, res) => {
   }
 });
 
-app.patch('/api/mvp/:id', requireAdmin, async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: 'No database' });
-  try {
-    const id = +req.params.id;
-    const { name, points, delta } = req.body;
-    const sets = [];
-    const params = [];
-    let i = 1;
-    if (name != null) { sets.push(`name = $${i++}`); params.push(String(name).trim()); }
-    if (points != null && Number.isFinite(+points)) { sets.push(`points = $${i++}`); params.push(Math.max(0, +points)); }
-    if (delta != null && Number.isFinite(+delta)) { sets.push(`points = GREATEST(0, points + $${i++})`); params.push(+delta); }
-    if (!sets.length) return res.status(400).json({ error: 'No fields' });
-    sets.push(`updated_at = NOW()`);
-    params.push(id);
-    const { rows } = await pool.query(
-      `UPDATE mvp_entries SET ${sets.join(', ')} WHERE id = $${i} RETURNING month`, params
-    );
-    io.emit('mvp-updated', { month: rows[0]?.month });
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
-
-app.delete('/api/mvp/:id', requireAdmin, async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: 'No database' });
-  try {
-    const { rows } = await pool.query(
-      'DELETE FROM mvp_entries WHERE id = $1 RETURNING month', [+req.params.id]
-    );
-    io.emit('mvp-updated', { month: rows[0]?.month });
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
-
-app.delete('/api/mvp', requireAdmin, async (req, res) => {
-  if (!dbReady) return res.status(503).json({ error: 'No database' });
-  try {
-    // ?month=YYYY-MM clears just that month; no param clears everything.
-    const month = isValidMonth(req.query.month) ? req.query.month : null;
-    if (month) {
-      await pool.query('DELETE FROM mvp_entries WHERE month = $1', [month]);
-    } else {
-      await pool.query('DELETE FROM mvp_entries');
-    }
-    io.emit('mvp-updated', { month });
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed' });
-  }
-});
-
 // ===== MVP PRIZE PER MONTH =====
+// Registered BEFORE /api/mvp/:id so DELETE /api/mvp/prize doesn't get
+// swallowed by the :id handler with id="prize" → NaN.
 app.get('/api/mvp/prize', async (req, res) => {
   if (!dbReady) return res.json({ month: currentMonth(), prize_label: null, prize_image: null });
   try {
@@ -1324,6 +1272,60 @@ app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
     );
     if (rows[0]?.prize_image) deleteR2Object(rows[0].prize_image);
     io.emit('mvp-prize-updated', { month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.patch('/api/mvp/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const id = +req.params.id;
+    const { name, points, delta } = req.body;
+    const sets = [];
+    const params = [];
+    let i = 1;
+    if (name != null) { sets.push(`name = $${i++}`); params.push(String(name).trim()); }
+    if (points != null && Number.isFinite(+points)) { sets.push(`points = $${i++}`); params.push(Math.max(0, +points)); }
+    if (delta != null && Number.isFinite(+delta)) { sets.push(`points = GREATEST(0, points + $${i++})`); params.push(+delta); }
+    if (!sets.length) return res.status(400).json({ error: 'No fields' });
+    sets.push(`updated_at = NOW()`);
+    params.push(id);
+    const { rows } = await pool.query(
+      `UPDATE mvp_entries SET ${sets.join(', ')} WHERE id = $${i} RETURNING month`, params
+    );
+    io.emit('mvp-updated', { month: rows[0]?.month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/mvp/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const { rows } = await pool.query(
+      'DELETE FROM mvp_entries WHERE id = $1 RETURNING month', [+req.params.id]
+    );
+    io.emit('mvp-updated', { month: rows[0]?.month });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.delete('/api/mvp', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    // ?month=YYYY-MM clears just that month; no param clears everything.
+    const month = isValidMonth(req.query.month) ? req.query.month : null;
+    if (month) {
+      await pool.query('DELETE FROM mvp_entries WHERE month = $1', [month]);
+    } else {
+      await pool.query('DELETE FROM mvp_entries');
+    }
+    io.emit('mvp-updated', { month });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });

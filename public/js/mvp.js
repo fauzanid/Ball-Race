@@ -76,21 +76,49 @@ async function loadMvpEntries(){
 function renderMvpPrize(){
   const el = $('mvp-prize-banner');
   if(!el) return;
+  const isAdmin = role === 'admin';
   const hasPrize = mvpPrize && (mvpPrize.prize_image || mvpPrize.prize_label);
+
+  // Viewer + no prize → silent. Admin + no prize → CTA so it's obvious
+  // where to click to add one.
+  if(!hasPrize && !isAdmin){ el.style.display = 'none'; return; }
+  el.style.display = '';
+
   if(!hasPrize){
-    el.style.display = 'none';
+    el.className = 'mvp-prize empty';
+    el.innerHTML = `
+      <div class="mvp-prize-empty-icon">🏆</div>
+      <div class="mvp-prize-info">
+        <div class="mvp-prize-kicker">Hadiah ${escapeHtml(formatMonthLabel(mvpSelectedMonth))}</div>
+        <div class="mvp-prize-label">Belum ada hadiah — klik untuk atur</div>
+      </div>
+      <button class="mvp-prize-cta-btn" type="button" data-act="add">+ Atur</button>`;
+    // Whole banner is the click target so it feels like one big button.
+    // The CTA button stops propagation so it doesn't double-fire.
+    el.onclick = () => openMvpPrizeEditor();
+    el.querySelector('[data-act="add"]')?.addEventListener('click', e => { e.stopPropagation(); openMvpPrizeEditor(); });
     return;
   }
-  el.style.display = '';
+
+  // Has prize — viewers see the banner read-only; admins get inline ✎ / 🗑
+  el.onclick = null;
   const kicker = `🏆 Hadiah ${formatMonthLabel(mvpPrize.month || mvpSelectedMonth)}`;
+  const adminActions = isAdmin
+    ? `<div class="mvp-prize-actions">
+        <button class="mvp-prize-action edit" type="button" data-act="edit" title="Ubah hadiah" aria-label="Ubah hadiah">✎</button>
+        <button class="mvp-prize-action del" type="button" data-act="del" title="Hapus hadiah" aria-label="Hapus hadiah">🗑</button>
+      </div>`
+    : '';
+
   if(mvpPrize.prize_image){
     el.className = 'mvp-prize';
     el.innerHTML = `
-      <img src="${escapeHtml(mvpPrize.prize_image)}" alt="" data-act="zoom">
+      <img class="mvp-prize-thumb" src="${escapeHtml(mvpPrize.prize_image)}" alt="" data-act="zoom">
       <div class="mvp-prize-info">
         <div class="mvp-prize-kicker">${kicker}</div>
         <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label || 'Hadiah eksklusif')}</div>
-      </div>`;
+      </div>
+      ${adminActions}`;
     el.querySelector('img[data-act="zoom"]')?.addEventListener('click', () => openMvpLightbox(mvpPrize.prize_image));
   } else {
     el.className = 'mvp-prize no-image';
@@ -98,8 +126,26 @@ function renderMvpPrize(){
       <div class="mvp-prize-info">
         <div class="mvp-prize-kicker">${kicker}</div>
         <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label)}</div>
-      </div>`;
+      </div>
+      ${adminActions}`;
   }
+
+  el.querySelector('[data-act="edit"]')?.addEventListener('click', e => { e.stopPropagation(); openMvpPrizeEditor(); });
+  el.querySelector('[data-act="del"]')?.addEventListener('click', e => { e.stopPropagation(); deleteMvpPrize(); });
+}
+
+async function deleteMvpPrize(){
+  if(role !== 'admin') return;
+  if(!confirm(`Hapus hadiah ${formatMonthLabel(mvpSelectedMonth)}?`)) return;
+  try {
+    const r = await fetch('/api/mvp/prize?month=' + encodeURIComponent(mvpSelectedMonth), {
+      method:'DELETE',
+      headers:{'x-admin-token':adminToken}
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menghapus'); return; }
+    toast('✓ Hadiah dihapus');
+    closeMvpPrizeEditor();
+  } catch { toast('Gagal menghapus'); }
 }
 
 function openMvpLightbox(src){
@@ -271,6 +317,8 @@ let mvpPrizeDraft = { label: '', image_url: '' };
 
 function openMvpPrizeEditor(){
   if(role !== 'admin') return;
+  const editor = $('mvp-prize-editor');
+  if(!editor) return;
   // Seed the draft from the current saved prize for this month
   mvpPrizeDraft = {
     label: mvpPrize?.prize_label || '',
@@ -279,13 +327,17 @@ function openMvpPrizeEditor(){
   $('mvp-prize-editor-month').textContent = formatMonthLabel(mvpSelectedMonth);
   $('mvp-prize-label-input').value = mvpPrizeDraft.label;
   renderMvpPrizeEditorPreview();
-  $('mvp-prize-editor').style.display = '';
-  $('mvp-prize-toggle-btn').style.display = 'none';
-  setTimeout(() => $('mvp-prize-label-input').focus(), 50);
+  editor.style.display = '';
+  // Bring it into view so the admin sees the panel right away even on
+  // long pages — without this the editor opens below the fold.
+  setTimeout(() => {
+    editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    $('mvp-prize-label-input').focus();
+  }, 50);
 }
 function closeMvpPrizeEditor(){
-  $('mvp-prize-editor').style.display = 'none';
-  $('mvp-prize-toggle-btn').style.display = '';
+  const editor = $('mvp-prize-editor');
+  if(editor) editor.style.display = 'none';
   // Reset the file input so the same file can be re-picked next time
   if($('mvp-prize-file')) $('mvp-prize-file').value = '';
 }
@@ -302,7 +354,6 @@ function renderMvpPrizeEditorPreview(){
   }
 }
 
-$('mvp-prize-toggle-btn')?.addEventListener('click', openMvpPrizeEditor);
 $('mvp-prize-editor-close')?.addEventListener('click', closeMvpPrizeEditor);
 $('mvp-prize-cancel')?.addEventListener('click', closeMvpPrizeEditor);
 

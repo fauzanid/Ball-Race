@@ -545,16 +545,36 @@ body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-c
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
 /* ═══ MVP OF THE MONTH ═══ */
 .mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
-.mvp-prize{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(255,215,64,.14),rgba(255,140,40,.06));border:1px solid rgba(255,215,64,.35);border-radius:var(--r-md)}
-.mvp-prize img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid rgba(255,215,64,.45);cursor:zoom-in;flex-shrink:0;transition:transform .2s}
-.mvp-prize img:hover{transform:scale(1.05)}
+.mvp-prize{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(255,215,64,.14),rgba(255,140,40,.06));border:1px solid rgba(255,215,64,.35);border-radius:var(--r-md);position:relative}
+.mvp-prize img.mvp-prize-thumb{width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid rgba(255,215,64,.45);cursor:zoom-in;flex-shrink:0;transition:transform .2s}
+.mvp-prize img.mvp-prize-thumb:hover{transform:scale(1.05)}
 .mvp-prize-info{flex:1;min-width:0}
 .mvp-prize-kicker{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#ffd740;margin-bottom:4px}
 .mvp-prize-label{font-family:var(--font-cond);font-weight:700;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mvp-prize.no-image{justify-content:center;text-align:center}
-.mvp-prize.no-image .mvp-prize-info{flex:initial}
-.mvp-prize.no-image .mvp-prize-label{font-size:18px;white-space:normal}
+.mvp-prize.no-image{text-align:left}
+.mvp-prize.no-image .mvp-prize-label{font-size:17px;white-space:normal}
 body[data-theme="light"] .mvp-prize{background:linear-gradient(135deg,rgba(255,215,64,.18),rgba(255,140,40,.08));border-color:rgba(255,170,0,.4)}
+/* Admin inline actions on the banner — replaces the old standalone toggle */
+.mvp-prize-actions{display:flex;gap:6px;flex-shrink:0;margin-left:auto}
+.mvp-prize-action{background:rgba(255,255,255,.08);border:1px solid rgba(255,215,64,.25);color:var(--ink-50);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s,color .15s;flex-shrink:0;padding:0}
+.mvp-prize-action:hover{background:rgba(255,215,64,.18);border-color:#ffd740}
+.mvp-prize-action.del:hover{background:rgba(255,85,119,.18);border-color:#ff5577;color:#ff5577}
+body[data-theme="light"] .mvp-prize-action{background:rgba(0,0,0,.04);border-color:rgba(255,170,0,.3);color:#1a1a16}
+body[data-theme="light"] .mvp-prize-action:hover{background:rgba(255,215,64,.2);border-color:#ffaa00}
+/* Empty-state CTA — admin only, replaces the silent "no prize" gap */
+.mvp-prize.empty{background:rgba(255,215,64,.05);border:1.5px dashed rgba(255,215,64,.4);cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
+.mvp-prize.empty:hover{background:rgba(255,215,64,.11);border-color:#ffd740;transform:translateY(-1px)}
+.mvp-prize-empty-icon{width:56px;height:56px;border-radius:10px;background:rgba(255,215,64,.15);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.mvp-prize.empty .mvp-prize-label{color:var(--ink-200);font-weight:600}
+.mvp-prize-cta-btn{background:#ffd740;border:none;color:#1a1a16;font-family:var(--font-cond);font-weight:800;font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px;border-radius:8px;cursor:pointer;flex-shrink:0;transition:background .15s,transform .15s}
+.mvp-prize-cta-btn:hover{background:#ffe066}
+body[data-theme="light"] .mvp-prize.empty{background:rgba(255,215,64,.08);border-color:rgba(255,170,0,.5)}
+body[data-theme="light"] .mvp-prize.empty:hover{background:rgba(255,215,64,.16);border-color:#ffaa00}
+@media(max-width:520px){
+  .mvp-prize-action{width:32px;height:32px;font-size:13px}
+  .mvp-prize-cta-btn{padding:8px 10px;font-size:11px}
+  .mvp-prize-empty-icon{width:44px;height:44px;font-size:20px}
+}
 /* Prize edit panel — expands inline under the admin toggle button */
 .mvp-prize-editor{display:flex;flex-direction:column;gap:10px;padding:14px;background:rgba(255,215,64,.05);border:1px solid rgba(255,215,64,.3);border-radius:var(--r-md);animation:mvp-prize-slide .2s ease-out}
 @keyframes mvp-prize-slide{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
@@ -1665,17 +1685,14 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <!-- Prize banner — visible to everyone, edit button for admin -->
       <div class="mvp-prize" id="mvp-prize-banner" style="display:none"></div>
 
-      <!-- Admin add row + prize button -->
+      <!-- Admin add row + inline prize editor (opened via the banner) -->
       <div class="mvp-admin-only" style="display:none">
         <div class="add-row">
           <input id="mvp-name-input" placeholder="Nama pemain" maxlength="80">
           <input id="mvp-pts-input" type="number" min="0" max="9999" placeholder="Poin" value="0" style="max-width:100px">
           <button class="btn btn-primary btn-sm" id="mvp-add-btn">+ Tambah</button>
         </div>
-        <div class="add-row">
-          <button class="btn btn-ghost btn-sm" id="mvp-prize-toggle-btn">🏆 Atur Hadiah Bulan Ini</button>
-        </div>
-        <!-- Prize edit panel — expands inline when admin toggles it -->
+        <!-- Prize edit panel — opens when admin clicks ✎ Edit on the banner -->
         <div class="mvp-prize-editor" id="mvp-prize-editor" style="display:none">
           <div class="mvp-prize-editor-hd">
             <span class="mvp-prize-editor-title">🏆 Hadiah <span id="mvp-prize-editor-month"></span></span>
@@ -2676,6 +2693,7 @@ function setRole(r){
   if(typeof renderPredictList === 'function') renderPredictList();
   document.querySelectorAll('.mvp-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   if(typeof renderMvpTable === 'function') renderMvpTable();
+  if(typeof renderMvpPrize === 'function') renderMvpPrize();
   if(typeof renderWheelChips === 'function') renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
