@@ -289,6 +289,20 @@ async function initDB() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    // Standings movement — Billboard-style two-publish snapshot per month.
+    // `ranks` holds the last published rankings; `prev_ranks` holds the
+    // publish before that. ▲▼ chips compare live → prev_ranks while no
+    // edits have happened since the last publish (so just-published
+    // movements stay visible), and live → ranks after admin edits.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS mvp_snapshots (
+        month VARCHAR(7) PRIMARY KEY,
+        captured_at TIMESTAMPTZ DEFAULT NOW(),
+        ranks JSONB NOT NULL,
+        prev_ranks JSONB
+      )
+    `);
+    await pool.query(`ALTER TABLE mvp_snapshots ADD COLUMN IF NOT EXISTS prev_ranks JSONB`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -1167,19 +1181,102 @@ app.get('/api/mvp/months', async (req, res) => {
   }
 });
 
+// Publish current ranks as the new "last publish", sliding the previous
+// "last publish" into `prev_ranks` so just-published movements stay
+// visible until admin edits again.
+async function captureMvpSnapshot(month) {
+  const { rows } = await pool.query(
+    `SELECT id FROM mvp_entries WHERE month = $1
+       ORDER BY points DESC, name ASC`,
+    [month]
+  );
+  const newRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
+  // Read the prior `ranks` so we can demote it to prev_ranks (otherwise
+  // publishing twice would lose the chart-transition view).
+  const cur = await pool.query(
+    `SELECT ranks FROM mvp_snapshots WHERE month = $1`, [month]
+  );
+  const slidPrev = cur.rows[0]?.ranks || null;
+  const result = await pool.query(
+    `INSERT INTO mvp_snapshots (month, captured_at, ranks, prev_ranks)
+       VALUES ($1, NOW(), $2, $3)
+       ON CONFLICT (month) DO UPDATE
+         SET captured_at = NOW(),
+             ranks = EXCLUDED.ranks,
+             prev_ranks = EXCLUDED.prev_ranks
+       RETURNING captured_at`,
+    [month, JSON.stringify(newRanks), slidPrev ? JSON.stringify(slidPrev) : null]
+  );
+  return result.rows[0]?.captured_at || null;
+}
+
+// Two rank maps are "equal" when every key matches and every rank matches.
+// Used to detect "live state == last publish" — i.e. no edits since the
+// last Publish click.
+function ranksEqual(a, b) {
+  if (!a || !b) return false;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (a[k] !== b[k]) return false;
+  return true;
+}
+
 app.get('/api/mvp', async (req, res) => {
-  if (!dbReady) return res.json([]);
+  if (!dbReady) return res.json({ entries: [], published_at: null });
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     const { rows } = await pool.query(
-      `SELECT id, name, points, month, created_at, updated_at FROM mvp_entries
+      `SELECT id, name, points FROM mvp_entries
          WHERE month = $1
          ORDER BY points DESC, name ASC`,
       [month]
     );
-    res.json(rows);
+
+    const snap = await pool.query(
+      `SELECT captured_at, ranks, prev_ranks FROM mvp_snapshots WHERE month = $1`,
+      [month]
+    );
+    const last = snap.rows[0]?.ranks || null;
+    const prev = snap.rows[0]?.prev_ranks || null;
+    const published_at = snap.rows[0]?.captured_at || null;
+
+    // Pick the comparison baseline:
+    //  - No publish yet → null (chips hidden)
+    //  - Live state == last publish (admin hasn't edited since) → prev,
+    //    so chips show the just-published chart transition
+    //  - Live state diverged → last, so chips show drift since publish
+    const liveRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
+    let baseline;
+    if (!last) baseline = null;
+    else if (ranksEqual(liveRanks, last)) baseline = prev;
+    else baseline = last;
+
+    const entries = rows.map((r, i) => {
+      if (!baseline) return { id: r.id, name: r.name, points: r.points, movement: null };
+      const prevRank = baseline[String(r.id)];
+      return {
+        id: r.id,
+        name: r.name,
+        points: r.points,
+        // positive = moved up, negative = moved down, 0 = same, null = new vs baseline
+        movement: prevRank != null ? prevRank - (i + 1) : null,
+      };
+    });
+    res.json({ entries, published_at });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
+  }
+});
+
+app.post('/api/mvp/publish', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const month = isValidMonth(req.body?.month) ? req.body.month : currentMonth();
+    const captured_at = await captureMvpSnapshot(month);
+    io.emit('mvp-updated', { month });
+    res.json({ ok: true, month, published_at: captured_at });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to publish' });
   }
 });
 
@@ -1309,11 +1406,15 @@ app.delete('/api/mvp', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     // ?month=YYYY-MM clears just that month; no param clears everything.
+    // Snapshot entries are wiped alongside so the next view rebuilds a
+    // fresh baseline instead of comparing against deleted IDs.
     const month = isValidMonth(req.query.month) ? req.query.month : null;
     if (month) {
       await pool.query('DELETE FROM mvp_entries WHERE month = $1', [month]);
+      await pool.query('DELETE FROM mvp_snapshots WHERE month = $1', [month]);
     } else {
       await pool.query('DELETE FROM mvp_entries');
+      await pool.query('DELETE FROM mvp_snapshots');
     }
     io.emit('mvp-updated', { month });
     res.json({ ok: true });

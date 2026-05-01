@@ -9,6 +9,7 @@ let mvpEntries = [];
 let mvpAvailableMonths = [];
 let mvpSelectedMonth = currentMonthString();
 let mvpPrize = null; // { month, prize_label, prize_image }
+let mvpPublishedAt = null; // ISO string of last snapshot publish for the selected month
 
 function currentMonthString(){
   const d = new Date();
@@ -53,9 +54,9 @@ async function loadMvpEntries(){
   const month = mvpSelectedMonth;
   await Promise.all([
     fetch('/api/mvp?month=' + encodeURIComponent(month))
-      .then(r => r.ok ? r.json() : [])
-      .then(d => { mvpEntries = d; })
-      .catch(() => { mvpEntries = []; }),
+      .then(r => r.ok ? r.json() : { entries: [], published_at: null })
+      .then(d => { mvpEntries = d.entries || []; mvpPublishedAt = d.published_at || null; })
+      .catch(() => { mvpEntries = []; mvpPublishedAt = null; }),
     fetch('/api/mvp/prize?month=' + encodeURIComponent(month))
       .then(r => r.ok ? r.json() : null)
       .then(d => { mvpPrize = d; })
@@ -70,7 +71,37 @@ async function loadMvpEntries(){
       : `Klasemen pemain ${formatMonthLabel(mvpSelectedMonth)}.`;
   }
   renderMvpPrize();
+  renderMvpPublishBar();
   renderMvpTable();
+}
+
+// "Terakhir dipublikasi: 5 menit yang lalu" — relative time keeps the
+// bar honest without a live ticker.
+function formatRelativeTime(iso){
+  if(!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if(!Number.isFinite(ms) || ms < 0) return 'baru saja';
+  const s = Math.floor(ms / 1000);
+  if(s < 60) return 'baru saja';
+  const m = Math.floor(s / 60);
+  if(m < 60) return `${m} menit yang lalu`;
+  const h = Math.floor(m / 60);
+  if(h < 24) return `${h} jam yang lalu`;
+  const d = Math.floor(h / 24);
+  if(d < 30) return `${d} hari yang lalu`;
+  return new Date(iso).toLocaleDateString('id-ID', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function renderMvpPublishBar(){
+  const el = $('mvp-publish-time');
+  if(!el) return;
+  if(mvpPublishedAt){
+    el.classList.remove('empty');
+    el.textContent = `Terakhir dipublikasi: ${formatRelativeTime(mvpPublishedAt)}`;
+  } else {
+    el.classList.add('empty');
+    el.textContent = 'Belum dipublikasi — klik 📸 Publikasi untuk mengaktifkan ▲▼';
+  }
 }
 
 function renderMvpPrize(){
@@ -163,10 +194,22 @@ function openMvpLightbox(src){
   lb.style.display = 'flex';
 }
 
+// Movement chip — server returns delta = (rank 48h ago) − (rank now).
+// Positive = climbed, negative = dropped, 0 = stayed, null = new entry.
+function movementChipHtml(m){
+  if(m == null) return `<span class="mvp-move new" title="Pemain baru di periode ini">✦ Baru</span>`;
+  if(m > 0)    return `<span class="mvp-move up" title="Naik ${m} posisi">▲${m}</span>`;
+  if(m < 0)    return `<span class="mvp-move down" title="Turun ${-m} posisi">▼${-m}</span>`;
+  return `<span class="mvp-move same" title="Tidak berubah">─</span>`;
+}
+
 function renderMvpTable(){
   const el = $('mvp-table');
   if(!el) return;
   const isAdmin = role === 'admin';
+  const hasPublish = !!mvpPublishedAt;
+  // Toggle the extra grid column on/off based on whether chips will render.
+  el.classList.toggle('has-publish', hasPublish);
 
   if(!mvpEntries.length){
     el.innerHTML = `<div class="empty-msg" style="padding:32px 16px">${
@@ -175,9 +218,11 @@ function renderMvpTable(){
     return;
   }
 
-  // Header
+  // Header — empty cell between # and Pemain mirrors the chip column.
+  // Only rendered when there's a publish to compare against.
   let html = `<div class="mvp-thead">
     <span>#</span>
+    ${hasPublish ? '<span></span>' : ''}
     <span>Pemain</span>
     <span class="mvp-pts">Pts</span>
   </div>`;
@@ -196,8 +241,15 @@ function renderMvpTable(){
           <button class="mvp-del" data-act="del" data-id="${p.id}" title="Hapus">×</button>
         </div>`
       : `<span class="mvp-pts">${p.points}</span>`;
+    // Hide chips entirely until admin publishes a baseline — otherwise
+    // every row would say "✦ Baru" which is misleading (no comparison
+    // exists yet, the player isn't actually "new").
+    const moveCell = hasPublish
+      ? `<span class="mvp-move-cell">${movementChipHtml(p.movement)}</span>`
+      : '';
     return `<div class="mvp-row ${rankClass}${isAdmin ? ' has-admin' : ''}" data-id="${p.id}">
       <span class="mvp-rank ${rankClass}">${i + 1}</span>
+      ${moveCell}
       <span class="mvp-name">${medal ? `<span class="mvp-medal">${medal}</span>` : ''}${escapeHtml(p.name)}</span>
       ${adminCell}
     </div>`;
@@ -290,6 +342,25 @@ $('mvp-add-btn')?.addEventListener('click', async () => {
 });
 $('mvp-name-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') $('mvp-pts-input').focus(); });
 $('mvp-pts-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') $('mvp-add-btn').click(); });
+
+// Admin: publish current standings as the new ▲▼ baseline. Until the
+// next publish, viewers see how each player has shifted vs. this snapshot.
+$('mvp-publish-btn')?.addEventListener('click', async () => {
+  if(role !== 'admin') return;
+  if(!mvpEntries.length){ toast('Tambah pemain dulu'); return; }
+  const btn = $('mvp-publish-btn');
+  btn.disabled = true;
+  try {
+    const r = await fetch('/api/mvp/publish', {
+      method:'POST',
+      headers:{'content-type':'application/json','x-admin-token':adminToken},
+      body: JSON.stringify({ month: mvpSelectedMonth })
+    });
+    if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal publikasi'); return; }
+    toast('✓ Klasemen dipublikasi');
+  } catch { toast('Gagal publikasi'); }
+  finally { btn.disabled = false; }
+});
 
 // Admin: clear current month only (so historic months stay intact)
 $('mvp-clear-btn')?.addEventListener('click', async () => {

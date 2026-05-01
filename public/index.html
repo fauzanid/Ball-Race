@@ -602,15 +602,30 @@ body[data-theme="light"] .mvp-prize-editor-preview{background:rgba(0,0,0,.02)}
 body[data-theme="light"] .mvp-month-picker{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .mvp-month-control select option{background:#ffffff;color:#1a1a16}
 .mvp-table{display:flex;flex-direction:column;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);overflow:hidden}
-.mvp-thead{display:grid;grid-template-columns:48px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
+.mvp-thead{display:grid;grid-template-columns:36px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;font-family:var(--font-cond);font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);border-bottom:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,.18)}
 .mvp-thead .mvp-pts{text-align:right;color:var(--ink-50)}
-.mvp-row{display:grid;grid-template-columns:48px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+.mvp-row{display:grid;grid-template-columns:36px 1fr 80px;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s}
+/* When ▲▼ chips are live, grow the grid by one column right after rank.
+   Without a publish there's no extra column, so layout stays clean. */
+.mvp-table.has-publish .mvp-thead,
+.mvp-table.has-publish .mvp-row{grid-template-columns:36px auto 1fr 80px}
+.mvp-move-cell{display:flex;align-items:center;justify-content:flex-start;min-width:0}
 .mvp-row:last-child{border-bottom:none}
 .mvp-row:hover{background:rgba(255,255,255,.02)}
 .mvp-rank{font-family:var(--font-cond);font-weight:700;font-size:15px;color:var(--ink-200);text-align:left}
 .mvp-rank.r1{color:#ffd740}
 .mvp-rank.r2{color:#cdd5e0}
 .mvp-rank.r3{color:#cd8050}
+/* Movement chip — small ▲/▼/─/✦ pill below the rank number. */
+.mvp-move{font-family:var(--font-cond);font-weight:800;font-size:9px;letter-spacing:.02em;padding:1px 5px;border-radius:4px;line-height:1.3;display:inline-flex;align-items:center;white-space:nowrap}
+.mvp-move.up{color:#4cdfb6;background:rgba(76,223,182,.14)}
+.mvp-move.down{color:#ff7a8a;background:rgba(255,85,119,.14)}
+.mvp-move.same{color:var(--ink-400);background:rgba(255,255,255,.04);opacity:.65;font-weight:700}
+.mvp-move.new{color:#ffd740;background:rgba(255,215,64,.14);font-size:8px;letter-spacing:.06em}
+body[data-theme="light"] .mvp-move.up{color:#0a8060;background:rgba(10,128,96,.10)}
+body[data-theme="light"] .mvp-move.down{color:#cc1f4c;background:rgba(204,31,76,.09)}
+body[data-theme="light"] .mvp-move.same{color:#8a8884;background:rgba(0,0,0,.04)}
+body[data-theme="light"] .mvp-move.new{color:#b85d00;background:rgba(255,170,0,.14)}
 .mvp-name{font-family:var(--font-cond);font-weight:600;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
 .mvp-medal{font-size:18px;flex-shrink:0}
 .mvp-pts{font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--ink-50);text-align:right;font-variant-numeric:tabular-nums}
@@ -626,7 +641,25 @@ body[data-theme="light"] .mvp-month-control select option{background:#ffffff;col
 .mvp-actions .mvp-edit,.mvp-actions .mvp-del{background:none;border:none;cursor:pointer;font-size:14px;padding:4px;color:var(--ink-200);opacity:.7;transition:opacity .15s,color .15s}
 .mvp-actions .mvp-edit:hover{opacity:1;color:var(--ink-50)}
 .mvp-actions .mvp-del:hover{opacity:1;color:#ff5577}
-.mvp-row.has-admin{grid-template-columns:48px 1fr auto}
+.mvp-row.has-admin{grid-template-columns:36px 1fr auto}
+.mvp-table.has-publish .mvp-row.has-admin{grid-template-columns:36px auto 1fr auto}
+/* Publish bar — sits above the standings, shows how recent the ▲▼ chips
+   are, and (admin only) carries the "Publikasi Klasemen" button. */
+.mvp-publish-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);margin:4px 0 10px}
+.mvp-publish-meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.mvp-publish-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400)}
+.mvp-publish-time{font-family:var(--font-cond);font-weight:700;font-size:13px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvp-publish-time.empty{color:var(--ink-400);font-weight:600}
+#mvp-publish-btn{flex-shrink:0;white-space:nowrap}
+body[data-theme="light"] .mvp-publish-bar{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .mvp-publish-time{color:#1a1a16}
+body[data-theme="light"] .mvp-publish-time.empty{color:#8a8884}
+body[data-theme="light"] .mvp-publish-label{color:#6b6a62}
+@media(max-width:520px){
+  .mvp-publish-bar{padding:9px 12px}
+  .mvp-publish-time{font-size:12px}
+  #mvp-publish-btn{font-size:11px;padding:6px 10px}
+}
 /* FAQ accordion — explains the points system using native <details>. */
 .mvp-faq{margin-top:24px;display:flex;flex-direction:column;gap:8px}
 .mvp-faq-title{font-family:var(--font-cond);font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);margin:0 0 4px;padding:0 4px}
@@ -676,9 +709,12 @@ body[data-theme="light"] .mvp-actions .mvp-del:hover{color:#cc1f4c}
 @media(max-width:520px){
   .mvp-faq-item summary{padding:12px 14px;font-size:13px}
   .mvp-faq-body{padding:0 14px 12px 44px;font-size:12px}
-  .mvp-thead{padding:12px;grid-template-columns:36px 1fr 60px}
-  .mvp-row{padding:12px;grid-template-columns:36px 1fr 60px}
-  .mvp-row.has-admin{grid-template-columns:36px 1fr auto}
+  .mvp-thead{padding:12px;grid-template-columns:28px 1fr 60px;gap:6px}
+  .mvp-row{padding:12px;grid-template-columns:28px 1fr 60px;gap:6px}
+  .mvp-row.has-admin{grid-template-columns:28px 1fr auto;gap:6px}
+  .mvp-table.has-publish .mvp-thead,
+  .mvp-table.has-publish .mvp-row{grid-template-columns:28px auto 1fr 60px}
+  .mvp-table.has-publish .mvp-row.has-admin{grid-template-columns:28px auto 1fr auto}
   .mvp-name{font-size:14px}
   .mvp-pts{font-size:16px}
   .mvp-actions .mvp-quick{padding:3px 6px;font-size:10px}
@@ -1728,6 +1764,16 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <!-- Prize banner — visible to everyone, edit button for admin -->
       <div class="mvp-prize" id="mvp-prize-banner" style="display:none"></div>
 
+      <!-- Publish ribbon — visible to all so viewers know how recent the
+           movement chips are. Admin-only controls live inside it. -->
+      <div class="mvp-publish-bar">
+        <div class="mvp-publish-meta">
+          <span class="mvp-publish-label">Pergerakan ▲▼</span>
+          <span class="mvp-publish-time" id="mvp-publish-time">Belum dipublikasi</span>
+        </div>
+        <button class="btn btn-primary btn-sm mvp-admin-only" id="mvp-publish-btn" style="display:none">📸 Publikasi</button>
+      </div>
+
       <!-- Admin add row + inline prize editor (opened via the banner) -->
       <div class="mvp-admin-only" style="display:none">
         <div class="add-row">
@@ -1791,6 +1837,10 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <details class="mvp-faq-item">
           <summary>Bagaimana cara ikut Ball Race?</summary>
           <div class="mvp-faq-body">Seluruh peserta yang melakukan bid di item acak yang terpilih (menang maupun kalah) akan dilombakan di Ball Race. Masing-masing dapat <strong>1 pts</strong>, plus hadiah langsung untuk juara <strong>1, 2, dan 3</strong>.</div>
+        </details>
+        <details class="mvp-faq-item">
+          <summary>Apa arti tanda ▲ ▼ di sebelah peringkat?</summary>
+          <div class="mvp-faq-body">Itu pergerakan posisi sejak <strong>klasemen terakhir dipublikasi</strong> (mirip Billboard / liga sepak bola). Admin merapikan poin dulu, lalu klik 📸 Publikasi untuk menetapkan klasemen baru. <span class="mvp-move up">▲</span> naik peringkat, <span class="mvp-move down">▼</span> turun, <span class="mvp-move same">─</span> tidak berubah, <span class="mvp-move new">✦ Baru</span> = belum ada di klasemen sebelumnya.</div>
         </details>
       </div>
     </div>
