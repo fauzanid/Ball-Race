@@ -641,14 +641,18 @@ body[data-theme="light"] .mvp-month-control select option{background:#ffffff;col
 .mvp-faq-body{padding:0 16px 14px 48px;font-family:var(--font-cond);font-size:13px;line-height:1.55;color:var(--ink-200);animation:mvp-faq-slide .2s ease-out}
 .mvp-faq-body strong{color:#ffd740;font-weight:800}
 @keyframes mvp-faq-slide{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
-body[data-theme="light"] .mvp-faq-item{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
-body[data-theme="light"] .mvp-faq-item[open]{border-color:rgba(255,170,0,.45);background:rgba(255,215,64,.06)}
+body[data-theme="light"] .mvp-faq-item{background:#ffffff;border-color:rgba(0,0,0,.1);box-shadow:0 1px 3px rgba(0,0,0,.05)}
+body[data-theme="light"] .mvp-faq-item:hover{border-color:rgba(255,170,0,.4)}
+body[data-theme="light"] .mvp-faq-item[open]{border-color:rgba(255,140,0,.5);background:linear-gradient(135deg,rgba(255,215,64,.18),rgba(255,140,40,.06));box-shadow:0 2px 10px rgba(255,170,0,.15)}
 body[data-theme="light"] .mvp-faq-item summary{color:#1a1a16}
-body[data-theme="light"] .mvp-faq-item summary:hover{color:#cc7700}
-body[data-theme="light"] .mvp-faq-item summary::before{color:#cc7700;border-color:rgba(255,170,0,.5);background:rgba(255,215,64,.18)}
-body[data-theme="light"] .mvp-faq-body{color:#4a4a45}
-body[data-theme="light"] .mvp-faq-body strong{color:#cc7700}
-body[data-theme="light"] .mvp-faq-title{color:#6b6a62}
+body[data-theme="light"] .mvp-faq-item summary:hover{color:#b85d00}
+body[data-theme="light"] .mvp-faq-item[open] summary{color:#8a4500}
+body[data-theme="light"] .mvp-faq-item summary::before{color:#b85d00;border-color:rgba(255,140,0,.5);background:rgba(255,170,0,.18)}
+body[data-theme="light"] .mvp-faq-item[open] summary::before{background:#ffaa00;border-color:#ff8800;color:#ffffff}
+body[data-theme="light"] .mvp-faq-item summary:focus-visible{outline-color:#cc7700}
+body[data-theme="light"] .mvp-faq-body{color:#3a3a35}
+body[data-theme="light"] .mvp-faq-body strong{color:#b85d00}
+body[data-theme="light"] .mvp-faq-title{color:#4a4a45}
 @media(max-width:520px){
   .mvp-faq-item summary{padding:12px 14px;font-size:13px}
   .mvp-faq-body{padding:0 14px 12px 44px;font-size:12px}
