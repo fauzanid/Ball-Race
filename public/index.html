@@ -97,7 +97,7 @@ header{padding:12px 18px;display:flex;align-items:center;gap:10px;min-height:60p
 /* Screens */
 .screen{display:none;flex:1;flex-direction:column;min-height:0}
 .screen.active{display:flex}
-#app{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
 /* Toast */
 .toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--accent);color:var(--ink-900);font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.04em;padding:10px 24px;border-radius:6px;z-index:100;opacity:0;transition:opacity .3s;pointer-events:none;text-transform:uppercase}
@@ -626,7 +626,7 @@ body[data-theme="light"] .mvp-move.up{color:#0a8060;background:rgba(10,128,96,.1
 body[data-theme="light"] .mvp-move.down{color:#cc1f4c;background:rgba(204,31,76,.09)}
 body[data-theme="light"] .mvp-move.same{color:#8a8884;background:rgba(0,0,0,.04)}
 body[data-theme="light"] .mvp-move.new{color:#b85d00;background:rgba(255,170,0,.14)}
-.mvp-name{font-family:var(--font-cond);font-weight:600;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px}
+.mvp-name{font-family:var(--font-cond);font-weight:600;font-size:15px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:8px;min-width:0}
 .mvp-medal{font-size:18px;flex-shrink:0}
 .mvp-pts{font-family:'Archivo Black',sans-serif;font-size:18px;color:var(--ink-50);text-align:right;font-variant-numeric:tabular-nums}
 .mvp-row.r1{background:linear-gradient(90deg,rgba(255,215,64,.10),transparent)}
@@ -659,9 +659,11 @@ body[data-theme="light"] .mvp-publish-time{color:#1a1a16}
 body[data-theme="light"] .mvp-publish-time.empty{color:#8a8884}
 body[data-theme="light"] .mvp-publish-label{color:#6b6a62}
 @media(max-width:520px){
-  .mvp-publish-bar{padding:9px 12px}
-  .mvp-publish-time{font-size:12px}
-  #mvp-publish-btn{font-size:11px;padding:6px 10px}
+  /* Stack meta + button so the time text gets the full width and the
+     button keeps a comfortable tap target instead of being squeezed. */
+  .mvp-publish-bar{padding:10px 12px;flex-direction:column;align-items:stretch;gap:8px}
+  .mvp-publish-time{font-size:12px;white-space:normal}
+  #mvp-publish-btn{font-size:12px;padding:8px 12px;width:100%}
 }
 /* FAQ accordion — explains the points system using native <details>. */
 .mvp-faq{margin-top:24px;display:flex;flex-direction:column;gap:8px}
@@ -713,14 +715,15 @@ body[data-theme="light"] .mvp-actions .mvp-del:hover{color:#cc1f4c}
   .mvp-faq-item summary{padding:12px 14px;font-size:13px}
   .mvp-faq-body{padding:0 14px 12px 44px;font-size:12px}
   .mvp-thead{padding:12px;grid-template-columns:28px 1fr 60px;gap:6px}
-  .mvp-row{padding:12px;grid-template-columns:28px 1fr 60px;gap:6px}
-  .mvp-row.has-admin{grid-template-columns:28px 1fr auto;gap:6px}
+  .mvp-row{padding:12px;grid-template-columns:36px 1fr 60px;gap:6px}
+  .mvp-row.has-admin{grid-template-columns:36px 1fr auto}
   .mvp-table.has-publish .mvp-thead,
-  .mvp-table.has-publish .mvp-row{grid-template-columns:28px auto 1fr 60px}
-  .mvp-table.has-publish .mvp-row.has-admin{grid-template-columns:28px auto 1fr auto}
+  .mvp-table.has-publish .mvp-row{grid-template-columns:36px auto 1fr 60px}
+  .mvp-table.has-publish .mvp-row.has-admin{grid-template-columns:36px auto 1fr auto}
   .mvp-name{font-size:14px}
   .mvp-pts{font-size:16px}
-  .mvp-actions .mvp-quick{padding:3px 6px;font-size:10px}
+  .mvp-actions{flex-wrap:wrap;gap:4px;justify-content:flex-end}
+  .mvp-actions .mvp-quick{padding:4px 8px;font-size:10px}
 }
 body[data-theme="light"] .mvp-table{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
 body[data-theme="light"] .mvp-thead{background:rgba(0,0,0,.03);border-bottom-color:rgba(0,0,0,.08);color:#4a4a45}
@@ -915,7 +918,19 @@ body[data-theme="light"] .auction-card-title{color:#1a1a16}
 body[data-theme="light"] .auction-card-poster{background:rgba(0,0,0,.03)}
 body[data-theme="light"] .auction-card-countdown{background:rgba(255,255,255,.92);color:#cc7700;border-color:rgba(255,170,0,.5);box-shadow:0 4px 14px rgba(0,0,0,.12)}
 body[data-theme="light"] .auction-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
-.tool-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;max-width:720px;margin:0 auto;padding:20px 0 32px;display:flex;flex-direction:column;gap:14px}
+.tool-wrap{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain;width:100%;max-width:720px;margin:0 auto;padding:20px 0 32px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+/* Direct children must not shrink. Without this, any child with
+   `overflow:hidden` (like .mvp-table for its rounded corners) gets a
+   min-content of 0 in flex-column, lets the parent compress it,
+   masks the page's scrollHeight, and silently clips content past the
+   viewport instead of triggering the scrollbar. */
+.tool-wrap > *{flex-shrink:0}
+.tool-wrap::-webkit-scrollbar{width:10px}
+.tool-wrap::-webkit-scrollbar-track{background:transparent}
+.tool-wrap::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:5px;border:2px solid transparent;background-clip:padding-box}
+.tool-wrap::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.25);background-clip:padding-box;border:2px solid transparent}
+body[data-theme="light"] .tool-wrap::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18);background-clip:padding-box;border:2px solid transparent}
+body[data-theme="light"] .tool-wrap::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.32);background-clip:padding-box;border:2px solid transparent}
 @media(max-width:520px){.tool-wrap{padding:16px 14px 28px}}
 /* Skeleton loaders — gentle shimmer placeholder while a fetch is in flight */
 .skeleton-list{display:flex;flex-direction:column;gap:10px}

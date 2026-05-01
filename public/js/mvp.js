@@ -356,7 +356,7 @@ function mvpSort(a, b){
 // Admin: add new player — always added to the currently-viewed month so
 // admins can backfill into past months too if they need to.
 $('mvp-add-btn')?.addEventListener('click', async () => {
-  if(role !== 'admin') return;
+  if(role !== 'admin'){ toast('Login admin dulu'); return; }
   const nameEl = $('mvp-name-input'), ptsEl = $('mvp-pts-input');
   const name = nameEl.value.trim();
   const points = +ptsEl.value || 0;
@@ -368,9 +368,21 @@ $('mvp-add-btn')?.addEventListener('click', async () => {
       body: JSON.stringify({ name, points, month: mvpSelectedMonth })
     });
     if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menambah'); return; }
+    const created = await r.json().catch(()=>null);
     nameEl.value = '';
     ptsEl.value = '0';
     nameEl.focus();
+    // Refresh locally — socket round-trip usually beats us here, but
+    // the explicit reload guarantees the new row renders even if the
+    // socket is down or the client just resumed from another tab.
+    await loadMvpEntries();
+    // 0-pt adds land at the bottom of a sorted list; scroll the new row
+    // into view so admin gets visual confirmation that it landed.
+    if(created?.id){
+      const row = document.querySelector(`.mvp-row[data-id="${created.id}"]`);
+      if(row) row.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+    toast(`✓ ${name} ditambahkan`);
   } catch { toast('Gagal menambah'); }
 });
 $('mvp-name-input')?.addEventListener('keydown', e => { if(e.key === 'Enter') $('mvp-pts-input').focus(); });
