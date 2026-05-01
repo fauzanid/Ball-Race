@@ -350,6 +350,16 @@ function isValidHttpsUrl(s) {
   try { return new URL(s).protocol === 'https:'; } catch { return false; }
 }
 
+// Coerce a route param to a positive integer in the Postgres int4 range;
+// returns null on bad input. Used at the route boundary so scanner
+// probes ("0 OR 1=1", "1'", etc.) get rejected before they reach the
+// DB and clutter the logs with invalid-integer cast errors.
+function parseIntId(s) {
+  if (typeof s !== 'string' || !/^\d{1,10}$/.test(s)) return null;
+  const n = Number(s);
+  return n >= 1 && n <= 2_147_483_647 ? n : null;
+}
+
 app.post('/api/admin/login', loginLimiter, (req, res) => {
   const { password } = req.body || {};
   if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Invalid password' });
@@ -414,8 +424,10 @@ app.get('/api/races', async (req, res) => {
 
 app.get('/api/races/:id', async (req, res) => {
   if (!dbReady) return res.status(404).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Race not found' });
   try {
-    const { rows } = await pool.query('SELECT * FROM races WHERE id = $1', [req.params.id]);
+    const { rows } = await pool.query('SELECT * FROM races WHERE id = $1', [id]);
     if (!rows.length) return res.status(404).json({ error: 'Race not found' });
     res.json(rows[0]);
   } catch (err) {
@@ -561,8 +573,10 @@ app.post('/api/shipments', requireAdmin, async (req, res) => {
 
 app.delete('/api/shipments/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    await pool.query('DELETE FROM shipments WHERE id = $1', [req.params.id]);
+    await pool.query('DELETE FROM shipments WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete' });
@@ -607,8 +621,10 @@ app.post('/api/lucky-cards', requireAdmin, async (req, res) => {
 
 app.delete('/api/lucky-cards/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const { rows } = await pool.query('DELETE FROM lucky_cards WHERE id = $1 RETURNING image_url', [req.params.id]);
+    const { rows } = await pool.query('DELETE FROM lucky_cards WHERE id = $1 RETURNING image_url', [id]);
     if (rows[0]?.image_url) deleteR2Object(rows[0].image_url);
     io.emit('lucky-cards-updated');
     res.json({ ok: true });
@@ -725,8 +741,9 @@ app.get('/api/auctions', async (req, res) => {
 // row contains a base64 data-URL.
 app.get('/api/auctions/:id/images', async (req, res) => {
   if (!dbReady) return res.json([]);
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.json([]);
   try {
-    const id = +req.params.id;
     const { rows } = await pool.query(
       `SELECT id, image_url, sort_order, created_at FROM auction_images
          WHERE auction_id = $1 ORDER BY sort_order ASC, id ASC`,
@@ -743,8 +760,9 @@ const MAX_IMAGES_PER_AUCTION = 250;
 
 app.post('/api/auctions/:id/images', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const incoming = Array.isArray(req.body?.images) ? req.body.images : [];
     if (!incoming.length) return res.status(400).json({ error: 'No images' });
     // Cap individual image + total count + validate URL scheme
@@ -783,7 +801,8 @@ app.post('/api/auctions/:id/images', requireAdmin, async (req, res) => {
 app.delete('/api/auctions/images/:imgId', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
-    const imgId = +req.params.imgId;
+    const imgId = parseIntId(req.params.imgId);
+    if (imgId == null) return res.status(404).json({ error: 'Not found' });
     const { rows } = await pool.query('DELETE FROM auction_images WHERE id = $1 RETURNING auction_id, image_url', [imgId]);
     const auctionId = rows[0]?.auction_id;
     if (rows[0]?.image_url) deleteR2Object(rows[0].image_url);
@@ -822,8 +841,9 @@ app.post('/api/auctions', requireAdmin, async (req, res) => {
 
 app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Auction not found' });
   try {
-    const id = parseInt(req.params.id);
     const fields = [];
     const values = [];
     let i = 1;
@@ -878,10 +898,12 @@ app.patch('/api/auctions/:id', requireAdmin, async (req, res) => {
 
 app.post('/api/auctions/:id/close', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
     const { rows } = await pool.query(
       `UPDATE auctions SET closed = TRUE, closed_at = NOW() WHERE id = $1 AND closed = FALSE RETURNING *`,
-      [req.params.id]
+      [id]
     );
     if (!rows.length) return res.status(404).json({ error: 'Not found' });
     const row = rowToAuction(rows[0]);
@@ -894,8 +916,9 @@ app.post('/api/auctions/:id/close', requireAdmin, async (req, res) => {
 
 app.delete('/api/auctions/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = parseInt(req.params.id);
     // Collect every image URL (primary + gallery) before the cascade fires
     const main = await pool.query('SELECT image_url FROM auctions WHERE id = $1', [id]);
     const gal = await pool.query('SELECT image_url FROM auction_images WHERE auction_id = $1', [id]);
@@ -970,8 +993,9 @@ app.get('/api/predictions/matches', async (req, res) => {
 
 app.get('/api/predictions/matches/:id', async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const match = await loadMatchWithStats(id);
     if (!match) return res.status(404).json({ error: 'Not found' });
     const { rows: entries } = await pool.query(
@@ -1030,8 +1054,9 @@ app.post('/api/predictions/matches', requireAdmin, async (req, res) => {
 
 app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const { label, status, final_home, final_away, prize_label, prize_image, opens_at, closes_at } = req.body;
     if (prize_image && typeof prize_image === 'string' && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
       return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
@@ -1080,8 +1105,9 @@ app.patch('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
 
 app.delete('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const { rows } = await pool.query('DELETE FROM prediction_matches WHERE id = $1 RETURNING prize_image', [id]);
     if (rows[0]?.prize_image) deleteR2Object(rows[0].prize_image);
     io.emit('prediction-match-deleted', { id });
@@ -1093,8 +1119,9 @@ app.delete('/api/predictions/matches/:id', requireAdmin, async (req, res) => {
 
 app.post('/api/predictions/matches/:id/entries', submitLimiter, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Match not found' });
   try {
-    const id = +req.params.id;
     const name = String(req.body.name || '').trim();
     const phone = String(req.body.phone || '').replace(/[^\d+]/g, '');
     const ph = +req.body.predicted_home;
@@ -1143,8 +1170,9 @@ app.post('/api/predictions/matches/:id/entries', submitLimiter, async (req, res)
 
 app.delete('/api/predictions/entries/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const { rows } = await pool.query('DELETE FROM prediction_entries WHERE id = $1 RETURNING match_id', [id]);
     const matchId = rows[0]?.match_id;
     io.emit('prediction-entry-deleted', { id, match_id: matchId });
@@ -1191,12 +1219,16 @@ async function captureMvpSnapshot(month) {
     [month]
   );
   const newRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
-  // Read the prior `ranks` so we can demote it to prev_ranks (otherwise
-  // publishing twice would lose the chart-transition view).
+  // Read the prior snapshot so we can demote `ranks` → `prev_ranks` —
+  // unless nothing actually changed since the last publish, in which
+  // case sliding would erase the previous chart-transition view (e.g.
+  // accidental double-click on Publikasi). Preserve oldPrev in that case.
   const cur = await pool.query(
-    `SELECT ranks FROM mvp_snapshots WHERE month = $1`, [month]
+    `SELECT ranks, prev_ranks FROM mvp_snapshots WHERE month = $1`, [month]
   );
-  const slidPrev = cur.rows[0]?.ranks || null;
+  const oldRanks = cur.rows[0]?.ranks || null;
+  const oldPrev = cur.rows[0]?.prev_ranks || null;
+  const slidPrev = (oldRanks && ranksEqual(newRanks, oldRanks)) ? oldPrev : oldRanks;
   const result = await pool.query(
     `INSERT INTO mvp_snapshots (month, captured_at, ranks, prev_ranks)
        VALUES ($1, NOW(), $2, $3)
@@ -1241,14 +1273,18 @@ app.get('/api/mvp', async (req, res) => {
     const published_at = snap.rows[0]?.captured_at || null;
 
     // Pick the comparison baseline:
-    //  - No publish yet → null (chips hidden)
+    //  - No publish yet → null (chips hidden entirely)
     //  - Live state == last publish (admin hasn't edited since) → prev,
-    //    so chips show the just-published chart transition
-    //  - Live state diverged → last, so chips show drift since publish
+    //    so chips show the just-published chart transition. On the very
+    //    first publish there's no prev yet, so fall back to `last` —
+    //    every entry then resolves to movement=0 (─), which is accurate
+    //    ("nothing has changed since the baseline was set") and still
+    //    gives admin visual confirmation that the publish landed.
+    //  - Live state diverged → last, so chips show drift since publish.
     const liveRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
     let baseline;
     if (!last) baseline = null;
-    else if (ranksEqual(liveRanks, last)) baseline = prev;
+    else if (ranksEqual(liveRanks, last)) baseline = prev || last;
     else baseline = last;
 
     const entries = rows.map((r, i) => {
@@ -1367,8 +1403,9 @@ app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
 
 app.patch('/api/mvp/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
-    const id = +req.params.id;
     const { name, points, delta } = req.body;
     const sets = [];
     const params = [];
@@ -1391,9 +1428,11 @@ app.patch('/api/mvp/:id', requireAdmin, async (req, res) => {
 
 app.delete('/api/mvp/:id', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
   try {
     const { rows } = await pool.query(
-      'DELETE FROM mvp_entries WHERE id = $1 RETURNING month', [+req.params.id]
+      'DELETE FROM mvp_entries WHERE id = $1 RETURNING month', [id]
     );
     io.emit('mvp-updated', { month: rows[0]?.month });
     res.json({ ok: true });

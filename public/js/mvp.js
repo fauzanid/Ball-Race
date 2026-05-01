@@ -100,7 +100,11 @@ function renderMvpPublishBar(){
     el.textContent = `Terakhir dipublikasi: ${formatRelativeTime(mvpPublishedAt)}`;
   } else {
     el.classList.add('empty');
-    el.textContent = 'Belum dipublikasi — klik 📸 Publikasi untuk mengaktifkan ▲▼';
+    // Viewers can't click 📸 — give them a non-actionable variant so the
+    // bar doesn't look like a CTA they're missing.
+    el.textContent = role === 'admin'
+      ? 'Belum dipublikasi — klik 📸 Publikasi untuk mengaktifkan ▲▼'
+      : 'Pergerakan ▲▼ belum aktif';
   }
 }
 
@@ -270,9 +274,19 @@ function renderMvpTable(){
 
 async function mvpDelta(id, delta){
   if(role !== 'admin') return;
-  // Optimistic local update so the UI feels snappy
+  // Optimistic local update so the UI feels snappy. A rank shift makes
+  // every entry's server-computed `movement` stale — without clearing
+  // them, the player who just jumped from rank 5 to rank 1 would still
+  // show their old "▼1" chip until the socket round-trip lands. Reset
+  // all movements to 0 (─) for the in-flight render; the socket
+  // refresh recomputes the real values.
   const e = mvpEntries.find(x => x.id === id);
-  if(e){ e.points = Math.max(0, e.points + delta); mvpEntries.sort(mvpSort); renderMvpTable(); }
+  if(e){
+    e.points = Math.max(0, e.points + delta);
+    mvpEntries.forEach(x => { if(x.movement != null) x.movement = 0; });
+    mvpEntries.sort(mvpSort);
+    renderMvpTable();
+  }
   try {
     const r = await fetch(`/api/mvp/${id}`, {
       method:'PATCH',

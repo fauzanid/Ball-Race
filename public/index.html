@@ -2802,6 +2802,7 @@ function setRole(r){
   document.querySelectorAll('.mvp-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   if(typeof renderMvpTable === 'function') renderMvpTable();
   if(typeof renderMvpPrize === 'function') renderMvpPrize();
+  if(typeof renderMvpPublishBar === 'function') renderMvpPublishBar();
   if(typeof renderWheelChips === 'function') renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
