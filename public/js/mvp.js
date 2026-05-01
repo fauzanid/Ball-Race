@@ -10,6 +10,7 @@ let mvpAvailableMonths = [];
 let mvpSelectedMonth = currentMonthString();
 let mvpPrize = null; // { month, prize_label, prize_image }
 let mvpPublishedAt = null; // ISO string of last snapshot publish for the selected month
+let mvpDraft = false;     // admin's live state differs from the published snapshot
 
 function currentMonthString(){
   const d = new Date();
@@ -53,10 +54,16 @@ async function loadMvpEntries(){
   // Fire entries + prize requests in parallel
   const month = mvpSelectedMonth;
   await Promise.all([
-    fetch('/api/mvp?month=' + encodeURIComponent(month))
-      .then(r => r.ok ? r.json() : { entries: [], published_at: null })
-      .then(d => { mvpEntries = d.entries || []; mvpPublishedAt = d.published_at || null; })
-      .catch(() => { mvpEntries = []; mvpPublishedAt = null; }),
+    fetch('/api/mvp?month=' + encodeURIComponent(month), {
+      headers: adminToken ? { 'x-admin-token': adminToken } : {}
+    })
+      .then(r => r.ok ? r.json() : { entries: [], published_at: null, draft: false })
+      .then(d => {
+        mvpEntries = d.entries || [];
+        mvpPublishedAt = d.published_at || null;
+        mvpDraft = !!d.draft;
+      })
+      .catch(() => { mvpEntries = []; mvpPublishedAt = null; mvpDraft = false; }),
     fetch('/api/mvp/prize?month=' + encodeURIComponent(month))
       .then(r => r.ok ? r.json() : null)
       .then(d => { mvpPrize = d; })
@@ -95,6 +102,7 @@ function formatRelativeTime(iso){
 function renderMvpPublishBar(){
   const el = $('mvp-publish-time');
   if(!el) return;
+  const draftBadge = $('mvp-draft-badge');
   if(mvpPublishedAt){
     el.classList.remove('empty');
     el.textContent = `Terakhir dipublikasi: ${formatRelativeTime(mvpPublishedAt)}`;
@@ -103,8 +111,14 @@ function renderMvpPublishBar(){
     // Viewers can't click 📸 — give them a non-actionable variant so the
     // bar doesn't look like a CTA they're missing.
     el.textContent = role === 'admin'
-      ? 'Belum dipublikasi — klik 📸 Publikasi untuk mengaktifkan ▲▼'
-      : 'Pergerakan ▲▼ belum aktif';
+      ? 'Belum dipublikasi — klik 📸 Publikasi untuk mengaktifkan tampilan penonton'
+      : 'Klasemen belum dipublikasi';
+  }
+  // Admin-only "Mode draft" pill — appears whenever admin's live state has
+  // diverged from the published snapshot, so they know viewers don't yet
+  // see the changes they've been making.
+  if(draftBadge){
+    draftBadge.style.display = (role === 'admin' && mvpDraft) ? '' : 'none';
   }
 }
 
@@ -216,8 +230,13 @@ function renderMvpTable(){
   el.classList.toggle('has-publish', hasPublish);
 
   if(!mvpEntries.length){
+    // Viewer-side empty state distinguishes "no publish yet" from "empty
+    // chart" — both look the same to the client (no entries) but the
+    // wording is honest about why nothing is visible.
     el.innerHTML = `<div class="empty-msg" style="padding:32px 16px">${
-      isAdmin ? 'Tambah pemain pertama untuk mulai klasemen.' : 'Belum ada pemain di klasemen.'
+      isAdmin
+        ? 'Tambah pemain pertama untuk mulai klasemen.'
+        : (mvpPublishedAt ? 'Belum ada pemain di klasemen.' : 'Klasemen belum dipublikasi oleh admin.')
     }</div>`;
     return;
   }

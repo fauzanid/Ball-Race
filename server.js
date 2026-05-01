@@ -299,10 +299,15 @@ async function initDB() {
         month VARCHAR(7) PRIMARY KEY,
         captured_at TIMESTAMPTZ DEFAULT NOW(),
         ranks JSONB NOT NULL,
-        prev_ranks JSONB
+        prev_ranks JSONB,
+        entries JSONB
       )
     `);
     await pool.query(`ALTER TABLE mvp_snapshots ADD COLUMN IF NOT EXISTS prev_ranks JSONB`);
+    // `entries` holds the full published list (id, name, points, rank) so
+    // viewers see a frozen Billboard-style chart while admin keeps tweaking
+    // mvp_entries privately.
+    await pool.query(`ALTER TABLE mvp_snapshots ADD COLUMN IF NOT EXISTS entries JSONB`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -1209,20 +1214,21 @@ app.get('/api/mvp/months', async (req, res) => {
   }
 });
 
-// Publish current ranks as the new "last publish", sliding the previous
-// "last publish" into `prev_ranks` so just-published movements stay
-// visible until admin edits again.
+// Publish current entries as the frozen public chart for `month`. Captures
+// full entry data (so viewers see a Billboard-style snapshot independent
+// of admin's working state) plus rank maps for ▲▼ chip comparison. Slides
+// the prior `ranks` into `prev_ranks` unless nothing changed since last
+// publish (so accidental double-clicks don't erase the transition view).
 async function captureMvpSnapshot(month) {
   const { rows } = await pool.query(
-    `SELECT id FROM mvp_entries WHERE month = $1
+    `SELECT id, name, points FROM mvp_entries WHERE month = $1
        ORDER BY points DESC, name ASC`,
     [month]
   );
-  const newRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
-  // Read the prior snapshot so we can demote `ranks` → `prev_ranks` —
-  // unless nothing actually changed since the last publish, in which
-  // case sliding would erase the previous chart-transition view (e.g.
-  // accidental double-click on Publikasi). Preserve oldPrev in that case.
+  const fullEntries = rows.map((r, i) => ({
+    id: r.id, name: r.name, points: r.points, rank: i + 1,
+  }));
+  const newRanks = Object.fromEntries(fullEntries.map(e => [String(e.id), e.rank]));
   const cur = await pool.query(
     `SELECT ranks, prev_ranks FROM mvp_snapshots WHERE month = $1`, [month]
   );
@@ -1230,14 +1236,15 @@ async function captureMvpSnapshot(month) {
   const oldPrev = cur.rows[0]?.prev_ranks || null;
   const slidPrev = (oldRanks && ranksEqual(newRanks, oldRanks)) ? oldPrev : oldRanks;
   const result = await pool.query(
-    `INSERT INTO mvp_snapshots (month, captured_at, ranks, prev_ranks)
-       VALUES ($1, NOW(), $2, $3)
+    `INSERT INTO mvp_snapshots (month, captured_at, ranks, prev_ranks, entries)
+       VALUES ($1, NOW(), $2, $3, $4)
        ON CONFLICT (month) DO UPDATE
          SET captured_at = NOW(),
              ranks = EXCLUDED.ranks,
-             prev_ranks = EXCLUDED.prev_ranks
+             prev_ranks = EXCLUDED.prev_ranks,
+             entries = EXCLUDED.entries
        RETURNING captured_at`,
-    [month, JSON.stringify(newRanks), slidPrev ? JSON.stringify(slidPrev) : null]
+    [month, JSON.stringify(newRanks), slidPrev ? JSON.stringify(slidPrev) : null, JSON.stringify(fullEntries)]
   );
   return result.rows[0]?.captured_at || null;
 }
@@ -1254,51 +1261,60 @@ function ranksEqual(a, b) {
 }
 
 app.get('/api/mvp', async (req, res) => {
-  if (!dbReady) return res.json({ entries: [], published_at: null });
+  if (!dbReady) return res.json({ entries: [], published_at: null, draft: false });
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
-    const { rows } = await pool.query(
-      `SELECT id, name, points FROM mvp_entries
-         WHERE month = $1
-         ORDER BY points DESC, name ASC`,
-      [month]
-    );
+    const isAdmin = isAdminReq(req);
 
     const snap = await pool.query(
-      `SELECT captured_at, ranks, prev_ranks FROM mvp_snapshots WHERE month = $1`,
+      `SELECT captured_at, ranks, prev_ranks, entries FROM mvp_snapshots WHERE month = $1`,
       [month]
     );
     const last = snap.rows[0]?.ranks || null;
     const prev = snap.rows[0]?.prev_ranks || null;
+    const publishedEntries = snap.rows[0]?.entries || null;
     const published_at = snap.rows[0]?.captured_at || null;
 
-    // Pick the comparison baseline:
-    //  - No publish yet → null (chips hidden entirely)
-    //  - Live state == last publish (admin hasn't edited since) → prev,
-    //    so chips show the just-published chart transition. On the very
-    //    first publish there's no prev yet, so fall back to `last` —
-    //    every entry then resolves to movement=0 (─), which is accurate
-    //    ("nothing has changed since the baseline was set") and still
-    //    gives admin visual confirmation that the publish landed.
-    //  - Live state diverged → last, so chips show drift since publish.
-    const liveRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
-    let baseline;
-    if (!last) baseline = null;
-    else if (ranksEqual(liveRanks, last)) baseline = prev || last;
-    else baseline = last;
+    if (isAdmin) {
+      // Admin sees their live working state — every edit visible to them
+      // immediately, with chips comparing live → last (or prev if live
+      // hasn't diverged yet, so the just-published transition stays in
+      // view). `draft` is true when admin's live state differs from the
+      // published snapshot, so the UI can label "Mode draft".
+      const { rows } = await pool.query(
+        `SELECT id, name, points FROM mvp_entries
+           WHERE month = $1 ORDER BY points DESC, name ASC`,
+        [month]
+      );
+      const liveRanks = Object.fromEntries(rows.map((r, i) => [String(r.id), i + 1]));
+      let baseline;
+      if (!last) baseline = null;
+      else if (ranksEqual(liveRanks, last)) baseline = prev || last;
+      else baseline = last;
+      const entries = rows.map((r, i) => {
+        if (!baseline) return { id: r.id, name: r.name, points: r.points, movement: null };
+        const prevRank = baseline[String(r.id)];
+        return {
+          id: r.id, name: r.name, points: r.points,
+          movement: prevRank != null ? prevRank - (i + 1) : null,
+        };
+      });
+      const draft = !!last && !ranksEqual(liveRanks, last);
+      return res.json({ entries, published_at, draft });
+    }
 
-    const entries = rows.map((r, i) => {
-      if (!baseline) return { id: r.id, name: r.name, points: r.points, movement: null };
-      const prevRank = baseline[String(r.id)];
-      return {
-        id: r.id,
-        name: r.name,
-        points: r.points,
-        // positive = moved up, negative = moved down, 0 = same, null = new vs baseline
-        movement: prevRank != null ? prevRank - (i + 1) : null,
-      };
-    });
-    res.json({ entries, published_at });
+    // Viewer — frozen Billboard view. Show only the published snapshot;
+    // unpublished admin edits are invisible. Chips compare published →
+    // prev_ranks (the publish before this one), so each ▲▼ reflects the
+    // chart-drop transition — exactly like a real chart.
+    if (!publishedEntries) {
+      return res.json({ entries: [], published_at: null, draft: false });
+    }
+    const entries = publishedEntries.map(e => ({
+      id: e.id, name: e.name, points: e.points,
+      movement: prev && prev[String(e.id)] != null ? prev[String(e.id)] - e.rank : null,
+    }));
+    res.json({ entries, published_at, draft: false });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
   }

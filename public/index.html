@@ -647,7 +647,10 @@ body[data-theme="light"] .mvp-move.new{color:#b85d00;background:rgba(255,170,0,.
    are, and (admin only) carries the "Publikasi Klasemen" button. */
 .mvp-publish-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);margin:4px 0 10px}
 .mvp-publish-meta{display:flex;flex-direction:column;gap:2px;min-width:0}
-.mvp-publish-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400)}
+.mvp-publish-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400);display:inline-flex;align-items:center;gap:6px}
+.mvp-draft-badge{font-family:var(--font-cond);font-weight:800;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:#1a1a16;background:#ffd740;padding:2px 6px;border-radius:4px;line-height:1.4;animation:mvp-draft-pulse 1.6s ease-in-out infinite}
+@keyframes mvp-draft-pulse{0%,100%{opacity:1}50%{opacity:.6}}
+body[data-theme="light"] .mvp-draft-badge{color:#1a1a16;background:#ffaa00}
 .mvp-publish-time{font-family:var(--font-cond);font-weight:700;font-size:13px;color:var(--ink-50);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mvp-publish-time.empty{color:var(--ink-400);font-weight:600}
 #mvp-publish-btn{flex-shrink:0;white-space:nowrap}
@@ -1768,7 +1771,10 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
            movement chips are. Admin-only controls live inside it. -->
       <div class="mvp-publish-bar">
         <div class="mvp-publish-meta">
-          <span class="mvp-publish-label">Pergerakan ▲▼</span>
+          <span class="mvp-publish-label">
+            Pergerakan ▲▼
+            <span class="mvp-draft-badge" id="mvp-draft-badge" style="display:none">Mode draft</span>
+          </span>
           <span class="mvp-publish-time" id="mvp-publish-time">Belum dipublikasi</span>
         </div>
         <button class="btn btn-primary btn-sm mvp-admin-only" id="mvp-publish-btn" style="display:none">📸 Publikasi</button>
@@ -1840,7 +1846,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </details>
         <details class="mvp-faq-item">
           <summary>Apa arti tanda ▲ ▼ di sebelah peringkat?</summary>
-          <div class="mvp-faq-body">Itu pergerakan posisi sejak <strong>klasemen terakhir dipublikasi</strong> (mirip Billboard / liga sepak bola). Admin merapikan poin dulu, lalu klik 📸 Publikasi untuk menetapkan klasemen baru. <span class="mvp-move up">▲</span> naik peringkat, <span class="mvp-move down">▼</span> turun, <span class="mvp-move same">─</span> tidak berubah, <span class="mvp-move new">✦ Baru</span> = belum ada di klasemen sebelumnya.</div>
+          <div class="mvp-faq-body">Klasemen di sini bekerja seperti chart Billboard: admin menyusun poin secara <strong>privat</strong>, lalu klik 📸 Publikasi saat siap. Penonton hanya melihat versi yang sudah dipublikasi — perubahan poin yang belum dipublikasi tidak terlihat. Tanda <span class="mvp-move up">▲</span> naik peringkat, <span class="mvp-move down">▼</span> turun, <span class="mvp-move same">─</span> tidak berubah, <span class="mvp-move new">✦ Baru</span> = belum ada di klasemen sebelumnya.</div>
         </details>
       </div>
     </div>
