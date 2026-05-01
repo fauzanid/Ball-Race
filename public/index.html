@@ -627,7 +627,31 @@ body[data-theme="light"] .mvp-month-control select option{background:#ffffff;col
 .mvp-actions .mvp-edit:hover{opacity:1;color:var(--ink-50)}
 .mvp-actions .mvp-del:hover{opacity:1;color:#ff5577}
 .mvp-row.has-admin{grid-template-columns:48px 1fr auto}
+/* FAQ accordion — explains the points system using native <details>. */
+.mvp-faq{margin-top:24px;display:flex;flex-direction:column;gap:8px}
+.mvp-faq-title{font-family:var(--font-cond);font-weight:800;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-200);margin:0 0 4px;padding:0 4px}
+.mvp-faq-item{background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);overflow:hidden;transition:border-color .15s,background .15s}
+.mvp-faq-item[open]{border-color:rgba(255,215,64,.35);background:rgba(255,215,64,.04)}
+.mvp-faq-item summary{cursor:pointer;list-style:none;padding:14px 16px;font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--ink-50);display:flex;align-items:center;gap:10px;transition:color .15s;user-select:none}
+.mvp-faq-item summary::-webkit-details-marker{display:none}
+.mvp-faq-item summary::before{content:"+";flex-shrink:0;width:22px;height:22px;border-radius:50%;background:rgba(255,215,64,.15);border:1px solid rgba(255,215,64,.35);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#ffd740;line-height:1;transition:transform .2s,background .15s}
+.mvp-faq-item[open] summary::before{content:"−";transform:rotate(180deg);background:rgba(255,215,64,.25)}
+.mvp-faq-item summary:hover{color:#ffd740}
+.mvp-faq-item summary:focus-visible{outline:2px solid #ffd740;outline-offset:-2px}
+.mvp-faq-body{padding:0 16px 14px 48px;font-family:var(--font-cond);font-size:13px;line-height:1.55;color:var(--ink-200);animation:mvp-faq-slide .2s ease-out}
+.mvp-faq-body strong{color:#ffd740;font-weight:800}
+@keyframes mvp-faq-slide{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+body[data-theme="light"] .mvp-faq-item{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .mvp-faq-item[open]{border-color:rgba(255,170,0,.45);background:rgba(255,215,64,.06)}
+body[data-theme="light"] .mvp-faq-item summary{color:#1a1a16}
+body[data-theme="light"] .mvp-faq-item summary:hover{color:#cc7700}
+body[data-theme="light"] .mvp-faq-item summary::before{color:#cc7700;border-color:rgba(255,170,0,.5);background:rgba(255,215,64,.18)}
+body[data-theme="light"] .mvp-faq-body{color:#4a4a45}
+body[data-theme="light"] .mvp-faq-body strong{color:#cc7700}
+body[data-theme="light"] .mvp-faq-title{color:#6b6a62}
 @media(max-width:520px){
+  .mvp-faq-item summary{padding:12px 14px;font-size:13px}
+  .mvp-faq-body{padding:0 14px 12px 44px;font-size:12px}
   .mvp-thead{padding:12px;grid-template-columns:36px 1fr 60px}
   .mvp-row{padding:12px;grid-template-columns:36px 1fr 60px}
   .mvp-row.has-admin{grid-template-columns:36px 1fr auto}
@@ -1713,6 +1737,31 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
       <!-- Admin clear current month -->
       <div class="mvp-admin-only" style="display:none;text-align:center;margin-top:8px">
         <button class="btn btn-ghost btn-xs" id="mvp-clear-btn">🗑 Kosongkan bulan ini</button>
+      </div>
+
+      <!-- FAQ — explains how the points system works to viewers -->
+      <div class="mvp-faq">
+        <h3 class="mvp-faq-title">❓ Cara Kerja Poin</h3>
+        <details class="mvp-faq-item">
+          <summary>Bagaimana cara mendapatkan poin?</summary>
+          <div class="mvp-faq-body">Dengan memenangkan lelang atau event lain yang diadakan.</div>
+        </details>
+        <details class="mvp-faq-item">
+          <summary>Berapa nilai item lelang dalam poin?</summary>
+          <div class="mvp-faq-body">1 item lelang yang dimenangkan = <strong>1 pts</strong>.</div>
+        </details>
+        <details class="mvp-faq-item">
+          <summary>Apakah Tebak Skor menambah poin?</summary>
+          <div class="mvp-faq-body">Ya — menang Tebak Skor dapat tambahan <strong>3 pts</strong>.</div>
+        </details>
+        <details class="mvp-faq-item">
+          <summary>Ada cara lain mendapat poin?</summary>
+          <div class="mvp-faq-body">Ya — ikut Ball Race = <strong>1 pts</strong>.</div>
+        </details>
+        <details class="mvp-faq-item">
+          <summary>Bagaimana cara ikut Ball Race?</summary>
+          <div class="mvp-faq-body">Seluruh peserta yang melakukan bid di item acak yang terpilih (menang maupun kalah) akan dilombakan di Ball Race. Masing-masing dapat <strong>1 pts</strong>, plus hadiah langsung untuk juara <strong>1, 2, dan 3</strong>.</div>
+        </details>
       </div>
     </div>
   </div>
