@@ -543,6 +543,29 @@ body[data-theme="light"] .lucky-row-label{color:#1a1a16}
 body[data-theme="light"] .lucky-draw-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.18);color:#6b6a62}
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
+/* ═══ PERATURAN GRUP ═══ */
+.rules-intro{font-family:var(--font-cond);font-size:13px;letter-spacing:.04em;color:var(--ink-200);margin:-4px 0 8px;line-height:1.5}
+.rules-list{counter-reset:rule;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
+.rule-item{counter-increment:rule;position:relative;padding:16px 16px 14px 56px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-left:3px solid var(--accent);border-radius:var(--r-md);transition:border-color .15s,transform .15s}
+.rule-item:hover{border-left-color:#ff7638;transform:translateX(2px)}
+.rule-item::before{content:counter(rule);position:absolute;left:14px;top:14px;width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#8b5cf6,#4c1d95);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(139,92,246,.35);line-height:1}
+.rule-title{font-family:var(--font-display);font-style:italic;font-size:15px;color:var(--ink-50);text-transform:uppercase;letter-spacing:.04em;margin:0 0 6px;line-height:1.15}
+.rule-text{font-family:var(--font-cond);font-size:13px;color:var(--ink-200);line-height:1.55;margin:0}
+.rule-text strong{color:var(--accent);font-weight:700}
+.rules-footer{margin-top:14px;padding:12px 14px;font-family:var(--font-cond);font-size:11px;letter-spacing:.04em;color:var(--ink-400);text-align:center;background:rgba(255,69,0,.05);border:1px dashed rgba(255,69,0,.25);border-radius:var(--r-md)}
+body[data-theme="light"] .rules-intro{color:#4a4a45}
+body[data-theme="light"] .rule-item{background:#ffffff;border-color:rgba(0,0,0,.08);border-left-color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .rule-title{color:#1a1a16}
+body[data-theme="light"] .rule-text{color:#4a4a45}
+body[data-theme="light"] .rule-text strong{color:#cc4400}
+body[data-theme="light"] .rules-footer{color:#6b6a62;background:rgba(255,69,0,.06);border-color:rgba(255,69,0,.3)}
+@media(max-width:520px){
+  .rule-item{padding:14px 14px 12px 50px}
+  .rule-item::before{left:12px;top:12px;width:28px;height:28px;font-size:14px}
+  .rule-title{font-size:14px}
+  .rule-text{font-size:12px}
+}
+
 /* ═══ MVP OF THE MONTH ═══ */
 .mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
 .mvp-prize{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(135deg,rgba(255,215,64,.14),rgba(255,140,40,.06));border:1px solid rgba(255,215,64,.35);border-radius:var(--r-md);position:relative}
@@ -1190,6 +1213,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
   </header>
 
   <nav id="tab-bar">
+    <button class="tab" data-tab="rules">📜 Peraturan</button>
     <button class="tab active" data-tab="home">🏠 Beranda</button>
     <button class="tab" data-tab="race">⚽ Balapan</button>
     <button class="tab" data-tab="wheel">🎡 Roda</button>
@@ -1201,11 +1225,51 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <button class="tab" data-tab="history">📋 Riwayat</button>
   </nav>
 
+  <!-- PERATURAN GRUP — first tab, group rules for the WhatsApp community -->
+  <div id="rules-screen" class="screen">
+    <div class="tool-wrap">
+      <h2 class="tool-title">Peraturan <span class="accent">Grup</span></h2>
+      <p class="rules-intro">Aturan main grup WhatsApp Karboluxe. Mohon dibaca sebelum bergabung.</p>
+      <ol class="rules-list">
+        <li class="rule-item">
+          <h3 class="rule-title">Keanggotaan Grup</h3>
+          <p class="rule-text">Syarat untuk bergabung dalam grup WhatsApp ini adalah telah melakukan minimal <strong>satu kali transaksi</strong>, baik melalui lelang maupun claim sale Karboluxe.</p>
+        </li>
+        <li class="rule-item">
+          <h3 class="rule-title">Ketentuan Promosi</h3>
+          <p class="rule-text">Khusus pada hari <strong>Minggu</strong>, setiap anggota diperkenankan untuk memposting tautan lapak, siaran langsung (live), maupun usaha terkait perkarbolan.</p>
+        </li>
+        <li class="rule-item">
+          <h3 class="rule-title">Etika Berkomunikasi</h3>
+          <p class="rule-text">Dilarang keras menjelekkan, merendahkan, atau menjatuhkan lapak maupun usaha anggota lain dalam bentuk apa pun.</p>
+        </li>
+        <li class="rule-item">
+          <h3 class="rule-title">Apresiasi Koleksi</h3>
+          <p class="rule-text">Setiap kartu memiliki nilai dan cerita tersendiri. Oleh karena itu, diharapkan seluruh anggota dapat saling menghargai tanpa memberikan penilaian negatif.</p>
+        </li>
+        <li class="rule-item">
+          <h3 class="rule-title">Dukungan Antar Anggota</h3>
+          <p class="rule-text">Seluruh anggota diharapkan saling memberikan dukungan dengan cara <strong>up, like, share</strong>, atau meninggalkan jejak saat melihat postingan anggota lain yang sedang membuka lapak.</p>
+        </li>
+        <li class="rule-item">
+          <h3 class="rule-title">Larangan SARA</h3>
+          <p class="rule-text">Segala bentuk konten yang mengandung unsur <strong>Suku, Agama, Ras, dan Antargolongan (SARA)</strong> tidak diperkenankan.</p>
+        </li>
+      </ol>
+      <div class="rules-footer">Pelanggaran terhadap peraturan dapat berakibat dikeluarkan dari grup tanpa pemberitahuan.</div>
+    </div>
+  </div>
+
   <!-- HOME -->
   <div id="home-screen" class="screen active">
     <div class="home-wrap">
       <h2 class="home-title">Karboluxe <span class="accent">Hub</span></h2>
       <div class="home-grid">
+        <button class="home-tile" data-target="rules">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#8b5cf6,#4c1d95);--tile-glow:rgba(139,92,246,.45)">📜</div>
+          <div class="home-tile-title">Peraturan</div>
+          <div class="home-tile-sub">Aturan grup</div>
+        </button>
         <button class="home-tile" data-target="race">
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ff8a1f,#c53500);--tile-glow:rgba(255,69,0,.45)">⚽</div>
           <div class="home-tile-title">Balapan</div>
@@ -2127,7 +2191,7 @@ let _lastStateSync = null;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen'), $rulesScr=$('rules-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 // Race canvas now uses WebGL (Three.js); the 2D wheel canvas keeps its 2D ctx.
@@ -2860,7 +2924,7 @@ $('login-submit').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
-const VALID_TABS = ['home','race','wheel','lucky','auction','predict','mvp','track','history'];
+const VALID_TABS = ['rules','home','race','wheel','lucky','auction','predict','mvp','track','history'];
 let _suppressHistoryPush = false;
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -2870,7 +2934,8 @@ document.querySelectorAll('.tab').forEach(t => {
     t.classList.add('active'); currentTab = t.dataset.tab;
     document.body.setAttribute('data-tab', currentTab);
     $('kick-off-row').style.display = (role==='admin' && currentTab==='race' && !raceActive) ? '' : 'none';
-    if(currentTab==='home'){ exitReplay(); showScreen($home); }
+    if(currentTab==='rules'){ exitReplay(); showScreen($rulesScr); }
+    else if(currentTab==='home'){ exitReplay(); showScreen($home); }
     else if(currentTab==='race'){ exitReplay(); resumeRaceTab(); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
     else if(currentTab==='lucky'){ showScreen($luckyScr); resetLuckyStage(); loadLuckyCards(); loadLuckyDraws(); }
