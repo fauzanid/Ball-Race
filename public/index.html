@@ -543,6 +543,73 @@ body[data-theme="light"] .lucky-row-label{color:#1a1a16}
 body[data-theme="light"] .lucky-draw-row{background:#ffffff;border-color:rgba(0,0,0,.08)}
 body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.18);color:#6b6a62}
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
+/* ═══ PENALTY KICK ═══ */
+#penalty-screen{position:relative}
+.penalty-subtitle{font-family:var(--font-cond);font-size:13px;letter-spacing:.04em;color:var(--ink-200);margin:-4px 0 8px;line-height:1.5}
+.penalty-roster{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+.penalty-roster:empty{padding:24px 14px;border:2px dashed rgba(255,255,255,.1);border-radius:var(--r-md);text-align:center}
+.penalty-roster:empty::after{content:"Belum ada pemain";font-family:var(--font-cond);color:var(--ink-400);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.penalty-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--team-color,#ff4500);border-radius:var(--r-md);transition:transform .15s,border-color .15s}
+.penalty-row:hover{transform:translateX(2px)}
+.penalty-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);color:var(--ink-200);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-weight:700;font-size:13px}
+.penalty-name{flex:1;min-width:0;font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--ink-50);text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.penalty-color-dot{flex-shrink:0;width:14px;height:14px;border-radius:50%;background:var(--team-color,#ff4500);box-shadow:0 0 8px var(--team-color,#ff4500)}
+.penalty-row-rm{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.06);color:var(--ink-300);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,color .15s}
+.penalty-row-rm:hover{background:rgba(255,85,119,.18);color:#ff5577}
+.penalty-kickoff{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(135deg,rgba(28,138,114,.18),rgba(15,77,64,.10));border:1px solid rgba(28,138,114,.4);border-radius:var(--r-md);margin-top:6px}
+.penalty-kickoff-meta{font-family:var(--font-cond);font-size:12px;letter-spacing:.04em;color:var(--ink-200)}
+.penalty-viewer-note{padding:14px;text-align:center;font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-400);font-style:italic}
+/* Live stage — 3D scene + HUD overlay */
+.penalty-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0a0e08}
+#penalty-canvas{width:100%;height:100%;display:block}
+.penalty-hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column}
+.penalty-hud-top{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent)}
+.penalty-current-name{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,4vw,40px);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)}
+.penalty-progress{font-family:var(--font-display);font-style:italic;font-weight:700;letter-spacing:.04em;color:var(--ink-50);background:rgba(0,0,0,.6);padding:6px 12px;border-radius:8px;border:1px solid rgba(255,215,64,.35);display:inline-flex;align-items:center;gap:8px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pty-tally{font-size:clamp(16px,2.6vw,22px);font-style:normal}
+.pty-tally.goals{color:#4cdfb6}
+.pty-tally.saves{color:#ff7a8a}
+.pty-tally-sep{color:rgba(255,255,255,.35);font-size:clamp(14px,2.2vw,20px)}
+.pty-tally-progress{margin-left:8px;padding-left:10px;border-left:1px solid rgba(255,255,255,.2);font-size:clamp(12px,1.8vw,16px);color:var(--ink-200);font-weight:600;letter-spacing:.1em}
+.penalty-result-overlay{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:clamp(60px,12vw,140px);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:0 8px 30px rgba(0,0,0,.7);opacity:0;transform:scale(.7);transition:opacity .25s,transform .25s}
+.penalty-result-overlay.show{opacity:1;transform:scale(1)}
+.penalty-result-overlay.goal{color:#4cdfb6;text-shadow:0 0 80px rgba(76,223,182,.6),0 8px 30px rgba(0,0,0,.7)}
+.penalty-result-overlay.save{color:#ff7a8a;text-shadow:0 0 80px rgba(255,85,119,.6),0 8px 30px rgba(0,0,0,.7)}
+/* Results screen */
+.penalty-tally{display:flex;justify-content:center;gap:18px;margin:8px 0 16px;font-family:var(--font-display);font-style:italic}
+.penalty-tally-cell{padding:10px 18px;border-radius:var(--r-md);min-width:120px;text-align:center;border:1px solid rgba(255,255,255,.12)}
+.penalty-tally-cell.scored{background:linear-gradient(135deg,rgba(76,223,182,.2),rgba(28,138,114,.08));border-color:rgba(76,223,182,.45)}
+.penalty-tally-cell.missed{background:linear-gradient(135deg,rgba(255,85,119,.2),rgba(180,40,80,.08));border-color:rgba(255,85,119,.45)}
+.penalty-tally-num{font-size:34px;font-weight:700;line-height:1;color:var(--ink-50)}
+.penalty-tally-cell.scored .penalty-tally-num{color:#4cdfb6}
+.penalty-tally-cell.missed .penalty-tally-num{color:#ff7a8a}
+.penalty-tally-label{font-family:var(--font-cond);font-size:11px;letter-spacing:.14em;color:var(--ink-300);text-transform:uppercase;margin-top:4px}
+.penalty-results-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.penalty-results-col{display:flex;flex-direction:column;gap:6px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:12px;min-width:0}
+.penalty-results-col-hd{font-family:var(--font-cond);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;border-radius:6px;text-align:center}
+.penalty-results-col-hd.scored{background:rgba(76,223,182,.16);color:#4cdfb6}
+.penalty-results-col-hd.missed{background:rgba(255,85,119,.16);color:#ff7a8a}
+.penalty-results-list{display:flex;flex-direction:column;gap:4px;min-height:50px}
+.penalty-results-list:empty::after{content:"—";display:block;text-align:center;color:var(--ink-400);font-family:var(--font-cond);padding:12px}
+.penalty-result-name{font-family:var(--font-cond);font-weight:600;font-size:13px;color:var(--ink-50);padding:6px 10px;background:rgba(255,255,255,.04);border-left:3px solid var(--team-color,#ff4500);border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.penalty-results-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+@media(max-width:520px){
+  .penalty-kickoff{flex-direction:column;align-items:stretch;gap:8px}
+  .penalty-kickoff .kick-off-btn{width:100%}
+  .penalty-tally-cell{min-width:100px;padding:8px 12px}
+  .penalty-tally-num{font-size:28px}
+  .penalty-results-cols{grid-template-columns:1fr}
+  .penalty-current-name{font-size:20px}
+  .penalty-result-overlay{font-size:60px}
+}
+body[data-theme="light"] .penalty-row{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .penalty-name{color:#1a1a16}
+body[data-theme="light"] .penalty-num{background:rgba(0,0,0,.05);color:#4a4a45}
+body[data-theme="light"] .penalty-kickoff{background:linear-gradient(135deg,rgba(28,138,114,.15),rgba(15,77,64,.06));border-color:rgba(28,138,114,.45)}
+body[data-theme="light"] .penalty-results-col{background:#ffffff;border-color:rgba(0,0,0,.08)}
+body[data-theme="light"] .penalty-result-name{background:rgba(0,0,0,.03);color:#1a1a16}
+body[data-theme="light"] .penalty-subtitle{color:#4a4a45}
+
 /* ═══ PERATURAN GRUP ═══ */
 .rules-intro{font-family:var(--font-cond);font-size:13px;letter-spacing:.04em;color:var(--ink-200);margin:-4px 0 8px;line-height:1.5}
 .rules-list{counter-reset:rule;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px}
@@ -616,6 +683,42 @@ body[data-theme="light"] .mvp-prize.empty:hover{background:rgba(255,215,64,.16);
 body[data-theme="light"] .mvp-prize-editor{background:rgba(255,215,64,.10);border-color:rgba(255,170,0,.35)}
 body[data-theme="light"] .mvp-prize-editor input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
 body[data-theme="light"] .mvp-prize-editor-preview{background:rgba(0,0,0,.02)}
+/* Three-place prize banners — list wrapper + 2nd/3rd place color variants */
+.mvp-prize-list{display:flex;flex-direction:column;gap:8px}
+.mvp-prize.r2{background:linear-gradient(135deg,rgba(205,213,224,.16),rgba(140,150,170,.06));border-color:rgba(205,213,224,.42)}
+.mvp-prize.r3{background:linear-gradient(135deg,rgba(205,128,80,.16),rgba(140,80,40,.06));border-color:rgba(205,128,80,.42)}
+.mvp-prize.r2 img.mvp-prize-thumb{border-color:rgba(205,213,224,.5)}
+.mvp-prize.r3 img.mvp-prize-thumb{border-color:rgba(205,128,80,.5)}
+.mvp-prize.r2 .mvp-prize-kicker{color:#cdd5e0}
+.mvp-prize.r3 .mvp-prize-kicker{color:#cd8050}
+.mvp-prize.r2 .mvp-prize-action{border-color:rgba(205,213,224,.3)}
+.mvp-prize.r3 .mvp-prize-action{border-color:rgba(205,128,80,.3)}
+.mvp-prize.r2 .mvp-prize-action:hover{background:rgba(205,213,224,.18);border-color:#cdd5e0}
+.mvp-prize.r3 .mvp-prize-action:hover{background:rgba(205,128,80,.18);border-color:#cd8050}
+.mvp-prize.r2.empty{background:rgba(205,213,224,.05);border-color:rgba(205,213,224,.4)}
+.mvp-prize.r3.empty{background:rgba(205,128,80,.05);border-color:rgba(205,128,80,.4)}
+.mvp-prize.r2.empty:hover{background:rgba(205,213,224,.11);border-color:#cdd5e0}
+.mvp-prize.r3.empty:hover{background:rgba(205,128,80,.11);border-color:#cd8050}
+.mvp-prize.r2 .mvp-prize-empty-icon{background:rgba(205,213,224,.15)}
+.mvp-prize.r3 .mvp-prize-empty-icon{background:rgba(205,128,80,.15)}
+.mvp-prize.r2 .mvp-prize-cta-btn{background:#cdd5e0;color:#1a1a16}
+.mvp-prize.r2 .mvp-prize-cta-btn:hover{background:#dee4ec}
+.mvp-prize.r3 .mvp-prize-cta-btn{background:#cd8050;color:#1a1a16}
+.mvp-prize.r3 .mvp-prize-cta-btn:hover{background:#d99366}
+body[data-theme="light"] .mvp-prize.r2{background:linear-gradient(135deg,rgba(160,170,190,.18),rgba(100,110,130,.06));border-color:rgba(140,150,170,.45)}
+body[data-theme="light"] .mvp-prize.r3{background:linear-gradient(135deg,rgba(205,128,80,.18),rgba(168,90,48,.08));border-color:rgba(168,90,48,.45)}
+body[data-theme="light"] .mvp-prize.r2 .mvp-prize-kicker{color:#5a6070}
+body[data-theme="light"] .mvp-prize.r3 .mvp-prize-kicker{color:#a85a30}
+/* Editor: per-place sub-section */
+.mvp-prize-editor-place{display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06);border-radius:8px}
+.mvp-prize-editor-place-title{font-family:var(--font-cond);font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.mvp-prize-editor-place.p1 .mvp-prize-editor-place-title{color:#ffd740}
+.mvp-prize-editor-place.p2 .mvp-prize-editor-place-title{color:#cdd5e0}
+.mvp-prize-editor-place.p3 .mvp-prize-editor-place-title{color:#cd8050}
+body[data-theme="light"] .mvp-prize-editor-place{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .mvp-prize-editor-place.p1 .mvp-prize-editor-place-title{color:#b85d00}
+body[data-theme="light"] .mvp-prize-editor-place.p2 .mvp-prize-editor-place-title{color:#5a6070}
+body[data-theme="light"] .mvp-prize-editor-place.p3 .mvp-prize-editor-place-title{color:#a85a30}
 .mvp-month-picker{display:flex;flex-direction:column;gap:4px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:10px 14px}
 .mvp-month-label{font-family:var(--font-cond);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-400)}
 .mvp-month-control{position:relative;display:flex;align-items:center}
@@ -1216,6 +1319,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <button class="tab" data-tab="rules">📜 Peraturan</button>
     <button class="tab active" data-tab="home">🏠 Beranda</button>
     <button class="tab" data-tab="race">⚽ Balapan</button>
+    <button class="tab" data-tab="penalty" style="display:none">🥅 Penalty</button>
     <button class="tab" data-tab="wheel">🎡 Roda</button>
     <button class="tab" data-tab="lucky">🎁 Kotak</button>
     <button class="tab" data-tab="auction">🔨 Lelang</button>
@@ -1274,6 +1378,11 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ff8a1f,#c53500);--tile-glow:rgba(255,69,0,.45)">⚽</div>
           <div class="home-tile-title">Balapan</div>
           <div class="home-tile-sub">Adu kecepatan</div>
+        </button>
+        <button class="home-tile" data-target="penalty" style="display:none">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#1c8a72,#0f4d40);--tile-glow:rgba(28,138,114,.45)">🥅</div>
+          <div class="home-tile-title">Penalty</div>
+          <div class="home-tile-sub">Tendangan keberuntungan</div>
         </button>
         <button class="home-tile" data-target="wheel">
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ffd740,#ff8a1f);--tile-glow:rgba(255,215,64,.5)">🎡</div>
@@ -1634,6 +1743,71 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     </div>
   </div>
 
+  <!-- PENALTY KICK -->
+  <div id="penalty-screen" class="screen">
+    <!-- Setup view (admin add players + Kick-off) -->
+    <div class="penalty-setup" id="penalty-setup">
+      <div class="tool-wrap">
+        <h2 class="tool-title">Tendangan <span class="accent">Penalty</span></h2>
+        <p class="penalty-subtitle">Setiap pemain mendapat satu kesempatan menendang. Kiper menyelamatkan ~35% bola.</p>
+
+        <div class="penalty-admin-only" style="display:none">
+          <div class="add-row">
+            <input id="penalty-name-input" placeholder="Nama pemain" maxlength="80">
+            <button class="btn btn-primary btn-sm" id="penalty-add-btn">+ Tambah</button>
+          </div>
+          <div class="add-row">
+            <button class="btn btn-ghost btn-sm" id="penalty-shuffle-btn">🔀 Acak Urutan</button>
+            <button class="btn btn-ghost btn-sm" id="penalty-clear-btn">🗑 Kosongkan</button>
+          </div>
+        </div>
+
+        <div class="penalty-roster" id="penalty-roster"></div>
+
+        <div class="penalty-kickoff" id="penalty-kickoff" style="display:none">
+          <div class="penalty-kickoff-meta" id="penalty-kickoff-meta">Tambah minimal 1 pemain</div>
+          <button class="btn btn-primary kick-off-btn" id="penalty-start-btn" disabled>🥅 Mulai Penalty</button>
+        </div>
+
+        <div class="penalty-viewer-note" id="penalty-viewer-note">Tunggu admin untuk memulai penalty.</div>
+      </div>
+    </div>
+
+    <!-- Live view (3D scene + per-shot HUD) -->
+    <div class="penalty-stage" id="penalty-stage" style="display:none">
+      <canvas id="penalty-canvas"></canvas>
+      <div class="penalty-hud" id="penalty-hud">
+        <div class="penalty-hud-top">
+          <div class="penalty-current-name" id="penalty-current-name">—</div>
+          <div class="penalty-progress" id="penalty-progress">0 / 0</div>
+        </div>
+        <div class="penalty-result-overlay" id="penalty-result-overlay"></div>
+      </div>
+    </div>
+
+    <!-- Results view -->
+    <div class="penalty-results" id="penalty-results-view" style="display:none">
+      <div class="tool-wrap">
+        <h2 class="tool-title">Hasil <span class="accent">Penalty</span></h2>
+        <div class="penalty-tally" id="penalty-tally"></div>
+        <div class="penalty-results-cols">
+          <div class="penalty-results-col">
+            <div class="penalty-results-col-hd scored">⚽ Cetak Gol</div>
+            <div class="penalty-results-list" id="penalty-results-scorers"></div>
+          </div>
+          <div class="penalty-results-col">
+            <div class="penalty-results-col-hd missed">🛑 Diselamatkan</div>
+            <div class="penalty-results-list" id="penalty-results-missers"></div>
+          </div>
+        </div>
+        <div class="penalty-admin-only penalty-results-actions" style="display:none;text-align:center;margin-top:14px">
+          <button class="btn btn-ghost btn-sm" id="penalty-back-btn">← Kembali ke Setup</button>
+          <button class="btn btn-primary btn-sm" id="penalty-replay-btn">🔁 Main Lagi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TRACK (shipment tracking) -->
   <div id="track-screen" class="screen">
     <div class="tool-wrap">
@@ -1843,8 +2017,8 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         </div>
       </div>
 
-      <!-- Prize banner — visible to everyone, edit button for admin -->
-      <div class="mvp-prize" id="mvp-prize-banner" style="display:none"></div>
+      <!-- Prize banners — up to 3 (1st / 2nd / 3rd), JS-populated -->
+      <div class="mvp-prize-list" id="mvp-prize-list"></div>
 
       <!-- Publish ribbon — visible to all so viewers know how recent the
            movement chips are. Admin-only controls live inside it. -->
@@ -1866,23 +2040,59 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <input id="mvp-pts-input" type="number" min="0" max="9999" placeholder="Poin" value="0" style="max-width:100px">
           <button class="btn btn-primary btn-sm" id="mvp-add-btn">+ Tambah</button>
         </div>
-        <!-- Prize edit panel — opens when admin clicks ✎ Edit on the banner -->
+        <!-- Prize edit panel — opens when admin clicks ✎ Edit on a banner.
+             One panel covers all three places (1st / 2nd / 3rd). -->
         <div class="mvp-prize-editor" id="mvp-prize-editor" style="display:none">
           <div class="mvp-prize-editor-hd">
             <span class="mvp-prize-editor-title">🏆 Hadiah <span id="mvp-prize-editor-month"></span></span>
             <button class="btn btn-ghost btn-xs" id="mvp-prize-editor-close" type="button">✕</button>
           </div>
-          <input id="mvp-prize-label-input" placeholder="Label hadiah (mis. Voucher Rp 500K)" maxlength="200">
-          <div class="mvp-prize-editor-image-row">
-            <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview">
-              <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+          <div class="mvp-prize-editor-place p1" data-place="1">
+            <span class="mvp-prize-editor-place-title">🥇 Juara 1</span>
+            <input id="mvp-prize-label-input-1" placeholder="Label hadiah juara 1 (mis. Voucher Rp 500K)" maxlength="200">
+            <div class="mvp-prize-editor-image-row">
+              <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview-1">
+                <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+              </div>
+              <div class="mvp-prize-editor-actions">
+                <label class="lucky-upload-label" title="Pilih gambar">
+                  📸 Pilih Gambar
+                  <input type="file" id="mvp-prize-file-1" accept="image/*" style="display:none">
+                </label>
+                <button class="btn btn-ghost btn-xs mvp-prize-remove-img" id="mvp-prize-remove-img-1" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+              </div>
             </div>
-            <div class="mvp-prize-editor-actions">
-              <label class="lucky-upload-label" title="Pilih gambar">
-                📸 Pilih Gambar
-                <input type="file" id="mvp-prize-file" accept="image/*" style="display:none">
-              </label>
-              <button class="btn btn-ghost btn-xs" id="mvp-prize-remove-img" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+          </div>
+          <div class="mvp-prize-editor-place p2" data-place="2">
+            <span class="mvp-prize-editor-place-title">🥈 Juara 2</span>
+            <input id="mvp-prize-label-input-2" placeholder="Label hadiah juara 2" maxlength="200">
+            <div class="mvp-prize-editor-image-row">
+              <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview-2">
+                <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+              </div>
+              <div class="mvp-prize-editor-actions">
+                <label class="lucky-upload-label" title="Pilih gambar">
+                  📸 Pilih Gambar
+                  <input type="file" id="mvp-prize-file-2" accept="image/*" style="display:none">
+                </label>
+                <button class="btn btn-ghost btn-xs mvp-prize-remove-img" id="mvp-prize-remove-img-2" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+              </div>
+            </div>
+          </div>
+          <div class="mvp-prize-editor-place p3" data-place="3">
+            <span class="mvp-prize-editor-place-title">🥉 Juara 3</span>
+            <input id="mvp-prize-label-input-3" placeholder="Label hadiah juara 3" maxlength="200">
+            <div class="mvp-prize-editor-image-row">
+              <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview-3">
+                <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+              </div>
+              <div class="mvp-prize-editor-actions">
+                <label class="lucky-upload-label" title="Pilih gambar">
+                  📸 Pilih Gambar
+                  <input type="file" id="mvp-prize-file-3" accept="image/*" style="display:none">
+                </label>
+                <button class="btn btn-ghost btn-xs mvp-prize-remove-img" id="mvp-prize-remove-img-3" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+              </div>
             </div>
           </div>
           <div class="mvp-prize-editor-footer">
@@ -2191,12 +2401,12 @@ let _lastStateSync = null;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen'), $rulesScr=$('rules-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen'), $rulesScr=$('rules-screen'), $penaltyScr=$('penalty-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 // Race canvas now uses WebGL (Three.js); the 2D wheel canvas keeps its 2D ctx.
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr,$mvpScr,$rulesScr];
+const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr,$mvpScr,$rulesScr,$penaltyScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -2888,6 +3098,7 @@ function setRole(r){
   if(typeof renderMvpTable === 'function') renderMvpTable();
   if(typeof renderMvpPrize === 'function') renderMvpPrize();
   if(typeof renderMvpPublishBar === 'function') renderMvpPublishBar();
+  if(typeof refreshPenaltyAdminUI === 'function') refreshPenaltyAdminUI();
   if(typeof renderWheelChips === 'function') renderWheelChips();
   $('result-actions').style.display = isAdmin ? '' : 'none';
   $('viewer-result-msg').classList.toggle('active', !isAdmin);
@@ -2924,7 +3135,7 @@ $('login-submit').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
-const VALID_TABS = ['rules','home','race','wheel','lucky','auction','predict','mvp','track','history'];
+const VALID_TABS = ['rules','home','race','penalty','wheel','lucky','auction','predict','mvp','track','history'];
 let _suppressHistoryPush = false;
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -2937,6 +3148,7 @@ document.querySelectorAll('.tab').forEach(t => {
     if(currentTab==='rules'){ exitReplay(); showScreen($rulesScr); }
     else if(currentTab==='home'){ exitReplay(); showScreen($home); }
     else if(currentTab==='race'){ exitReplay(); resumeRaceTab(); }
+    else if(currentTab==='penalty'){ exitReplay(); showScreen($penaltyScr); if(typeof enterPenaltyTab === 'function') enterPenaltyTab(); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
     else if(currentTab==='lucky'){ showScreen($luckyScr); resetLuckyStage(); loadLuckyCards(); loadLuckyDraws(); }
     else if(currentTab==='auction'){ showScreen($auctionScr); loadAuctions(); }
@@ -6696,5 +6908,6 @@ setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); 
 <script src="./js/auction.js"></script>
 <script src="./js/predictions.js"></script>
 <script src="./js/mvp.js"></script>
+<script src="./js/penalty.js"></script>
 </body>
 </html>

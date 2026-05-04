@@ -8,9 +8,20 @@
 let mvpEntries = [];
 let mvpAvailableMonths = [];
 let mvpSelectedMonth = currentMonthString();
-let mvpPrize = null; // { month, prize_label, prize_image }
+// { month, prizes: [{place, label, image}, …] } — always 3 entries (places 1/2/3),
+// label/image may be null when that place is empty.
+let mvpPrize = null;
 let mvpPublishedAt = null; // ISO string of last snapshot publish for the selected month
 let mvpDraft = false;     // admin's live state differs from the published snapshot
+
+const MVP_PRIZE_META = {
+  1: { medal: '🥇', label: 'Juara 1', rankClass: 'r1' },
+  2: { medal: '🥈', label: 'Juara 2', rankClass: 'r2' },
+  3: { medal: '🥉', label: 'Juara 3', rankClass: 'r3' },
+};
+function mvpPrizeAt(place){
+  return mvpPrize?.prizes?.find(p => +p.place === place) || { place, label: null, image: null };
+}
 
 function currentMonthString(){
   const d = new Date();
@@ -123,77 +134,105 @@ function renderMvpPublishBar(){
 }
 
 function renderMvpPrize(){
-  const el = $('mvp-prize-banner');
-  if(!el) return;
+  const list = $('mvp-prize-list');
+  if(!list) return;
   const isAdmin = role === 'admin';
-  const hasPrize = mvpPrize && (mvpPrize.prize_image || mvpPrize.prize_label);
+  const monthLabel = formatMonthLabel(mvpSelectedMonth);
 
-  // Viewer + no prize → silent. Admin + no prize → CTA so it's obvious
-  // where to click to add one.
-  if(!hasPrize && !isAdmin){ el.style.display = 'none'; return; }
-  el.style.display = '';
+  // Build the up-to-3 banner cards. For viewers we skip empty places
+  // entirely; for admins we render a dashed CTA card so it's obvious
+  // where to click to set each prize.
+  const cards = [];
+  for(const place of [1, 2, 3]){
+    const prize = mvpPrizeAt(place);
+    const meta = MVP_PRIZE_META[place];
+    const has = !!(prize.image || prize.label);
+    if(!has && !isAdmin) continue;
+    const kicker = `${meta.medal} Hadiah ${meta.label} · ${monthLabel}`;
 
-  if(!hasPrize){
-    el.className = 'mvp-prize empty';
-    el.innerHTML = `
-      <div class="mvp-prize-empty-icon">🏆</div>
-      <div class="mvp-prize-info">
-        <div class="mvp-prize-kicker">Hadiah ${escapeHtml(formatMonthLabel(mvpSelectedMonth))}</div>
-        <div class="mvp-prize-label">Belum ada hadiah — klik untuk atur</div>
-      </div>
-      <button class="mvp-prize-cta-btn" type="button" data-act="add">+ Atur</button>`;
-    // Whole banner is the click target so it feels like one big button.
-    // The CTA button stops propagation so it doesn't double-fire.
-    el.onclick = () => openMvpPrizeEditor();
-    el.querySelector('[data-act="add"]')?.addEventListener('click', e => { e.stopPropagation(); openMvpPrizeEditor(); });
-    return;
+    if(!has){
+      cards.push(`
+        <div class="mvp-prize empty ${meta.rankClass}" data-place="${place}">
+          <div class="mvp-prize-empty-icon">${meta.medal}</div>
+          <div class="mvp-prize-info">
+            <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
+            <div class="mvp-prize-label">Belum ada hadiah — klik untuk atur</div>
+          </div>
+          <button class="mvp-prize-cta-btn" type="button" data-act="add" data-place="${place}">+ Atur</button>
+        </div>`);
+      continue;
+    }
+
+    const adminActions = isAdmin
+      ? `<div class="mvp-prize-actions">
+          <button class="mvp-prize-action edit" type="button" data-act="edit" data-place="${place}" title="Ubah hadiah" aria-label="Ubah hadiah">✎</button>
+          <button class="mvp-prize-action del"  type="button" data-act="del"  data-place="${place}" title="Hapus hadiah" aria-label="Hapus hadiah">🗑</button>
+        </div>`
+      : '';
+    if(prize.image){
+      cards.push(`
+        <div class="mvp-prize ${meta.rankClass}" data-place="${place}">
+          <img class="mvp-prize-thumb" src="${escapeHtml(prize.image)}" alt="" data-act="zoom" data-place="${place}">
+          <div class="mvp-prize-info">
+            <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
+            <div class="mvp-prize-label">${escapeHtml(prize.label || 'Hadiah eksklusif')}</div>
+          </div>
+          ${adminActions}
+        </div>`);
+    } else {
+      cards.push(`
+        <div class="mvp-prize no-image ${meta.rankClass}" data-place="${place}">
+          <div class="mvp-prize-info">
+            <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
+            <div class="mvp-prize-label">${escapeHtml(prize.label)}</div>
+          </div>
+          ${adminActions}
+        </div>`);
+    }
   }
 
-  // Has prize — viewers see the banner read-only; admins get inline ✎ / 🗑
-  el.onclick = null;
-  const kicker = `🏆 Hadiah ${formatMonthLabel(mvpPrize.month || mvpSelectedMonth)}`;
-  const adminActions = isAdmin
-    ? `<div class="mvp-prize-actions">
-        <button class="mvp-prize-action edit" type="button" data-act="edit" title="Ubah hadiah" aria-label="Ubah hadiah">✎</button>
-        <button class="mvp-prize-action del" type="button" data-act="del" title="Hapus hadiah" aria-label="Hapus hadiah">🗑</button>
-      </div>`
-    : '';
+  if(!cards.length){ list.style.display = 'none'; list.innerHTML = ''; return; }
+  list.style.display = '';
+  list.innerHTML = cards.join('');
 
-  if(mvpPrize.prize_image){
-    el.className = 'mvp-prize';
-    el.innerHTML = `
-      <img class="mvp-prize-thumb" src="${escapeHtml(mvpPrize.prize_image)}" alt="" data-act="zoom">
-      <div class="mvp-prize-info">
-        <div class="mvp-prize-kicker">${kicker}</div>
-        <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label || 'Hadiah eksklusif')}</div>
-      </div>
-      ${adminActions}`;
-    el.querySelector('img[data-act="zoom"]')?.addEventListener('click', () => openMvpLightbox(mvpPrize.prize_image));
-  } else {
-    el.className = 'mvp-prize no-image';
-    el.innerHTML = `
-      <div class="mvp-prize-info">
-        <div class="mvp-prize-kicker">${kicker}</div>
-        <div class="mvp-prize-label">${escapeHtml(mvpPrize.prize_label)}</div>
-      </div>
-      ${adminActions}`;
-  }
-
-  el.querySelector('[data-act="edit"]')?.addEventListener('click', e => { e.stopPropagation(); openMvpPrizeEditor(); });
-  el.querySelector('[data-act="del"]')?.addEventListener('click', e => { e.stopPropagation(); deleteMvpPrize(); });
+  // Wire up listeners. Empty CTAs use whole-card click; populated cards
+  // use the icon buttons. ✎ on a populated card focuses that place; the
+  // editor still shows all 3 sections.
+  list.querySelectorAll('.mvp-prize.empty').forEach(card => {
+    const place = +card.dataset.place;
+    card.onclick = () => openMvpPrizeEditor(place);
+    card.querySelector('[data-act="add"]')?.addEventListener('click', e => {
+      e.stopPropagation(); openMvpPrizeEditor(place);
+    });
+  });
+  list.querySelectorAll('img[data-act="zoom"]').forEach(img => {
+    img.addEventListener('click', () => openMvpLightbox(img.getAttribute('src')));
+  });
+  list.querySelectorAll('[data-act="edit"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation(); openMvpPrizeEditor(+btn.dataset.place);
+    });
+  });
+  list.querySelectorAll('[data-act="del"]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation(); deleteMvpPrize(+btn.dataset.place);
+    });
+  });
 }
 
-async function deleteMvpPrize(){
+async function deleteMvpPrize(place){
   if(role !== 'admin') return;
-  if(!confirm(`Hapus hadiah ${formatMonthLabel(mvpSelectedMonth)}?`)) return;
+  const meta = MVP_PRIZE_META[place];
+  if(!meta) return;
+  if(!confirm(`Hapus hadiah ${meta.label} ${formatMonthLabel(mvpSelectedMonth)}?`)) return;
   try {
-    const r = await fetch('/api/mvp/prize?month=' + encodeURIComponent(mvpSelectedMonth), {
+    const url = '/api/mvp/prize?month=' + encodeURIComponent(mvpSelectedMonth) + '&place=' + place;
+    const r = await fetch(url, {
       method:'DELETE',
       headers:{'x-admin-token':adminToken}
     });
     if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menghapus'); return; }
-    toast('✓ Hadiah dihapus');
-    closeMvpPrizeEditor();
+    toast(`✓ Hadiah ${meta.label} dihapus`);
   } catch { toast('Gagal menghapus'); }
 }
 
@@ -427,42 +466,53 @@ $('mvp-month-select')?.addEventListener('change', e => {
   loadMvpEntries();
 });
 
-// Admin: prize editor panel. Pure inline UI — no native prompt/confirm.
-// State: { label, image_url } reflecting the unsaved form values.
-let mvpPrizeDraft = { label: '', image_url: '' };
+// Admin: prize editor panel. One panel covers all three places (1st / 2nd /
+// 3rd) — admin edits everything and Save commits all three at once. State:
+// per-place { label, image_url } reflecting the unsaved form values.
+let mvpPrizeDraft = {
+  1: { label: '', image_url: '' },
+  2: { label: '', image_url: '' },
+  3: { label: '', image_url: '' },
+};
 
-function openMvpPrizeEditor(){
+function openMvpPrizeEditor(focusPlace){
   if(role !== 'admin') return;
   const editor = $('mvp-prize-editor');
   if(!editor) return;
-  // Seed the draft from the current saved prize for this month
-  mvpPrizeDraft = {
-    label: mvpPrize?.prize_label || '',
-    image_url: mvpPrize?.prize_image || '',
-  };
+  // Seed the draft from the current saved prizes for this month
+  for(const place of [1, 2, 3]){
+    const p = mvpPrizeAt(place);
+    mvpPrizeDraft[place] = { label: p.label || '', image_url: p.image || '' };
+    const labelInput = $(`mvp-prize-label-input-${place}`);
+    if(labelInput) labelInput.value = mvpPrizeDraft[place].label;
+    renderMvpPrizeEditorPreview(place);
+  }
   $('mvp-prize-editor-month').textContent = formatMonthLabel(mvpSelectedMonth);
-  $('mvp-prize-label-input').value = mvpPrizeDraft.label;
-  renderMvpPrizeEditorPreview();
   editor.style.display = '';
   // Bring it into view so the admin sees the panel right away even on
   // long pages — without this the editor opens below the fold.
   setTimeout(() => {
     editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    $('mvp-prize-label-input').focus();
+    const focus = focusPlace && [1,2,3].includes(focusPlace) ? focusPlace : 1;
+    $(`mvp-prize-label-input-${focus}`)?.focus();
   }, 50);
 }
 function closeMvpPrizeEditor(){
   const editor = $('mvp-prize-editor');
   if(editor) editor.style.display = 'none';
-  // Reset the file input so the same file can be re-picked next time
-  if($('mvp-prize-file')) $('mvp-prize-file').value = '';
+  // Reset the file inputs so the same file can be re-picked next time
+  for(const place of [1, 2, 3]){
+    const f = $(`mvp-prize-file-${place}`);
+    if(f) f.value = '';
+  }
 }
-function renderMvpPrizeEditorPreview(){
-  const wrap = $('mvp-prize-editor-preview');
-  const removeBtn = $('mvp-prize-remove-img');
+function renderMvpPrizeEditorPreview(place){
+  const wrap = $(`mvp-prize-editor-preview-${place}`);
+  const removeBtn = $(`mvp-prize-remove-img-${place}`);
   if(!wrap) return;
-  if(mvpPrizeDraft.image_url){
-    wrap.innerHTML = `<img src="${escapeHtml(mvpPrizeDraft.image_url)}" alt="">`;
+  const url = mvpPrizeDraft[place]?.image_url || '';
+  if(url){
+    wrap.innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
     if(removeBtn) removeBtn.style.display = '';
   } else {
     wrap.innerHTML = '<div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>';
@@ -473,54 +523,61 @@ function renderMvpPrizeEditorPreview(){
 $('mvp-prize-editor-close')?.addEventListener('click', closeMvpPrizeEditor);
 $('mvp-prize-cancel')?.addEventListener('click', closeMvpPrizeEditor);
 
-$('mvp-prize-file')?.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if(!file) return;
-  if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
-  // Show local preview immediately while uploading in background
-  const reader = new FileReader();
-  reader.onload = () => {
-    mvpPrizeDraft.image_url = reader.result; // temporary base64 for preview
-    renderMvpPrizeEditorPreview();
-  };
-  reader.readAsDataURL(file);
-  toast('Mengunggah gambar…');
-  try {
-    const [url] = await uploadImageFiles([file], 'mvp');
-    mvpPrizeDraft.image_url = url;
-    renderMvpPrizeEditorPreview();
-    toast('✓ Gambar diunggah');
-  } catch(err){
-    toast(err.message || 'Upload gagal');
-    // Revert preview to the saved value
-    mvpPrizeDraft.image_url = mvpPrize?.prize_image || '';
-    renderMvpPrizeEditorPreview();
-  }
-});
+// Wire up per-place file pickers and remove buttons. Each place has its
+// own input/preview/remove control with the place number as a suffix.
+for(const place of [1, 2, 3]){
+  $(`mvp-prize-file-${place}`)?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+    if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
+    // Show local preview immediately while uploading in background
+    const reader = new FileReader();
+    reader.onload = () => {
+      mvpPrizeDraft[place].image_url = reader.result; // temporary base64 for preview
+      renderMvpPrizeEditorPreview(place);
+    };
+    reader.readAsDataURL(file);
+    toast('Mengunggah gambar…');
+    try {
+      const [url] = await uploadImageFiles([file], 'mvp');
+      mvpPrizeDraft[place].image_url = url;
+      renderMvpPrizeEditorPreview(place);
+      toast('✓ Gambar diunggah');
+    } catch(err){
+      toast(err.message || 'Upload gagal');
+      // Revert preview to the saved value
+      mvpPrizeDraft[place].image_url = mvpPrizeAt(place).image || '';
+      renderMvpPrizeEditorPreview(place);
+    }
+  });
 
-$('mvp-prize-remove-img')?.addEventListener('click', () => {
-  mvpPrizeDraft.image_url = '';
-  if($('mvp-prize-file')) $('mvp-prize-file').value = '';
-  renderMvpPrizeEditorPreview();
-});
+  $(`mvp-prize-remove-img-${place}`)?.addEventListener('click', () => {
+    mvpPrizeDraft[place].image_url = '';
+    const f = $(`mvp-prize-file-${place}`);
+    if(f) f.value = '';
+    renderMvpPrizeEditorPreview(place);
+  });
+}
 
 $('mvp-prize-save')?.addEventListener('click', async () => {
   if(role !== 'admin') return;
-  const label = $('mvp-prize-label-input').value.trim();
-  const body = {
-    month: mvpSelectedMonth,
-    prize_label: label,
-    prize_image: mvpPrizeDraft.image_url || null,
-  };
-  // Block save if a base64 preview slipped through (upload should have replaced it)
-  if(body.prize_image && body.prize_image.startsWith('data:')){
-    toast('Tunggu upload selesai…'); return;
+  const prizes = [];
+  for(const place of [1, 2, 3]){
+    const labelEl = $(`mvp-prize-label-input-${place}`);
+    const label = (labelEl?.value || '').trim();
+    const image = mvpPrizeDraft[place]?.image_url || null;
+    // Block save if a base64 preview slipped through (upload should have replaced it)
+    if(image && typeof image === 'string' && image.startsWith('data:')){
+      toast('Tunggu upload selesai…');
+      return;
+    }
+    prizes.push({ place, label, image });
   }
   try {
     const r = await fetch('/api/mvp/prize', {
       method:'PUT',
       headers:{'content-type':'application/json','x-admin-token':adminToken},
-      body: JSON.stringify(body)
+      body: JSON.stringify({ month: mvpSelectedMonth, prizes })
     });
     if(!r.ok){ const e = await r.json().catch(()=>({})); toast(e.error || 'Gagal menyimpan'); return; }
     toast('✓ Hadiah disimpan');

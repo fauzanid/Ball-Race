@@ -279,8 +279,10 @@ async function initDB() {
     await pool.query(`ALTER TABLE mvp_entries ADD COLUMN IF NOT EXISTS month VARCHAR(7)`);
     await pool.query(`UPDATE mvp_entries SET month = TO_CHAR(created_at, 'YYYY-MM') WHERE month IS NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_mvp_month_points ON mvp_entries (month, points DESC)`);
-    // One prize per month — admin can attach a label + image visible to
-    // everyone as motivation.
+    // Up to 3 prizes per month (1st / 2nd / 3rd) — admin can attach a label
+    // + image per place visible to everyone as motivation. Place 1 reuses
+    // the original prize_label / prize_image columns so historical rows
+    // automatically become the 1st-place prize.
     await pool.query(`
       CREATE TABLE IF NOT EXISTS mvp_prizes (
         month VARCHAR(7) PRIMARY KEY,
@@ -289,6 +291,10 @@ async function initDB() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
+    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_label_2 VARCHAR(200)`);
+    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_image_2 TEXT`);
+    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_label_3 VARCHAR(200)`);
+    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_image_3 TEXT`);
     // Standings movement — Billboard-style two-publish snapshot per month.
     // `ranks` holds the last published rankings; `prev_ranks` holds the
     // publish before that. ▲▼ chips compare live → prev_ranks while no
@@ -1351,17 +1357,36 @@ app.post('/api/mvp', requireAdmin, async (req, res) => {
 });
 
 // ===== MVP PRIZE PER MONTH =====
+// Three prizes per month: 1st / 2nd / 3rd place. Place 1 lives in the
+// legacy `prize_label`/`prize_image` columns; places 2 and 3 live in the
+// `_2`/`_3` columns added by the migration.
 // Registered BEFORE /api/mvp/:id so DELETE /api/mvp/prize doesn't get
 // swallowed by the :id handler with id="prize" → NaN.
+const PRIZE_COLS = {
+  1: { label: 'prize_label',   image: 'prize_image'   },
+  2: { label: 'prize_label_2', image: 'prize_image_2' },
+  3: { label: 'prize_label_3', image: 'prize_image_3' },
+};
+function rowToPrizes(row) {
+  return [1, 2, 3].map(place => ({
+    place,
+    label: row?.[PRIZE_COLS[place].label] || null,
+    image: row?.[PRIZE_COLS[place].image] || null,
+  }));
+}
 app.get('/api/mvp/prize', async (req, res) => {
-  if (!dbReady) return res.json({ month: currentMonth(), prize_label: null, prize_image: null });
+  if (!dbReady) return res.json({ month: currentMonth(), prizes: rowToPrizes(null) });
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     const { rows } = await pool.query(
-      `SELECT month, prize_label, prize_image, updated_at FROM mvp_prizes WHERE month = $1`,
+      `SELECT month, prize_label, prize_image,
+              prize_label_2, prize_image_2,
+              prize_label_3, prize_image_3,
+              updated_at
+         FROM mvp_prizes WHERE month = $1`,
       [month]
     );
-    res.json(rows[0] || { month, prize_label: null, prize_image: null });
+    res.json({ month, prizes: rowToPrizes(rows[0]), updated_at: rows[0]?.updated_at || null });
   } catch (err) {
     res.status(500).json({ error: 'Failed' });
   }
@@ -1371,30 +1396,64 @@ app.put('/api/mvp/prize', requireAdmin, async (req, res) => {
   if (!dbReady) return res.status(503).json({ error: 'No database' });
   try {
     const month = isValidMonth(req.body.month) ? req.body.month : currentMonth();
-    const prize_label = String(req.body.prize_label || '').trim() || null;
-    const prize_image = req.body.prize_image ? String(req.body.prize_image) : null;
-    if (prize_image && prize_image.length > MAX_PRIZE_IMAGE_BYTES) {
-      return res.status(413).json({ error: 'Gambar hadiah terlalu besar (maks 1 MB)' });
+    // Accept the new shape `{ prizes: [{place,label,image}, ...] }`.
+    const incoming = Array.isArray(req.body.prizes) ? req.body.prizes : [];
+    const byPlace = { 1: { label: null, image: null }, 2: { label: null, image: null }, 3: { label: null, image: null } };
+    for (const p of incoming) {
+      const place = +p?.place;
+      if (![1, 2, 3].includes(place)) continue;
+      const label = String(p.label || '').trim() || null;
+      const image = p.image ? String(p.image) : null;
+      if (image && image.length > MAX_PRIZE_IMAGE_BYTES) {
+        return res.status(413).json({ error: `Gambar hadiah juara ${place} terlalu besar (maks 1 MB)` });
+      }
+      if (image && !isValidImageUrl(image)) {
+        return res.status(400).json({ error: `Invalid image URL for juara ${place}` });
+      }
+      byPlace[place] = { label, image };
     }
-    if (prize_image && !isValidImageUrl(prize_image)) {
-      return res.status(400).json({ error: 'Invalid image URL' });
-    }
-    // Look up the existing image so we can clean it from R2 once the
-    // new value is committed (matching the prediction prize pattern).
-    const cur = await pool.query(`SELECT prize_image FROM mvp_prizes WHERE month = $1`, [month]);
-    const oldImage = cur.rows[0]?.prize_image || null;
-    await pool.query(
-      `INSERT INTO mvp_prizes (month, prize_label, prize_image, updated_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (month) DO UPDATE SET
-           prize_label = EXCLUDED.prize_label,
-           prize_image = EXCLUDED.prize_image,
-           updated_at = NOW()`,
-      [month, prize_label, prize_image]
+    // Look up existing images so we can clean stale ones from R2 once the
+    // new values are committed (matching the prediction prize pattern).
+    const cur = await pool.query(
+      `SELECT prize_image, prize_image_2, prize_image_3 FROM mvp_prizes WHERE month = $1`,
+      [month]
     );
-    if (oldImage && oldImage !== prize_image) deleteR2Object(oldImage);
+    const oldImages = {
+      1: cur.rows[0]?.prize_image    || null,
+      2: cur.rows[0]?.prize_image_2  || null,
+      3: cur.rows[0]?.prize_image_3  || null,
+    };
+    await pool.query(
+      `INSERT INTO mvp_prizes (
+         month,
+         prize_label,   prize_image,
+         prize_label_2, prize_image_2,
+         prize_label_3, prize_image_3,
+         updated_at
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+       ON CONFLICT (month) DO UPDATE SET
+         prize_label    = EXCLUDED.prize_label,
+         prize_image    = EXCLUDED.prize_image,
+         prize_label_2  = EXCLUDED.prize_label_2,
+         prize_image_2  = EXCLUDED.prize_image_2,
+         prize_label_3  = EXCLUDED.prize_label_3,
+         prize_image_3  = EXCLUDED.prize_image_3,
+         updated_at     = NOW()`,
+      [
+        month,
+        byPlace[1].label, byPlace[1].image,
+        byPlace[2].label, byPlace[2].image,
+        byPlace[3].label, byPlace[3].image,
+      ]
+    );
+    for (const place of [1, 2, 3]) {
+      const oldImg = oldImages[place];
+      const newImg = byPlace[place].image;
+      if (oldImg && oldImg !== newImg) deleteR2Object(oldImg);
+    }
     io.emit('mvp-prize-updated', { month });
-    res.json({ ok: true, month, prize_label, prize_image });
+    res.json({ ok: true, month, prizes: [1, 2, 3].map(place => ({ place, ...byPlace[place] })) });
   } catch (err) {
     console.error('PUT /api/mvp/prize:', err.message);
     res.status(500).json({ error: 'Failed' });
@@ -1406,10 +1465,37 @@ app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : null;
     if (!month) return res.status(400).json({ error: 'month required' });
-    const { rows } = await pool.query(
-      `DELETE FROM mvp_prizes WHERE month = $1 RETURNING prize_image`, [month]
-    );
-    if (rows[0]?.prize_image) deleteR2Object(rows[0].prize_image);
+    // Optional `place` param clears just that place; otherwise clear all 3.
+    const placeParam = req.query.place != null ? +req.query.place : null;
+    if (placeParam != null && ![1, 2, 3].includes(placeParam)) {
+      return res.status(400).json({ error: 'Invalid place' });
+    }
+    if (placeParam) {
+      const cols = PRIZE_COLS[placeParam];
+      // Read old image before clearing so we can delete it from R2.
+      const before = await pool.query(
+        `SELECT ${cols.image} AS img FROM mvp_prizes WHERE month = $1`,
+        [month]
+      );
+      const oldImg = before.rows[0]?.img || null;
+      await pool.query(
+        `UPDATE mvp_prizes
+            SET ${cols.label} = NULL, ${cols.image} = NULL, updated_at = NOW()
+          WHERE month = $1`,
+        [month]
+      );
+      if (oldImg) deleteR2Object(oldImg);
+    } else {
+      const { rows } = await pool.query(
+        `DELETE FROM mvp_prizes WHERE month = $1
+           RETURNING prize_image, prize_image_2, prize_image_3`,
+        [month]
+      );
+      const r = rows[0];
+      if (r?.prize_image)    deleteR2Object(r.prize_image);
+      if (r?.prize_image_2)  deleteR2Object(r.prize_image_2);
+      if (r?.prize_image_3)  deleteR2Object(r.prize_image_3);
+    }
     io.emit('mvp-prize-updated', { month });
     res.json({ ok: true });
   } catch (err) {
@@ -1527,6 +1613,16 @@ const liveRace = {
   lastResults: null,    // { results: [...], racers: [...] }
 };
 
+// ===== PENALTY KICK (parallel game, separate state) =====
+const livePenalty = {
+  state: 'idle',        // 'idle' | 'setup' | 'shooting' | 'results'
+  players: [],          // [{ name, colorIdx }]
+  shots: [],            // [{ playerIdx, ballSide: 'L'|'C'|'R', keeperSide: 'L'|'C'|'R', isGoal }]
+  currentIdx: 0,        // whose turn (index into shots)
+  startTime: 0,
+  lastResults: null,    // { players, shots, scorers: [idx], missers: [idx] }
+};
+
 function publicState() {
   return {
     state: liveRace.state,
@@ -1542,6 +1638,14 @@ function publicState() {
     serverNow: Date.now(),
     lastResults: liveRace.lastResults,
     viewerCount: io.engine.clientsCount,
+    penalty: {
+      state: livePenalty.state,
+      players: livePenalty.players,
+      shots: livePenalty.shots,
+      currentIdx: livePenalty.currentIdx,
+      startTime: livePenalty.startTime,
+      lastResults: livePenalty.lastResults,
+    },
   };
 }
 
@@ -1653,6 +1757,50 @@ io.on('connection', socket => {
     io.emit('race-reset');
   });
 
+  // ===== PENALTY KICK =====
+  // Each player gets one shot. The admin client RNG-resolves all shots
+  // up-front (same pattern race uses — server is just a relay), then
+  // emits one result every PENALTY_SHOT_MS so all viewers stay synced.
+  socket.on('penalty-update-players', players => {
+    if (!isAdmin) return;
+    livePenalty.players = players;
+    if (livePenalty.state === 'idle') livePenalty.state = 'setup';
+    io.emit('penalty-players-updated', players);
+  });
+
+  socket.on('penalty-start', data => {
+    if (!isAdmin) return;
+    livePenalty.state = 'shooting';
+    livePenalty.shots = data.shots;
+    livePenalty.players = data.players;
+    livePenalty.currentIdx = 0;
+    livePenalty.startTime = Date.now();
+    socket.broadcast.emit('penalty-started', { ...data, startTime: livePenalty.startTime });
+  });
+
+  socket.on('penalty-shot-played', data => {
+    if (!isAdmin) return;
+    livePenalty.currentIdx = data.nextIdx;
+    socket.broadcast.emit('penalty-shot-played', data);
+  });
+
+  socket.on('penalty-end', data => {
+    if (!isAdmin) return;
+    livePenalty.state = 'results';
+    livePenalty.lastResults = data;
+    socket.broadcast.emit('penalty-ended', data);
+  });
+
+  socket.on('penalty-reset', () => {
+    if (!isAdmin) return;
+    livePenalty.state = livePenalty.players.length > 0 ? 'setup' : 'idle';
+    livePenalty.shots = [];
+    livePenalty.currentIdx = 0;
+    livePenalty.lastResults = null;
+    livePenalty.startTime = 0;
+    io.emit('penalty-reset');
+  });
+
   socket.on('disconnect', () => {
     adminSockets.delete(socket.id);
     io.emit('viewer-count', io.engine.clientsCount);
@@ -1665,6 +1813,16 @@ io.on('connection', socket => {
           liveRace.positions = null;
           liveRace.commentary = '';
           io.emit('race-aborted');
+        }
+      }, 8000);
+    }
+    if (adminSockets.size === 0 && livePenalty.state === 'shooting') {
+      setTimeout(() => {
+        if (adminSockets.size === 0 && livePenalty.state === 'shooting') {
+          livePenalty.state = livePenalty.players.length > 0 ? 'setup' : 'idle';
+          livePenalty.shots = [];
+          livePenalty.currentIdx = 0;
+          io.emit('penalty-aborted');
         }
       }, 8000);
     }
