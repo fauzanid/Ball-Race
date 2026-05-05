@@ -8,17 +8,21 @@
 let mvpEntries = [];
 let mvpAvailableMonths = [];
 let mvpSelectedMonth = currentMonthString();
-// { month, prizes: [{place, label, image}, …] } — always 3 entries (places 1/2/3),
+// { month, prizes: [{place, label, image}, …] } — always 10 entries (places 1-10),
 // label/image may be null when that place is empty.
 let mvpPrize = null;
 let mvpPublishedAt = null; // ISO string of last snapshot publish for the selected month
 let mvpDraft = false;     // admin's live state differs from the published snapshot
 
-const MVP_PRIZE_META = {
-  1: { medal: '🥇', label: 'Juara 1', rankClass: 'r1' },
-  2: { medal: '🥈', label: 'Juara 2', rankClass: 'r2' },
-  3: { medal: '🥉', label: 'Juara 3', rankClass: 'r3' },
-};
+const MVP_PLACES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+// Top 3 keep gold/silver/bronze. Places 4-10 share a single muted "r-mid"
+// treatment so the visual hierarchy stays clear without 10 distinct hues.
+function mvpPrizeMeta(place){
+  if (place === 1) return { medal: '🥇', label: 'Juara 1',  rankClass: 'r1', editorClass: 'p1' };
+  if (place === 2) return { medal: '🥈', label: 'Juara 2',  rankClass: 'r2', editorClass: 'p2' };
+  if (place === 3) return { medal: '🥉', label: 'Juara 3',  rankClass: 'r3', editorClass: 'p3' };
+  return { medal: '', label: `Juara ${place}`, rankClass: 'r-mid', editorClass: 'p-mid', rank: place };
+}
 function mvpPrizeAt(place){
   return mvpPrize?.prizes?.find(p => +p.place === place) || { place, label: null, image: null };
 }
@@ -139,21 +143,33 @@ function renderMvpPrize(){
   const isAdmin = role === 'admin';
   const monthLabel = formatMonthLabel(mvpSelectedMonth);
 
-  // Build the up-to-3 banner cards. For viewers we skip empty places
+  // Build the up-to-10 banner cards. For viewers we skip empty places
   // entirely; for admins we render a dashed CTA card so it's obvious
   // where to click to set each prize.
   const cards = [];
-  for(const place of [1, 2, 3]){
+  for(const place of MVP_PLACES){
     const prize = mvpPrizeAt(place);
-    const meta = MVP_PRIZE_META[place];
+    const meta = mvpPrizeMeta(place);
     const has = !!(prize.image || prize.label);
     if(!has && !isAdmin) continue;
-    const kicker = `${meta.medal} Hadiah ${meta.label} · ${monthLabel}`;
+    // Top 3 use the 🥇/🥈/🥉 emoji as a leading badge in the kicker;
+    // places 4-10 use a numbered rank badge rendered inline so the place
+    // is still obvious without an emoji.
+    const kicker = meta.medal
+      ? `${meta.medal} Hadiah ${meta.label} · ${monthLabel}`
+      : `Hadiah ${meta.label} · ${monthLabel}`;
+    const rankBadge = meta.rank
+      ? `<span class="mvp-prize-rank-badge" aria-hidden="true">${meta.rank}</span>`
+      : '';
 
     if(!has){
+      // Empty CTA: leading icon for top 3, numbered badge for the rest.
+      const emptyIcon = meta.medal
+        ? `<div class="mvp-prize-empty-icon">${meta.medal}</div>`
+        : `<div class="mvp-prize-empty-icon">${meta.rank}</div>`;
       cards.push(`
         <div class="mvp-prize empty ${meta.rankClass}" data-place="${place}">
-          <div class="mvp-prize-empty-icon">${meta.medal}</div>
+          ${emptyIcon}
           <div class="mvp-prize-info">
             <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
             <div class="mvp-prize-label">Belum ada hadiah — klik untuk atur</div>
@@ -172,6 +188,7 @@ function renderMvpPrize(){
     if(prize.image){
       cards.push(`
         <div class="mvp-prize ${meta.rankClass}" data-place="${place}">
+          ${rankBadge}
           <img class="mvp-prize-thumb" src="${escapeHtml(prize.image)}" alt="" data-act="zoom" data-place="${place}">
           <div class="mvp-prize-info">
             <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
@@ -182,6 +199,7 @@ function renderMvpPrize(){
     } else {
       cards.push(`
         <div class="mvp-prize no-image ${meta.rankClass}" data-place="${place}">
+          ${rankBadge}
           <div class="mvp-prize-info">
             <div class="mvp-prize-kicker">${escapeHtml(kicker)}</div>
             <div class="mvp-prize-label">${escapeHtml(prize.label)}</div>
@@ -222,8 +240,8 @@ function renderMvpPrize(){
 
 async function deleteMvpPrize(place){
   if(role !== 'admin') return;
-  const meta = MVP_PRIZE_META[place];
-  if(!meta) return;
+  if(!MVP_PLACES.includes(place)) return;
+  const meta = mvpPrizeMeta(place);
   if(!confirm(`Hapus hadiah ${meta.label} ${formatMonthLabel(mvpSelectedMonth)}?`)) return;
   try {
     const url = '/api/mvp/prize?month=' + encodeURIComponent(mvpSelectedMonth) + '&place=' + place;
@@ -466,21 +484,86 @@ $('mvp-month-select')?.addEventListener('change', e => {
   loadMvpEntries();
 });
 
-// Admin: prize editor panel. One panel covers all three places (1st / 2nd /
-// 3rd) — admin edits everything and Save commits all three at once. State:
-// per-place { label, image_url } reflecting the unsaved form values.
-let mvpPrizeDraft = {
-  1: { label: '', image_url: '' },
-  2: { label: '', image_url: '' },
-  3: { label: '', image_url: '' },
-};
+// Admin: prize editor panel. One panel covers all 10 places — admin edits
+// everything and Save commits all places at once. State: per-place
+// { label, image_url } reflecting the unsaved form values. The 10 sections
+// are JS-generated into #mvp-prize-editor-places on first open so we don't
+// have to maintain 10 hardcoded HTML copies.
+let mvpPrizeDraft = Object.fromEntries(MVP_PLACES.map(p => [p, { label: '', image_url: '' }]));
+let mvpPrizeEditorBuilt = false;
+
+function buildMvpPrizeEditorSections(){
+  const wrap = $('mvp-prize-editor-places');
+  if(!wrap) return;
+  wrap.innerHTML = MVP_PLACES.map(place => {
+    const meta = mvpPrizeMeta(place);
+    const titleIcon = meta.medal || `<span class="mvp-prize-rank-badge" aria-hidden="true">${meta.rank}</span>`;
+    const placeholder = place === 1
+      ? 'Label hadiah juara 1 (mis. Voucher Rp 500K)'
+      : `Label hadiah juara ${place}`;
+    return `
+      <div class="mvp-prize-editor-place ${meta.editorClass}" data-place="${place}">
+        <span class="mvp-prize-editor-place-title">${titleIcon} ${escapeHtml(meta.label)}</span>
+        <input id="mvp-prize-label-input-${place}" placeholder="${escapeHtml(placeholder)}" maxlength="200">
+        <div class="mvp-prize-editor-image-row">
+          <div class="mvp-prize-editor-preview" id="mvp-prize-editor-preview-${place}">
+            <div class="mvp-prize-editor-empty">📷 Belum ada gambar</div>
+          </div>
+          <div class="mvp-prize-editor-actions">
+            <label class="lucky-upload-label" title="Pilih gambar">
+              📸 Pilih Gambar
+              <input type="file" id="mvp-prize-file-${place}" accept="image/*" style="display:none">
+            </label>
+            <button class="btn btn-ghost btn-xs mvp-prize-remove-img" id="mvp-prize-remove-img-${place}" type="button" style="display:none;color:#ff5577">🗑 Hapus Gambar</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Wire up per-place file pickers and remove buttons after the elements exist.
+  for(const place of MVP_PLACES){
+    $(`mvp-prize-file-${place}`)?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if(!file) return;
+      if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
+      // Show local preview immediately while uploading in background
+      const reader = new FileReader();
+      reader.onload = () => {
+        mvpPrizeDraft[place].image_url = reader.result; // temporary base64 for preview
+        renderMvpPrizeEditorPreview(place);
+      };
+      reader.readAsDataURL(file);
+      toast('Mengunggah gambar…');
+      try {
+        const [url] = await uploadImageFiles([file], 'mvp');
+        mvpPrizeDraft[place].image_url = url;
+        renderMvpPrizeEditorPreview(place);
+        toast('✓ Gambar diunggah');
+      } catch(err){
+        toast(err.message || 'Upload gagal');
+        // Revert preview to the saved value
+        mvpPrizeDraft[place].image_url = mvpPrizeAt(place).image || '';
+        renderMvpPrizeEditorPreview(place);
+      }
+    });
+
+    $(`mvp-prize-remove-img-${place}`)?.addEventListener('click', () => {
+      mvpPrizeDraft[place].image_url = '';
+      const f = $(`mvp-prize-file-${place}`);
+      if(f) f.value = '';
+      renderMvpPrizeEditorPreview(place);
+    });
+  }
+  mvpPrizeEditorBuilt = true;
+}
 
 function openMvpPrizeEditor(focusPlace){
   if(role !== 'admin') return;
   const editor = $('mvp-prize-editor');
   if(!editor) return;
+  if(!mvpPrizeEditorBuilt) buildMvpPrizeEditorSections();
   // Seed the draft from the current saved prizes for this month
-  for(const place of [1, 2, 3]){
+  for(const place of MVP_PLACES){
     const p = mvpPrizeAt(place);
     mvpPrizeDraft[place] = { label: p.label || '', image_url: p.image || '' };
     const labelInput = $(`mvp-prize-label-input-${place}`);
@@ -489,19 +572,22 @@ function openMvpPrizeEditor(focusPlace){
   }
   $('mvp-prize-editor-month').textContent = formatMonthLabel(mvpSelectedMonth);
   editor.style.display = '';
-  // Bring it into view so the admin sees the panel right away even on
-  // long pages — without this the editor opens below the fold.
+  // Bring the editor into view, then scroll the focused section to the
+  // top of the inner scroll container so the right place is visible
+  // even when the admin clicked place 8.
   setTimeout(() => {
     editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const focus = focusPlace && [1,2,3].includes(focusPlace) ? focusPlace : 1;
-    $(`mvp-prize-label-input-${focus}`)?.focus();
+    const focus = MVP_PLACES.includes(focusPlace) ? focusPlace : 1;
+    const section = document.querySelector(`.mvp-prize-editor-place[data-place="${focus}"]`);
+    if(section) section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    $(`mvp-prize-label-input-${focus}`)?.focus({ preventScroll: true });
   }, 50);
 }
 function closeMvpPrizeEditor(){
   const editor = $('mvp-prize-editor');
   if(editor) editor.style.display = 'none';
   // Reset the file inputs so the same file can be re-picked next time
-  for(const place of [1, 2, 3]){
+  for(const place of MVP_PLACES){
     const f = $(`mvp-prize-file-${place}`);
     if(f) f.value = '';
   }
@@ -523,46 +609,10 @@ function renderMvpPrizeEditorPreview(place){
 $('mvp-prize-editor-close')?.addEventListener('click', closeMvpPrizeEditor);
 $('mvp-prize-cancel')?.addEventListener('click', closeMvpPrizeEditor);
 
-// Wire up per-place file pickers and remove buttons. Each place has its
-// own input/preview/remove control with the place number as a suffix.
-for(const place of [1, 2, 3]){
-  $(`mvp-prize-file-${place}`)?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
-    if(!file) return;
-    if(file.size > 10 * 1024 * 1024){ toast('Gambar terlalu besar (maks 10MB)'); e.target.value = ''; return; }
-    // Show local preview immediately while uploading in background
-    const reader = new FileReader();
-    reader.onload = () => {
-      mvpPrizeDraft[place].image_url = reader.result; // temporary base64 for preview
-      renderMvpPrizeEditorPreview(place);
-    };
-    reader.readAsDataURL(file);
-    toast('Mengunggah gambar…');
-    try {
-      const [url] = await uploadImageFiles([file], 'mvp');
-      mvpPrizeDraft[place].image_url = url;
-      renderMvpPrizeEditorPreview(place);
-      toast('✓ Gambar diunggah');
-    } catch(err){
-      toast(err.message || 'Upload gagal');
-      // Revert preview to the saved value
-      mvpPrizeDraft[place].image_url = mvpPrizeAt(place).image || '';
-      renderMvpPrizeEditorPreview(place);
-    }
-  });
-
-  $(`mvp-prize-remove-img-${place}`)?.addEventListener('click', () => {
-    mvpPrizeDraft[place].image_url = '';
-    const f = $(`mvp-prize-file-${place}`);
-    if(f) f.value = '';
-    renderMvpPrizeEditorPreview(place);
-  });
-}
-
 $('mvp-prize-save')?.addEventListener('click', async () => {
   if(role !== 'admin') return;
   const prizes = [];
-  for(const place of [1, 2, 3]){
+  for(const place of MVP_PLACES){
     const labelEl = $(`mvp-prize-label-input-${place}`);
     const label = (labelEl?.value || '').trim();
     const image = mvpPrizeDraft[place]?.image_url || null;

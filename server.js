@@ -279,10 +279,10 @@ async function initDB() {
     await pool.query(`ALTER TABLE mvp_entries ADD COLUMN IF NOT EXISTS month VARCHAR(7)`);
     await pool.query(`UPDATE mvp_entries SET month = TO_CHAR(created_at, 'YYYY-MM') WHERE month IS NULL`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_mvp_month_points ON mvp_entries (month, points DESC)`);
-    // Up to 3 prizes per month (1st / 2nd / 3rd) — admin can attach a label
-    // + image per place visible to everyone as motivation. Place 1 reuses
-    // the original prize_label / prize_image columns so historical rows
-    // automatically become the 1st-place prize.
+    // Up to 10 prizes per month (1st through 10th) — admin can attach a
+    // label + image per place visible to everyone as motivation. Place 1
+    // reuses the original prize_label / prize_image columns so historical
+    // rows automatically become the 1st-place prize.
     await pool.query(`
       CREATE TABLE IF NOT EXISTS mvp_prizes (
         month VARCHAR(7) PRIMARY KEY,
@@ -291,10 +291,10 @@ async function initDB() {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       )
     `);
-    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_label_2 VARCHAR(200)`);
-    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_image_2 TEXT`);
-    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_label_3 VARCHAR(200)`);
-    await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_image_3 TEXT`);
+    for (let p = 2; p <= 10; p++) {
+      await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_label_${p} VARCHAR(200)`);
+      await pool.query(`ALTER TABLE mvp_prizes ADD COLUMN IF NOT EXISTS prize_image_${p} TEXT`);
+    }
     // Standings movement — Billboard-style two-publish snapshot per month.
     // `ranks` holds the last published rankings; `prev_ranks` holds the
     // publish before that. ▲▼ chips compare live → prev_ranks while no
@@ -1357,18 +1357,22 @@ app.post('/api/mvp', requireAdmin, async (req, res) => {
 });
 
 // ===== MVP PRIZE PER MONTH =====
-// Three prizes per month: 1st / 2nd / 3rd place. Place 1 lives in the
-// legacy `prize_label`/`prize_image` columns; places 2 and 3 live in the
-// `_2`/`_3` columns added by the migration.
+// Up to 10 prizes per month (1st through 10th place). Place 1 lives in
+// the legacy `prize_label`/`prize_image` columns; places 2-10 live in
+// the `_N` suffixed columns added by the migration.
 // Registered BEFORE /api/mvp/:id so DELETE /api/mvp/prize doesn't get
 // swallowed by the :id handler with id="prize" → NaN.
-const PRIZE_COLS = {
-  1: { label: 'prize_label',   image: 'prize_image'   },
-  2: { label: 'prize_label_2', image: 'prize_image_2' },
-  3: { label: 'prize_label_3', image: 'prize_image_3' },
-};
+const MVP_PRIZE_PLACES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const PRIZE_COLS = Object.fromEntries(MVP_PRIZE_PLACES.map(p => [
+  p,
+  p === 1
+    ? { label: 'prize_label',     image: 'prize_image'     }
+    : { label: `prize_label_${p}`, image: `prize_image_${p}` },
+]));
+const PRIZE_ALL_COLS = MVP_PRIZE_PLACES.flatMap(p => [PRIZE_COLS[p].label, PRIZE_COLS[p].image]);
+const PRIZE_ALL_IMG_COLS = MVP_PRIZE_PLACES.map(p => PRIZE_COLS[p].image);
 function rowToPrizes(row) {
-  return [1, 2, 3].map(place => ({
+  return MVP_PRIZE_PLACES.map(place => ({
     place,
     label: row?.[PRIZE_COLS[place].label] || null,
     image: row?.[PRIZE_COLS[place].image] || null,
@@ -1379,10 +1383,7 @@ app.get('/api/mvp/prize', async (req, res) => {
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : currentMonth();
     const { rows } = await pool.query(
-      `SELECT month, prize_label, prize_image,
-              prize_label_2, prize_image_2,
-              prize_label_3, prize_image_3,
-              updated_at
+      `SELECT month, ${PRIZE_ALL_COLS.join(', ')}, updated_at
          FROM mvp_prizes WHERE month = $1`,
       [month]
     );
@@ -1398,10 +1399,10 @@ app.put('/api/mvp/prize', requireAdmin, async (req, res) => {
     const month = isValidMonth(req.body.month) ? req.body.month : currentMonth();
     // Accept the new shape `{ prizes: [{place,label,image}, ...] }`.
     const incoming = Array.isArray(req.body.prizes) ? req.body.prizes : [];
-    const byPlace = { 1: { label: null, image: null }, 2: { label: null, image: null }, 3: { label: null, image: null } };
+    const byPlace = Object.fromEntries(MVP_PRIZE_PLACES.map(p => [p, { label: null, image: null }]));
     for (const p of incoming) {
       const place = +p?.place;
-      if (![1, 2, 3].includes(place)) continue;
+      if (!MVP_PRIZE_PLACES.includes(place)) continue;
       const label = String(p.label || '').trim() || null;
       const image = p.image ? String(p.image) : null;
       if (image && image.length > MAX_PRIZE_IMAGE_BYTES) {
@@ -1415,45 +1416,36 @@ app.put('/api/mvp/prize', requireAdmin, async (req, res) => {
     // Look up existing images so we can clean stale ones from R2 once the
     // new values are committed (matching the prediction prize pattern).
     const cur = await pool.query(
-      `SELECT prize_image, prize_image_2, prize_image_3 FROM mvp_prizes WHERE month = $1`,
+      `SELECT ${PRIZE_ALL_IMG_COLS.join(', ')} FROM mvp_prizes WHERE month = $1`,
       [month]
     );
-    const oldImages = {
-      1: cur.rows[0]?.prize_image    || null,
-      2: cur.rows[0]?.prize_image_2  || null,
-      3: cur.rows[0]?.prize_image_3  || null,
-    };
+    const oldImages = Object.fromEntries(MVP_PRIZE_PLACES.map(p => [
+      p, cur.rows[0]?.[PRIZE_COLS[p].image] || null,
+    ]));
+    // Build INSERT ... ON CONFLICT DO UPDATE for all 21 columns (month +
+    // 10×label + 10×image).
+    const cols = ['month', ...PRIZE_ALL_COLS, 'updated_at'];
+    const params = [month];
+    for (const place of MVP_PRIZE_PLACES) {
+      params.push(byPlace[place].label, byPlace[place].image);
+    }
+    const placeholders = params.map((_, i) => `$${i + 1}`).join(', ');
+    const updates = PRIZE_ALL_COLS.map(c => `${c} = EXCLUDED.${c}`).join(', ');
     await pool.query(
-      `INSERT INTO mvp_prizes (
-         month,
-         prize_label,   prize_image,
-         prize_label_2, prize_image_2,
-         prize_label_3, prize_image_3,
-         updated_at
-       )
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      `INSERT INTO mvp_prizes (${cols.join(', ')})
+       VALUES (${placeholders}, NOW())
        ON CONFLICT (month) DO UPDATE SET
-         prize_label    = EXCLUDED.prize_label,
-         prize_image    = EXCLUDED.prize_image,
-         prize_label_2  = EXCLUDED.prize_label_2,
-         prize_image_2  = EXCLUDED.prize_image_2,
-         prize_label_3  = EXCLUDED.prize_label_3,
-         prize_image_3  = EXCLUDED.prize_image_3,
-         updated_at     = NOW()`,
-      [
-        month,
-        byPlace[1].label, byPlace[1].image,
-        byPlace[2].label, byPlace[2].image,
-        byPlace[3].label, byPlace[3].image,
-      ]
+         ${updates},
+         updated_at = NOW()`,
+      params
     );
-    for (const place of [1, 2, 3]) {
+    for (const place of MVP_PRIZE_PLACES) {
       const oldImg = oldImages[place];
       const newImg = byPlace[place].image;
       if (oldImg && oldImg !== newImg) deleteR2Object(oldImg);
     }
     io.emit('mvp-prize-updated', { month });
-    res.json({ ok: true, month, prizes: [1, 2, 3].map(place => ({ place, ...byPlace[place] })) });
+    res.json({ ok: true, month, prizes: MVP_PRIZE_PLACES.map(place => ({ place, ...byPlace[place] })) });
   } catch (err) {
     console.error('PUT /api/mvp/prize:', err.message);
     res.status(500).json({ error: 'Failed' });
@@ -1465,9 +1457,9 @@ app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
   try {
     const month = isValidMonth(req.query.month) ? req.query.month : null;
     if (!month) return res.status(400).json({ error: 'month required' });
-    // Optional `place` param clears just that place; otherwise clear all 3.
+    // Optional `place` param clears just that place; otherwise clear all.
     const placeParam = req.query.place != null ? +req.query.place : null;
-    if (placeParam != null && ![1, 2, 3].includes(placeParam)) {
+    if (placeParam != null && !MVP_PRIZE_PLACES.includes(placeParam)) {
       return res.status(400).json({ error: 'Invalid place' });
     }
     if (placeParam) {
@@ -1488,13 +1480,11 @@ app.delete('/api/mvp/prize', requireAdmin, async (req, res) => {
     } else {
       const { rows } = await pool.query(
         `DELETE FROM mvp_prizes WHERE month = $1
-           RETURNING prize_image, prize_image_2, prize_image_3`,
+           RETURNING ${PRIZE_ALL_IMG_COLS.join(', ')}`,
         [month]
       );
       const r = rows[0];
-      if (r?.prize_image)    deleteR2Object(r.prize_image);
-      if (r?.prize_image_2)  deleteR2Object(r.prize_image_2);
-      if (r?.prize_image_3)  deleteR2Object(r.prize_image_3);
+      if (r) for (const c of PRIZE_ALL_IMG_COLS) if (r[c]) deleteR2Object(r[c]);
     }
     io.emit('mvp-prize-updated', { month });
     res.json({ ok: true });
