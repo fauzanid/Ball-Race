@@ -545,6 +545,54 @@ body[data-theme="light"] .lucky-upload-label{background:rgba(0,0,0,.02);border-c
 body[data-theme="light"] .lucky-form-preview{background:#ffffff;border-color:rgba(0,0,0,.08)}
 /* ═══ PENALTY KICK ═══ */
 #penalty-screen{position:relative}
+/* ═══ FREE KICK ═══ */
+/* Mirrors the penalty layout: setup roster on top, fullscreen canvas
+   stage during play, results screen at the end. Top-down 2D pitch so
+   it stays smooth on low-end devices. */
+#freekick-screen{position:relative}
+.freekick-subtitle{font-family:var(--font-cond);font-size:13px;letter-spacing:.04em;color:var(--ink-200);margin:-4px 0 8px;line-height:1.5}
+.freekick-roster{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
+.freekick-roster:empty{padding:24px 14px;border:2px dashed rgba(255,255,255,.1);border-radius:var(--r-md);text-align:center}
+.freekick-roster:empty::after{content:"Belum ada pemain";font-family:var(--font-cond);color:var(--ink-400);letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+.freekick-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--team-color,#1c8a72);border-radius:var(--r-md);transition:transform .15s,border-color .15s}
+.freekick-row:hover{transform:translateX(2px)}
+.freekick-num{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.06);color:var(--ink-200);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-weight:700;font-size:13px}
+.freekick-name{flex:1;min-width:0;font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--ink-50);text-transform:uppercase;letter-spacing:.03em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.freekick-color-dot{flex-shrink:0;width:14px;height:14px;border-radius:50%;background:var(--team-color,#1c8a72);box-shadow:0 0 8px var(--team-color,#1c8a72)}
+.freekick-row-rm{flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.06);color:var(--ink-300);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:background .15s,color .15s}
+.freekick-row-rm:hover{background:rgba(255,85,119,.18);color:#ff5577}
+.freekick-kickoff{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(135deg,rgba(28,138,114,.18),rgba(15,77,64,.10));border:1px solid rgba(28,138,114,.4);border-radius:var(--r-md);margin-top:6px}
+.freekick-kickoff-meta{font-family:var(--font-cond);font-size:12px;letter-spacing:.04em;color:var(--ink-200)}
+.freekick-viewer-note{padding:14px;text-align:center;font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-400);font-style:italic}
+
+.freekick-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#0a0e08}
+#freekick-canvas{width:100%;height:100%;display:block}
+.freekick-hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column}
+.freekick-hud-top{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 22px;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent)}
+.freekick-current-name{font-family:var(--font-display);font-style:italic;font-size:clamp(22px,4vw,40px);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:0 4px 16px rgba(0,0,0,.6)}
+.freekick-progress{font-family:var(--font-display);font-style:italic;font-weight:700;letter-spacing:.04em;color:var(--ink-50);background:rgba(0,0,0,.6);padding:6px 12px;border-radius:8px;border:1px solid rgba(28,138,114,.45);display:inline-flex;align-items:center;gap:8px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.freekick-result-overlay{flex:1;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-style:italic;font-size:clamp(60px,12vw,140px);text-transform:uppercase;letter-spacing:.04em;color:#fff;text-shadow:0 8px 30px rgba(0,0,0,.7);opacity:0;transform:scale(.7);transition:opacity .25s,transform .25s}
+.freekick-result-overlay.show{opacity:1;transform:scale(1)}
+.freekick-result-overlay.goal{color:#4cdfb6;text-shadow:0 0 80px rgba(76,223,182,.6),0 8px 30px rgba(0,0,0,.7)}
+.freekick-result-overlay.miss{color:#ff7a8a;text-shadow:0 0 80px rgba(255,85,119,.6),0 8px 30px rgba(0,0,0,.7)}
+
+.freekick-tally{display:flex;justify-content:center;gap:18px;margin:8px 0 16px;font-family:var(--font-display);font-style:italic}
+.freekick-tally-cell{padding:10px 18px;border-radius:var(--r-md);min-width:120px;text-align:center;border:1px solid rgba(255,255,255,.12)}
+.freekick-tally-cell.scored{background:linear-gradient(135deg,rgba(76,223,182,.2),rgba(28,138,114,.08));border-color:rgba(76,223,182,.45)}
+.freekick-tally-cell.missed{background:linear-gradient(135deg,rgba(255,85,119,.2),rgba(180,40,80,.08));border-color:rgba(255,85,119,.45)}
+.freekick-tally-num{font-size:34px;font-weight:700;line-height:1;color:var(--ink-50)}
+.freekick-tally-cell.scored .freekick-tally-num{color:#4cdfb6}
+.freekick-tally-cell.missed .freekick-tally-num{color:#ff7a8a}
+.freekick-tally-label{font-family:var(--font-cond);font-size:11px;letter-spacing:.14em;color:var(--ink-300);text-transform:uppercase;margin-top:4px}
+.freekick-results-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.freekick-results-col{display:flex;flex-direction:column;gap:6px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);padding:12px;min-width:0}
+.freekick-results-col-hd{font-family:var(--font-cond);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;padding:6px 10px;border-radius:6px;text-align:center}
+.freekick-results-col-hd.scored{background:rgba(76,223,182,.16);color:#4cdfb6}
+.freekick-results-col-hd.missed{background:rgba(255,85,119,.16);color:#ff7a8a}
+.freekick-results-list{display:flex;flex-direction:column;gap:4px;min-height:50px}
+.freekick-results-list:empty::after{content:"—";display:block;text-align:center;color:var(--ink-400);font-family:var(--font-cond);padding:12px}
+.freekick-result-name{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;background:rgba(255,255,255,.04);border-left:3px solid var(--team-color,#1c8a72);border-radius:6px;font-family:var(--font-cond);font-weight:700;font-size:13px;color:var(--ink-50);text-transform:uppercase;letter-spacing:.03em}
+.freekick-result-tag{font-family:var(--font-cond);font-weight:800;font-size:9px;letter-spacing:.14em;color:var(--ink-300);background:rgba(255,255,255,.08);padding:2px 6px;border-radius:4px}
 .penalty-subtitle{font-family:var(--font-cond);font-size:13px;letter-spacing:.04em;color:var(--ink-200);margin:-4px 0 8px;line-height:1.5}
 .penalty-roster{display:flex;flex-direction:column;gap:8px;margin:6px 0 14px}
 .penalty-roster:empty{padding:24px 14px;border:2px dashed rgba(255,255,255,.1);border-radius:var(--r-md);text-align:center}
@@ -1341,6 +1389,7 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
     <button class="tab active" data-tab="home">🏠 Beranda</button>
     <button class="tab" data-tab="race">⚽ Balapan</button>
     <button class="tab" data-tab="penalty" style="display:none">🥅 Penalty</button>
+    <button class="tab" data-tab="freekick" style="display:none">🎯 Tendangan Bebas</button>
     <button class="tab" data-tab="wheel">🎡 Roda</button>
     <button class="tab" data-tab="lucky">🎁 Kotak</button>
     <button class="tab" data-tab="auction">🔨 Lelang</button>
@@ -1404,6 +1453,11 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#1c8a72,#0f4d40);--tile-glow:rgba(28,138,114,.45)">🥅</div>
           <div class="home-tile-title">Penalty</div>
           <div class="home-tile-sub">Tendangan keberuntungan</div>
+        </button>
+        <button class="home-tile" data-target="freekick" style="display:none">
+          <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#1c8a72,#0f4d40);--tile-glow:rgba(28,138,114,.45)">🎯</div>
+          <div class="home-tile-title">Tendangan Bebas</div>
+          <div class="home-tile-sub">Lengkungan ke gawang</div>
         </button>
         <button class="home-tile" data-target="wheel">
           <div class="home-tile-icon" style="--tile-bg:linear-gradient(135deg,#ffd740,#ff8a1f);--tile-glow:rgba(255,215,64,.5)">🎡</div>
@@ -1824,6 +1878,71 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
         <div class="penalty-admin-only penalty-results-actions" style="display:none;text-align:center;margin-top:14px">
           <button class="btn btn-ghost btn-sm" id="penalty-back-btn">← Kembali ke Setup</button>
           <button class="btn btn-primary btn-sm" id="penalty-replay-btn">🔁 Main Lagi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FREE KICK — 2D animated free-kick mini-game -->
+  <div id="freekick-screen" class="screen">
+    <!-- Setup view (admin add players + Kick-off) -->
+    <div class="freekick-setup" id="freekick-setup">
+      <div class="tool-wrap">
+        <h2 class="tool-title">Tendangan <span class="accent">Bebas</span></h2>
+        <p class="freekick-subtitle">Setiap pemain mendapat satu kesempatan menendang dari titik bebas. Bola harus melengkung melewati pagar pemain dan kiper.</p>
+
+        <div class="freekick-admin-only" style="display:none">
+          <div class="add-row">
+            <input id="freekick-name-input" placeholder="Nama pemain" maxlength="80">
+            <button class="btn btn-primary btn-sm" id="freekick-add-btn">+ Tambah</button>
+          </div>
+          <div class="add-row">
+            <button class="btn btn-ghost btn-sm" id="freekick-shuffle-btn">🔀 Acak Urutan</button>
+            <button class="btn btn-ghost btn-sm" id="freekick-clear-btn">🗑 Kosongkan</button>
+          </div>
+        </div>
+
+        <div class="freekick-roster" id="freekick-roster"></div>
+
+        <div class="freekick-kickoff" id="freekick-kickoff" style="display:none">
+          <div class="freekick-kickoff-meta" id="freekick-kickoff-meta">Tambah minimal 1 pemain</div>
+          <button class="btn btn-primary kick-off-btn" id="freekick-start-btn" disabled>🎯 Mulai Tendangan</button>
+        </div>
+
+        <div class="freekick-viewer-note" id="freekick-viewer-note">Tunggu admin untuk memulai tendangan bebas.</div>
+      </div>
+    </div>
+
+    <!-- Live view (2D canvas + per-shot HUD) -->
+    <div class="freekick-stage" id="freekick-stage" style="display:none">
+      <canvas id="freekick-canvas"></canvas>
+      <div class="freekick-hud" id="freekick-hud">
+        <div class="freekick-hud-top">
+          <div class="freekick-current-name" id="freekick-current-name">—</div>
+          <div class="freekick-progress" id="freekick-progress">0 / 0</div>
+        </div>
+        <div class="freekick-result-overlay" id="freekick-result-overlay"></div>
+      </div>
+    </div>
+
+    <!-- Results view -->
+    <div class="freekick-results" id="freekick-results-view" style="display:none">
+      <div class="tool-wrap">
+        <h2 class="tool-title">Hasil <span class="accent">Tendangan Bebas</span></h2>
+        <div class="freekick-tally" id="freekick-tally"></div>
+        <div class="freekick-results-cols">
+          <div class="freekick-results-col">
+            <div class="freekick-results-col-hd scored">⚽ Cetak Gol</div>
+            <div class="freekick-results-list" id="freekick-results-scorers"></div>
+          </div>
+          <div class="freekick-results-col">
+            <div class="freekick-results-col-hd missed">🛑 Tidak Gol</div>
+            <div class="freekick-results-list" id="freekick-results-missers"></div>
+          </div>
+        </div>
+        <div class="freekick-admin-only freekick-results-actions" style="display:none;text-align:center;margin-top:14px">
+          <button class="btn btn-ghost btn-sm" id="freekick-back-btn">← Kembali ke Setup</button>
+          <button class="btn btn-primary btn-sm" id="freekick-replay-btn">🔁 Main Lagi</button>
         </div>
       </div>
     </div>
@@ -2377,12 +2496,12 @@ let _lastStateSync = null;
 // ═══════════════════════════════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
 const $home=$('home-screen'), $setup=$('setup-screen'), $race=$('race-screen'), $results=$('results-screen');
-const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen'), $rulesScr=$('rules-screen'), $penaltyScr=$('penalty-screen');
+const $wheel=$('wheel-screen'), $historyScr=$('history-screen'), $trackScr=$('track-screen'), $luckyScr=$('lucky-screen'), $auctionScr=$('auction-screen'), $predictScr=$('predict-screen'), $mvpScr=$('mvp-screen'), $rulesScr=$('rules-screen'), $penaltyScr=$('penalty-screen'), $freekickScr=$('freekick-screen');
 const $canvas=$('race-canvas'), $cdOverlay=$('countdown-overlay');
 const $tabBar=$('tab-bar'), $wCanvas=$('wheel-canvas');
 // Race canvas now uses WebGL (Three.js); the 2D wheel canvas keeps its 2D ctx.
 const wCtx = $wCanvas.getContext('2d');
-const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr,$mvpScr,$rulesScr,$penaltyScr];
+const allScreens = [$home,$setup,$race,$results,$wheel,$historyScr,$trackScr,$luckyScr,$auctionScr,$predictScr,$mvpScr,$rulesScr,$penaltyScr,$freekickScr];
 let idCounter = 1;
 const nextId = () => 'r-'+(idCounter++);
 
@@ -3111,7 +3230,7 @@ $('login-submit').addEventListener('click', async () => {
 // ═══════════════════════════════════════════════════════════════════════════
 // TAB NAV
 // ═══════════════════════════════════════════════════════════════════════════
-const VALID_TABS = ['rules','home','race','penalty','wheel','lucky','auction','predict','mvp','track','history'];
+const VALID_TABS = ['rules','home','race','penalty','freekick','wheel','lucky','auction','predict','mvp','track','history'];
 let _suppressHistoryPush = false;
 
 document.querySelectorAll('.tab').forEach(t => {
@@ -3125,6 +3244,7 @@ document.querySelectorAll('.tab').forEach(t => {
     else if(currentTab==='home'){ exitReplay(); showScreen($home); }
     else if(currentTab==='race'){ exitReplay(); resumeRaceTab(); }
     else if(currentTab==='penalty'){ exitReplay(); showScreen($penaltyScr); if(typeof enterPenaltyTab === 'function') enterPenaltyTab(); }
+    else if(currentTab==='freekick'){ exitReplay(); showScreen($freekickScr); if(typeof enterFreekickTab === 'function') enterFreekickTab(); }
     else if(currentTab==='wheel'){ showScreen($wheel); resizeWheelCanvas(); drawWheel(); loadWheelHistory(); }
     else if(currentTab==='lucky'){ showScreen($luckyScr); resetLuckyStage(); loadLuckyCards(); loadLuckyDraws(); }
     else if(currentTab==='auction'){ showScreen($auctionScr); loadAuctions(); }
@@ -6884,6 +7004,7 @@ setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); 
 <script src="./js/auction.js"></script>
 <script src="./js/predictions.js"></script>
 <script src="./js/mvp.js"></script>
+<script src="./js/freekick.js"></script>
 <script src="./js/penalty.js"></script>
 </body>
 </html>

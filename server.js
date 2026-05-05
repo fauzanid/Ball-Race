@@ -264,6 +264,8 @@ async function initDB() {
     // Each (home,away) combination can only be predicted once per match —
     // first user to submit that exact score "claims" it.
     await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_pred_score ON prediction_entries (match_id, predicted_home, predicted_away)`);
+    // One submission per phone per match — same user can't enter twice.
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_pred_phone ON prediction_entries (match_id, phone)`);
     // MVP of the Month — standings tagged by month so viewers can browse
     // past months. Month is stored as 'YYYY-MM' so it sorts as text.
     await pool.query(`
@@ -1164,9 +1166,13 @@ app.post('/api/predictions/matches/:id/entries', submitLimiter, async (req, res)
       );
       entry = rows[0];
     } catch (insertErr) {
-      // Postgres 23505 = unique_violation — the (match,home,away) score
-      // is already claimed by another user.
+      // Postgres 23505 = unique_violation. Two possible constraints:
+      //   uniq_pred_score — the (match,home,away) score is already taken
+      //   uniq_pred_phone — this phone already submitted for this match
       if (insertErr && insertErr.code === '23505') {
+        if (insertErr.constraint === 'uniq_pred_phone') {
+          return res.status(409).json({ error: 'Nomor HP ini sudah submit prediksi untuk match ini.' });
+        }
         return res.status(409).json({ error: `Skor ${ph}-${pa} sudah dipilih orang lain. Coba skor lain.` });
       }
       throw insertErr;
@@ -1613,6 +1619,16 @@ const livePenalty = {
   lastResults: null,    // { players, shots, scorers: [idx], missers: [idx] }
 };
 
+// ===== FREE KICK (2D, parallel game, separate state) =====
+const liveFreekick = {
+  state: 'idle',        // 'idle' | 'setup' | 'shooting' | 'results'
+  players: [],          // [{ name, colorIdx }]
+  shots: [],            // [{ playerIdx, outcome: 'goal'|'wall'|'save'|'over', side: 'L'|'R', keeperGuess }]
+  currentIdx: 0,
+  startTime: 0,
+  lastResults: null,    // { players, shots, scorers: [idx], missers: [{idx, outcome}] }
+};
+
 function publicState() {
   return {
     state: liveRace.state,
@@ -1635,6 +1651,14 @@ function publicState() {
       currentIdx: livePenalty.currentIdx,
       startTime: livePenalty.startTime,
       lastResults: livePenalty.lastResults,
+    },
+    freekick: {
+      state: liveFreekick.state,
+      players: liveFreekick.players,
+      shots: liveFreekick.shots,
+      currentIdx: liveFreekick.currentIdx,
+      startTime: liveFreekick.startTime,
+      lastResults: liveFreekick.lastResults,
     },
   };
 }
@@ -1791,6 +1815,44 @@ io.on('connection', socket => {
     io.emit('penalty-reset');
   });
 
+  // ===== FREE KICK =====
+  // Same relay pattern as penalty — admin client RNG-resolves all kicks
+  // up-front, server broadcasts the agreed-upon shot list and start time
+  // so all viewers stay synced.
+  socket.on('freekick-update-players', players => {
+    if (!isAdmin) return;
+    liveFreekick.players = players;
+    if (liveFreekick.state === 'idle') liveFreekick.state = 'setup';
+    io.emit('freekick-players-updated', players);
+  });
+
+  socket.on('freekick-start', data => {
+    if (!isAdmin) return;
+    liveFreekick.state = 'shooting';
+    liveFreekick.shots = data.shots;
+    liveFreekick.players = data.players;
+    liveFreekick.currentIdx = 0;
+    liveFreekick.startTime = Date.now();
+    socket.broadcast.emit('freekick-started', { ...data, startTime: liveFreekick.startTime });
+  });
+
+  socket.on('freekick-end', data => {
+    if (!isAdmin) return;
+    liveFreekick.state = 'results';
+    liveFreekick.lastResults = data;
+    socket.broadcast.emit('freekick-ended', data);
+  });
+
+  socket.on('freekick-reset', () => {
+    if (!isAdmin) return;
+    liveFreekick.state = liveFreekick.players.length > 0 ? 'setup' : 'idle';
+    liveFreekick.shots = [];
+    liveFreekick.currentIdx = 0;
+    liveFreekick.lastResults = null;
+    liveFreekick.startTime = 0;
+    io.emit('freekick-reset');
+  });
+
   socket.on('disconnect', () => {
     adminSockets.delete(socket.id);
     io.emit('viewer-count', io.engine.clientsCount);
@@ -1813,6 +1875,16 @@ io.on('connection', socket => {
           livePenalty.shots = [];
           livePenalty.currentIdx = 0;
           io.emit('penalty-aborted');
+        }
+      }, 8000);
+    }
+    if (adminSockets.size === 0 && liveFreekick.state === 'shooting') {
+      setTimeout(() => {
+        if (adminSockets.size === 0 && liveFreekick.state === 'shooting') {
+          liveFreekick.state = liveFreekick.players.length > 0 ? 'setup' : 'idle';
+          liveFreekick.shots = [];
+          liveFreekick.currentIdx = 0;
+          io.emit('freekick-aborted');
         }
       }, 8000);
     }
