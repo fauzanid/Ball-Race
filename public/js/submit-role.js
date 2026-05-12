@@ -16,6 +16,68 @@ const STATUS_LABEL = {
 
 let _sellerAdminFilter = 'pending';
 
+const TIER_ORDER = ['star', 'elite', 'select'];
+const TIER_HEADING = {
+  star:   '⭐ Star Seller',
+  elite:  '💎 Elite Seller',
+  select: '🛡️ Select Seller',
+};
+const TIER_ICON = { star: '⭐', elite: '💎', select: '🛡️' };
+const TIER_EMPTY = {
+  star:   'Belum ada Star Seller terverifikasi.',
+  elite:  'Belum ada Elite Seller terverifikasi.',
+  select: 'Belum ada Select Seller terverifikasi.',
+};
+
+function _fmtApprovedDate(iso){
+  if(!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('id-ID', {day:'2-digit', month:'short', year:'numeric'});
+  } catch { return ''; }
+}
+
+function _renderSellerBoard(rows){
+  const el = $('seller-approved-board');
+  if(!el) return;
+  const groups = { star: [], elite: [], select: [] };
+  for(const r of rows){ if(groups[r.tier]) groups[r.tier].push(r); }
+  el.innerHTML = TIER_ORDER.map(tier => {
+    const items = groups[tier];
+    const body = items.length
+      ? items.map(r => `
+          <a class="seller-chip" href="${escapeHtml(r.fb_url)}" target="_blank" rel="noopener noreferrer">
+            <span class="seller-chip-icon">${TIER_ICON[tier]}</span>
+            <span class="seller-chip-body">
+              <span class="seller-chip-name">${escapeHtml(r.fb_name)}</span>
+              <span class="seller-chip-date">Disetujui ${escapeHtml(_fmtApprovedDate(r.reviewed_at))}</span>
+            </span>
+            <span class="seller-chip-go">↗</span>
+          </a>`).join('')
+      : `<div class="seller-group-empty">${escapeHtml(TIER_EMPTY[tier])}</div>`;
+    return `
+      <div class="seller-group" data-tier="${tier}">
+        <div class="seller-group-hd">
+          <span>${escapeHtml(TIER_HEADING[tier])}</span>
+          <span class="seller-group-count">${items.length}</span>
+        </div>
+        <div class="seller-group-body">${body}</div>
+      </div>`;
+  }).join('');
+}
+
+async function loadApprovedSellers(){
+  const el = $('seller-approved-board');
+  if(!el) return;
+  try {
+    const r = await fetch('/api/role-submissions/approved');
+    if(!r.ok){ el.innerHTML = '<div class="seller-board-empty">Gagal memuat daftar seller.</div>'; return; }
+    const rows = await r.json();
+    _renderSellerBoard(rows);
+  } catch(err){
+    el.innerHTML = '<div class="seller-board-empty">Gagal terhubung ke server.</div>';
+  }
+}
+
 function _fmtSellerDate(iso){
   if(!iso) return '';
   const d = new Date(iso);
@@ -262,14 +324,16 @@ async function _deleteSubmission(id){
   }
 })();
 
-// Live updates: refresh the admin list when any submission changes.
+// Live updates: refresh the admin queue and the public showcase whenever
+// any submission changes — so everyone on the tab sees a new Star Seller
+// pop in the moment admin approves them.
 if(typeof socket !== 'undefined' && socket){
-  const refreshIfAdminAndVisible = () => {
-    if(role === 'admin' && document.body.getAttribute('data-tab') === 'submit-role'){
-      loadSellerAdminList();
-    }
+  const onRoleEvent = () => {
+    const onTab = document.body.getAttribute('data-tab') === 'submit-role';
+    if(onTab) loadApprovedSellers();
+    if(role === 'admin' && onTab) loadSellerAdminList();
   };
-  socket.on('role-submission-added', refreshIfAdminAndVisible);
-  socket.on('role-submission-updated', refreshIfAdminAndVisible);
-  socket.on('role-submission-deleted', refreshIfAdminAndVisible);
+  socket.on('role-submission-added', onRoleEvent);
+  socket.on('role-submission-updated', onRoleEvent);
+  socket.on('role-submission-deleted', onRoleEvent);
 }

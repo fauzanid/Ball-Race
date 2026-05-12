@@ -785,6 +785,44 @@ body[data-theme="light"] .seller-admin-empty{background:rgba(0,0,0,.02);border-c
   .seller-lookup-row{flex-direction:column}
   .seller-lookup-row .btn{width:100%}
 }
+.seller-board{display:flex;flex-direction:column;gap:14px}
+.seller-board-empty{padding:14px;text-align:center;font-family:var(--font-cond);font-size:13px;color:var(--ink-300);background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);border-radius:var(--r-md)}
+.seller-group{background:rgba(20,20,18,.55);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md);overflow:hidden}
+.seller-group-hd{display:flex;align-items:center;gap:10px;padding:10px 14px;font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:rgba(0,0,0,.25)}
+.seller-group[data-tier="star"] .seller-group-hd{background:linear-gradient(135deg,rgba(255,215,64,.18),rgba(255,138,31,.06));border-bottom:1px solid rgba(255,215,64,.3)}
+.seller-group[data-tier="elite"] .seller-group-hd{background:linear-gradient(135deg,rgba(169,111,255,.18),rgba(106,48,197,.06));border-bottom:1px solid rgba(169,111,255,.3)}
+.seller-group[data-tier="select"] .seller-group-hd{background:linear-gradient(135deg,rgba(76,223,182,.18),rgba(28,138,114,.06));border-bottom:1px solid rgba(76,223,182,.3)}
+.seller-group-count{margin-left:auto;font-family:var(--font-mono);font-size:11px;background:rgba(0,0,0,.35);padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.seller-group-body{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:10px 12px}
+.seller-group-body:empty{display:block;padding:14px;font-family:var(--font-cond);font-size:12.5px;color:var(--ink-300);text-align:center}
+.seller-group-empty{padding:12px 14px;font-family:var(--font-cond);font-size:12.5px;color:var(--ink-300);text-align:center;grid-column:1/-1}
+.seller-chip{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(10,10,8,.55);border:1px solid rgba(255,255,255,.08);border-radius:10px;text-decoration:none;color:var(--ink-50);transition:transform .12s,border-color .12s,background .12s;min-width:0}
+.seller-chip:hover{transform:translateY(-1px);border-color:var(--accent);background:rgba(10,10,8,.75)}
+.seller-chip-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.seller-group[data-tier="star"] .seller-chip-icon{background:linear-gradient(135deg,#ffd740,#ff8a1f);box-shadow:0 2px 8px rgba(255,215,64,.35)}
+.seller-group[data-tier="elite"] .seller-chip-icon{background:linear-gradient(135deg,#a96fff,#6a30c5);box-shadow:0 2px 8px rgba(169,111,255,.3)}
+.seller-group[data-tier="select"] .seller-chip-icon{background:linear-gradient(135deg,#4cdfb6,#1c8a72);box-shadow:0 2px 8px rgba(76,223,182,.3)}
+.seller-chip-body{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+.seller-chip-name{font-family:var(--font-display);font-style:italic;font-size:13.5px;letter-spacing:.02em;color:var(--ink-50);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seller-chip-date{font-family:var(--font-cond);font-size:10.5px;letter-spacing:.04em;color:var(--ink-300)}
+.seller-chip-go{font-size:12px;color:var(--ink-300);flex-shrink:0;opacity:0;transition:opacity .12s,transform .12s}
+.seller-chip:hover .seller-chip-go{opacity:1;transform:translateX(2px)}
+body[data-theme="light"] .seller-board-empty{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.1);color:#6b6a62}
+body[data-theme="light"] .seller-group{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .seller-group-hd{color:#1a1a16;background:rgba(0,0,0,.03)}
+body[data-theme="light"] .seller-group[data-tier="star"] .seller-group-hd{background:linear-gradient(135deg,rgba(255,215,64,.15),rgba(255,138,31,.04));border-bottom-color:rgba(255,138,31,.3)}
+body[data-theme="light"] .seller-group[data-tier="elite"] .seller-group-hd{background:linear-gradient(135deg,rgba(169,111,255,.15),rgba(106,48,197,.04));border-bottom-color:rgba(106,48,197,.25)}
+body[data-theme="light"] .seller-group[data-tier="select"] .seller-group-hd{background:linear-gradient(135deg,rgba(28,138,114,.12),rgba(28,138,114,.03));border-bottom-color:rgba(28,138,114,.3)}
+body[data-theme="light"] .seller-group-count{background:rgba(0,0,0,.06);color:#1a1a16}
+body[data-theme="light"] .seller-chip{background:#ffffff;border-color:rgba(0,0,0,.08);color:#1a1a16}
+body[data-theme="light"] .seller-chip:hover{background:#fffaf3;border-color:var(--accent)}
+body[data-theme="light"] .seller-chip-name{color:#1a1a16}
+body[data-theme="light"] .seller-chip-date{color:#6b6a62}
+body[data-theme="light"] .seller-group-empty,
+body[data-theme="light"] .seller-group-body:empty{color:#6b6a62}
+@media(max-width:520px){
+  .seller-group-body{grid-template-columns:1fr}
+}
 
 /* ═══ MVP OF THE MONTH ═══ */
 .mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
@@ -1572,6 +1610,13 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
           </ul>
         </li>
       </ul>
+
+      <hr class="seller-divider">
+
+      <h3 class="seller-section-title">Daftar Seller Terverifikasi</h3>
+      <div id="seller-approved-board" class="seller-board">
+        <div class="seller-board-empty">Memuat daftar seller…</div>
+      </div>
 
       <hr class="seller-divider">
 
@@ -3456,7 +3501,7 @@ document.querySelectorAll('.tab').forEach(t => {
     else if(currentTab==='predict'){ showScreen($predictScr); if(typeof loadPredictMatches === 'function') loadPredictMatches(); }
     else if(currentTab==='mvp'){ showScreen($mvpScr); if(typeof loadMvpEntries === 'function') loadMvpEntries(); }
     else if(currentTab==='track'){ showScreen($trackScr); if(role==='admin') loadTrackAdminList(); }
-    else if(currentTab==='submit-role'){ exitReplay(); showScreen($submitRoleScr); if(role==='admin' && typeof loadSellerAdminList === 'function') loadSellerAdminList(); }
+    else if(currentTab==='submit-role'){ exitReplay(); showScreen($submitRoleScr); if(typeof loadApprovedSellers === 'function') loadApprovedSellers(); if(role==='admin' && typeof loadSellerAdminList === 'function') loadSellerAdminList(); }
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
     if(!_suppressHistoryPush && history.state?.tab !== currentTab){
       const url = currentTab === 'home'

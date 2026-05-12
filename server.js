@@ -1654,6 +1654,35 @@ app.post('/api/role-submissions', submitLimiter, async (req, res) => {
   }
 });
 
+// Public list of approved sellers — what we surface on the Submit Role
+// page. Deduplicated by fb_url so someone who got upgraded over time shows
+// up once with their highest tier. We expose fb_name, fb_url, tier, and
+// reviewed_at only — never admin_note (private).
+app.get('/api/role-submissions/approved', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const { rows } = await pool.query(`
+      SELECT id, fb_name, fb_url, tier, reviewed_at, tier_rank
+      FROM (
+        SELECT DISTINCT ON (LOWER(fb_url))
+          id, fb_name, fb_url, tier, reviewed_at,
+          CASE tier WHEN 'star' THEN 3 WHEN 'elite' THEN 2 WHEN 'select' THEN 1 ELSE 0 END AS tier_rank
+        FROM role_submissions
+        WHERE status = 'approved'
+        ORDER BY LOWER(fb_url),
+          CASE tier WHEN 'star' THEN 3 WHEN 'elite' THEN 2 WHEN 'select' THEN 1 ELSE 0 END DESC,
+          reviewed_at DESC
+      ) t
+      ORDER BY tier_rank DESC, reviewed_at DESC NULLS LAST
+      LIMIT 500
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/role-submissions/approved:', err.message);
+    res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
 // Public lookup by Facebook URL — lets a submitter check the verdict on
 // their own submissions without exposing the whole queue. Returns the
 // most recent 20 rows that match the exact url (case-insensitive).
