@@ -723,6 +723,68 @@ body[data-theme="light"] .seller-divider{border-top-color:rgba(0,0,0,.08)}
   .seller-tier-req{font-size:12px}
   .seller-format,.seller-disclaimer{font-size:12px}
 }
+.seller-form{display:flex;flex-direction:column;gap:12px;padding:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md)}
+.seller-field{display:flex;flex-direction:column;gap:6px}
+.seller-field-label{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-300)}
+.seller-input{padding:10px 12px;background:rgba(10,10,8,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--ink-50);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s,background .15s;width:100%}
+.seller-input:focus{border-color:var(--accent);background:rgba(10,10,8,.85)}
+.seller-input:invalid{border-color:rgba(255,255,255,.1)}
+select.seller-input{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M0 0l6 8 6-8' fill='%23ffffff' opacity='0.6'/></svg>");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.seller-msg{padding:10px 12px;border-radius:8px;font-family:var(--font-cond);font-size:13px;line-height:1.5}
+.seller-msg.ok{background:rgba(76,223,182,.12);border:1px solid rgba(76,223,182,.4);color:#7df0c8}
+.seller-msg.err{background:rgba(255,85,119,.12);border:1px solid rgba(255,85,119,.4);color:#ff8aa3}
+.seller-lookup{padding:14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-md)}
+.seller-lookup-row{display:flex;gap:8px;align-items:stretch}
+.seller-lookup-row .seller-input{flex:1;min-width:0}
+.seller-lookup-result{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.seller-lookup-result:empty{display:none}
+.seller-sub-card{padding:12px 14px;background:rgba(20,20,18,.65);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-md);display:flex;flex-direction:column;gap:6px}
+.seller-sub-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.seller-sub-meta{font-family:var(--font-cond);font-size:12px;color:var(--ink-300);display:flex;gap:8px;flex-wrap:wrap}
+.seller-sub-tier{font-family:var(--font-display);font-style:italic;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-50)}
+.seller-sub-link{font-family:var(--font-mono);font-size:11px;color:var(--accent);text-decoration:none;word-break:break-all}
+.seller-sub-link:hover{text-decoration:underline}
+.seller-sub-name{font-family:var(--font-display);font-style:italic;font-size:14px;color:var(--ink-50)}
+.seller-status{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;font-weight:700;white-space:nowrap}
+.seller-status.pending{background:rgba(255,215,64,.15);color:#ffd96b;border:1px solid rgba(255,215,64,.4)}
+.seller-status.approved{background:rgba(76,223,182,.15);color:#7df0c8;border:1px solid rgba(76,223,182,.4)}
+.seller-status.rejected{background:rgba(255,85,119,.15);color:#ff8aa3;border:1px solid rgba(255,85,119,.4)}
+.seller-sub-note{font-family:var(--font-cond);font-size:12.5px;color:var(--ink-200);background:rgba(255,255,255,.04);border-left:2px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:4px;line-height:1.5}
+.seller-admin-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.seller-filter-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.seller-filter-tab{font-family:var(--font-cond);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--ink-200);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.seller-filter-tab:hover{background:rgba(255,255,255,.08);color:var(--ink-50)}
+.seller-filter-tab.active{background:var(--accent);color:#0a0a08;border-color:var(--accent);font-weight:700}
+.seller-admin-list{display:flex;flex-direction:column;gap:10px}
+.seller-admin-empty{padding:14px;text-align:center;font-family:var(--font-cond);font-size:13px;color:var(--ink-300);background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.1);border-radius:var(--r-md)}
+.seller-admin-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:4px}
+.seller-admin-note-input{flex:1;min-width:140px;padding:8px 10px;background:rgba(10,10,8,.6);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--ink-50);font-size:12px;font-family:inherit;outline:none}
+.seller-admin-note-input:focus{border-color:var(--accent);background:rgba(10,10,8,.85)}
+.btn-approve{background:linear-gradient(135deg,#4cdfb6,#1c8a72);color:#0a0a08;font-weight:700;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;transition:transform .12s,filter .12s}
+.btn-approve:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-reject{background:linear-gradient(135deg,#ff5577,#c5184f);color:#fff;font-weight:700;border:none;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;transition:transform .12s,filter .12s}
+.btn-reject:hover{filter:brightness(1.08);transform:translateY(-1px)}
+body[data-theme="light"] .seller-form,
+body[data-theme="light"] .seller-lookup{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.06)}
+body[data-theme="light"] .seller-field-label{color:#6b6a62}
+body[data-theme="light"] .seller-input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .seller-input:focus{background:#ffffff;border-color:var(--accent)}
+body[data-theme="light"] select.seller-input{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M0 0l6 8 6-8' fill='%23000000' opacity='0.5'/></svg>")}
+body[data-theme="light"] .seller-msg.ok{color:#0f6b50}
+body[data-theme="light"] .seller-msg.err{color:#c5184f}
+body[data-theme="light"] .seller-sub-card{background:#ffffff;border-color:rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+body[data-theme="light"] .seller-sub-meta{color:#6b6a62}
+body[data-theme="light"] .seller-sub-tier,
+body[data-theme="light"] .seller-sub-name{color:#1a1a16}
+body[data-theme="light"] .seller-sub-note{color:#4a4a45;background:rgba(0,0,0,.03);border-left-color:rgba(0,0,0,.15)}
+body[data-theme="light"] .seller-filter-tab{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.1);color:#4a4a45}
+body[data-theme="light"] .seller-filter-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+body[data-theme="light"] .seller-admin-note-input{background:#ffffff;border-color:rgba(0,0,0,.12);color:#1a1a16}
+body[data-theme="light"] .seller-admin-empty{background:rgba(0,0,0,.02);border-color:rgba(0,0,0,.1);color:#6b6a62}
+@media(max-width:520px){
+  .seller-lookup-row{flex-direction:column}
+  .seller-lookup-row .btn{width:100%}
+}
 
 /* ═══ MVP OF THE MONTH ═══ */
 .mvp-subtitle{font-family:var(--font-cond);font-size:12px;letter-spacing:.06em;color:var(--ink-200);margin:-6px 0 4px}
@@ -1513,19 +1575,59 @@ body[data-theme="light"] .podium-title{color:#1a1a16}
 
       <hr class="seller-divider">
 
-      <h3 class="seller-section-title">Format Pengajuan</h3>
-      <div class="seller-format">
-        Silakan submit dengan format berikut:
-        <ul class="seller-format-list">
-          <li>Nama Facebook:</li>
-          <li>Link Profile Facebook:</li>
-          <li>Ingin Mengajukan Menjadi:</li>
-        </ul>
+      <h3 class="seller-section-title">Form Pengajuan</h3>
+      <form id="seller-submit-form" class="seller-form" autocomplete="off" novalidate>
+        <label class="seller-field">
+          <span class="seller-field-label">Nama Facebook</span>
+          <input id="seller-fb-name" class="seller-input" type="text" maxlength="120" placeholder="Nama yang tertera di profil Facebook" required>
+        </label>
+        <label class="seller-field">
+          <span class="seller-field-label">Link Profile Facebook</span>
+          <input id="seller-fb-url" class="seller-input" type="url" maxlength="500" placeholder="https://www.facebook.com/username" inputmode="url" required>
+        </label>
+        <label class="seller-field">
+          <span class="seller-field-label">Ingin Mengajukan Menjadi</span>
+          <select id="seller-tier" class="seller-input" required>
+            <option value="">— Pilih badge yang diajukan —</option>
+            <option value="select">🛡️ Select Seller (25× WTS · Rising Contributor)</option>
+            <option value="elite">💎 Elite Seller (50× WTS · Top Contributor)</option>
+            <option value="star">⭐ Star Seller (100× WTS · All Star Contributor)</option>
+          </select>
+        </label>
+        <button type="submit" class="btn btn-primary" id="seller-submit-btn">Kirim Pengajuan</button>
+        <div id="seller-submit-msg" class="seller-msg" style="display:none"></div>
+      </form>
+
+      <hr class="seller-divider">
+
+      <h3 class="seller-section-title">Cek Status Pengajuan</h3>
+      <div class="seller-lookup">
+        <div class="seller-lookup-row">
+          <input id="seller-lookup-url" class="seller-input" type="url" maxlength="500" placeholder="Paste link Facebook Anda untuk cek status" inputmode="url">
+          <button class="btn btn-primary btn-sm" id="seller-lookup-btn">🔍 Cek</button>
+        </div>
+        <div id="seller-lookup-result" class="seller-lookup-result"></div>
       </div>
 
       <div class="seller-disclaimer">
         <p>Seluruh pengajuan akan diperiksa secara manual oleh tim kami dengan mempertimbangkan kualitas, komentar, serta aktivitas pada setiap postingan Anda.</p>
         <p>Tim berhak menolak atau membatalkan pengajuan apabila ditemukan kecurangan maupun tindakan yang berpotensi merugikan pembeli.</p>
+      </div>
+
+      <!-- Admin review panel -->
+      <div class="role-admin-only" id="seller-admin-panel" style="display:none">
+        <hr class="seller-divider">
+        <h3 class="seller-section-title">Admin · Antrian Pengajuan</h3>
+        <div class="seller-admin-toolbar">
+          <div class="seller-filter-tabs" id="seller-filter-tabs">
+            <button class="seller-filter-tab active" data-filter="pending">Pending</button>
+            <button class="seller-filter-tab" data-filter="approved">Disetujui</button>
+            <button class="seller-filter-tab" data-filter="rejected">Ditolak</button>
+            <button class="seller-filter-tab" data-filter="all">Semua</button>
+          </div>
+          <button class="btn btn-ghost btn-xs" id="seller-admin-refresh">↻ Refresh</button>
+        </div>
+        <div id="seller-admin-list" class="seller-admin-list"></div>
       </div>
     </div>
   </div>
@@ -3291,6 +3393,8 @@ function setRole(r){
   document.querySelectorAll('.predict-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
   if(typeof renderPredictList === 'function') renderPredictList();
   document.querySelectorAll('.mvp-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  document.querySelectorAll('.role-admin-only').forEach(el => el.style.display = isAdmin ? '' : 'none');
+  if(isAdmin && currentTab === 'submit-role' && typeof loadSellerAdminList === 'function') loadSellerAdminList();
   if(typeof renderMvpTable === 'function') renderMvpTable();
   if(typeof renderMvpPrize === 'function') renderMvpPrize();
   if(typeof renderMvpPublishBar === 'function') renderMvpPublishBar();
@@ -3352,7 +3456,7 @@ document.querySelectorAll('.tab').forEach(t => {
     else if(currentTab==='predict'){ showScreen($predictScr); if(typeof loadPredictMatches === 'function') loadPredictMatches(); }
     else if(currentTab==='mvp'){ showScreen($mvpScr); if(typeof loadMvpEntries === 'function') loadMvpEntries(); }
     else if(currentTab==='track'){ showScreen($trackScr); if(role==='admin') loadTrackAdminList(); }
-    else if(currentTab==='submit-role'){ exitReplay(); showScreen($submitRoleScr); }
+    else if(currentTab==='submit-role'){ exitReplay(); showScreen($submitRoleScr); if(role==='admin' && typeof loadSellerAdminList === 'function') loadSellerAdminList(); }
     else if(currentTab==='history'){ loadHistory().then(renderHistory); showScreen($historyScr); }
     if(!_suppressHistoryPush && history.state?.tab !== currentTab){
       const url = currentTab === 'home'
@@ -7108,5 +7212,6 @@ setTimeout(()=>{ const ni=$('name-input'); if(ni && role==='admin') ni.focus(); 
 <script src="./js/mvp.js"></script>
 <script src="./js/freekick.js"></script>
 <script src="./js/penalty.js"></script>
+<script src="./js/submit-role.js"></script>
 </body>
 </html>

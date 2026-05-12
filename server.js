@@ -316,6 +316,23 @@ async function initDB() {
     // viewers see a frozen Billboard-style chart while admin keeps tweaking
     // mvp_entries privately.
     await pool.query(`ALTER TABLE mvp_snapshots ADD COLUMN IF NOT EXISTS entries JSONB`);
+    // Seller-badge role pengajuan. Multiple pending submissions per user are
+    // allowed (so we don't constrain on fb_url). Status starts 'pending'; admin
+    // sets it to 'approved' or 'rejected' and may attach a note.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS role_submissions (
+        id SERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        reviewed_at TIMESTAMPTZ,
+        fb_name VARCHAR(120) NOT NULL,
+        fb_url TEXT NOT NULL,
+        tier VARCHAR(20) NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'pending',
+        admin_note VARCHAR(500)
+      )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_sub_status_created ON role_submissions (status, created_at DESC)`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_role_sub_fb_url ON role_submissions (fb_url)`);
     dbReady = true;
     console.log('Database ready');
   } catch (err) {
@@ -1593,6 +1610,137 @@ async function autoClosePredictions() {
   }
 }
 setInterval(autoClosePredictions, 10000);
+
+// ===== SELLER ROLE SUBMISSIONS =====
+const VALID_TIERS = new Set(['select', 'elite', 'star']);
+const VALID_STATUSES = new Set(['pending', 'approved', 'rejected']);
+const TIER_LABEL = { select: 'Select Seller', elite: 'Elite Seller', star: 'Star Seller' };
+
+// Facebook profile URL check: must be https on a facebook.com host.
+// Accepts m./www./web./mobile. subdomains plus the apex.
+function isValidFacebookUrl(s) {
+  if (!isValidHttpsUrl(s)) return false;
+  try {
+    const host = new URL(s).hostname.toLowerCase();
+    return host === 'facebook.com' || host.endsWith('.facebook.com') || host === 'fb.com' || host.endsWith('.fb.com');
+  } catch { return false; }
+}
+
+// Public submit. Multiple pending submissions per user are allowed; admin
+// reviews each one individually.
+app.post('/api/role-submissions', submitLimiter, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  try {
+    const fb_name = String(req.body?.fb_name || '').trim();
+    const fb_url = String(req.body?.fb_url || '').trim();
+    const tier = String(req.body?.tier || '').trim().toLowerCase();
+    if (!fb_name) return res.status(400).json({ error: 'Nama Facebook wajib diisi' });
+    if (fb_name.length > 120) return res.status(400).json({ error: 'Nama Facebook terlalu panjang' });
+    if (!fb_url) return res.status(400).json({ error: 'Link Profile Facebook wajib diisi' });
+    if (fb_url.length > 500) return res.status(400).json({ error: 'Link Facebook terlalu panjang' });
+    if (!isValidFacebookUrl(fb_url)) return res.status(400).json({ error: 'Link harus berupa URL Facebook yang valid (https://...facebook.com/...)' });
+    if (!VALID_TIERS.has(tier)) return res.status(400).json({ error: 'Pilih badge yang diajukan' });
+    const { rows } = await pool.query(
+      `INSERT INTO role_submissions (fb_name, fb_url, tier)
+       VALUES ($1, $2, $3)
+       RETURNING id, created_at, fb_name, fb_url, tier, status`,
+      [fb_name, fb_url, tier]
+    );
+    io.emit('role-submission-added', rows[0]);
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('POST /api/role-submissions:', err.message);
+    res.status(500).json({ error: 'Gagal menyimpan' });
+  }
+});
+
+// Public lookup by Facebook URL — lets a submitter check the verdict on
+// their own submissions without exposing the whole queue. Returns the
+// most recent 20 rows that match the exact url (case-insensitive).
+app.get('/api/role-submissions/lookup', async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const fb_url = String(req.query.fb_url || '').trim();
+    if (!fb_url || !isValidFacebookUrl(fb_url)) return res.json([]);
+    const { rows } = await pool.query(
+      `SELECT id, created_at, reviewed_at, fb_name, fb_url, tier, status, admin_note
+       FROM role_submissions
+       WHERE LOWER(fb_url) = LOWER($1)
+       ORDER BY created_at DESC LIMIT 20`,
+      [fb_url]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/role-submissions/lookup:', err.message);
+    res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
+// Admin list — optional ?status= filter (pending|approved|rejected|all).
+app.get('/api/role-submissions', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.json([]);
+  try {
+    const status = String(req.query.status || 'pending').toLowerCase();
+    const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+    let rows;
+    if (status === 'all') {
+      ({ rows } = await pool.query(
+        `SELECT * FROM role_submissions ORDER BY created_at DESC LIMIT $1`,
+        [limit]
+      ));
+    } else {
+      if (!VALID_STATUSES.has(status)) return res.status(400).json({ error: 'Bad status filter' });
+      ({ rows } = await pool.query(
+        `SELECT * FROM role_submissions WHERE status = $1 ORDER BY created_at DESC LIMIT $2`,
+        [status, limit]
+      ));
+    }
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /api/role-submissions:', err.message);
+    res.status(500).json({ error: 'Failed to load' });
+  }
+});
+
+// Admin review — set status and optional note.
+app.patch('/api/role-submissions/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
+  try {
+    const status = String(req.body?.status || '').toLowerCase();
+    if (!VALID_STATUSES.has(status)) return res.status(400).json({ error: 'Bad status' });
+    const noteRaw = req.body?.admin_note;
+    const admin_note = noteRaw == null ? null : String(noteRaw).trim().slice(0, 500) || null;
+    const reviewedAt = status === 'pending' ? null : new Date();
+    const { rows } = await pool.query(
+      `UPDATE role_submissions
+       SET status = $1, admin_note = $2, reviewed_at = $3
+       WHERE id = $4 RETURNING *`,
+      [status, admin_note, reviewedAt, id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Not found' });
+    io.emit('role-submission-updated', rows[0]);
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('PATCH /api/role-submissions/:id:', err.message);
+    res.status(500).json({ error: 'Failed to update' });
+  }
+});
+
+app.delete('/api/role-submissions/:id', requireAdmin, async (req, res) => {
+  if (!dbReady) return res.status(503).json({ error: 'No database' });
+  const id = parseIntId(req.params.id);
+  if (id == null) return res.status(404).json({ error: 'Not found' });
+  try {
+    const { rowCount } = await pool.query('DELETE FROM role_submissions WHERE id = $1', [id]);
+    if (!rowCount) return res.status(404).json({ error: 'Not found' });
+    io.emit('role-submission-deleted', { id });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete' });
+  }
+});
 
 // ===== LIVE RACE (single global state) =====
 const liveRace = {
